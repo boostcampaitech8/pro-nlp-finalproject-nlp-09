@@ -76,7 +76,7 @@ class CornPricePredictor:
         Args:
             news_data: 최근 뉴스 데이터 (DataFrame)
                 필수 컬럼: ['publish_date', 'article_embedding', 'price_impact_score', 
-                           'sentiment_confidence', 'positive_score', 'negative_score']
+                        'sentiment_confidence', 'positive_score', 'negative_score']
                 최소 3일치 데이터 권장
             
             price_history: 최근 가격 데이터 (DataFrame)
@@ -147,7 +147,7 @@ class CornPricePredictor:
         """입력 데이터 검증"""
         # 뉴스 데이터 검증
         required_news_cols = ['publish_date', 'article_embedding', 'price_impact_score', 
-                              'sentiment_confidence', 'positive_score', 'negative_score']
+                            'sentiment_confidence', 'positive_score', 'negative_score']
         missing_news_cols = [col for col in required_news_cols if col not in news_data.columns]
         if missing_news_cols:
             raise ValueError(f"뉴스 데이터에 필수 컬럼이 누락되었습니다: {missing_news_cols}")
