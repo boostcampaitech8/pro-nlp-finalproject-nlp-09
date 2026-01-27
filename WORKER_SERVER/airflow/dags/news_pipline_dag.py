@@ -109,7 +109,6 @@ with DAG(
         for art in all_articles:
             # T인 기사 중 임베딩이 null인 경우만!
             if art.get('article_embedding') is None:
-                # 세훈님 공식: Title + Description
                 text_to_embed = f"{art['title']}\n\n{art.get('description', '')}"
                 
                 print(f"🔄 임베딩 생성 중: {art['title'][:20]}...")
@@ -172,7 +171,7 @@ with DAG(
                 json.dump(existing_triples + new_triples, f, indent=4, ensure_ascii=False)
             print(f"✅ {len(new_triples)}개의 트리플 임베딩 완료!")
 
-        # 🌟 다음 태스크(빅쿼리)를 위해 이번에 작업된 리스트만 반환
+
         return newly_embedded_articles
 
     # 1. 크롤링 태스크
