@@ -1,0 +1,32 @@
+# LSTM 모델 설정 (추후 구현 예정)
+LSTM_MODEL_PATH=models/lstm_model.h5
+
+# FinBERT 설정 (추후 구현 예정)
+FINBERT_MODEL_NAME=ProsusAI/finbert
+
+# GPU 사용 여부
+USE_GPU=true
+
+# 생성 모델 설정
+GENERATE_MODEL_NAME=meta/llama-3.1-70b-instruct-maas
+GENERATE_MODEL_TEMPERATURE=0.5
+GENERATE_MODEL_MAX_TOKENS=4096
+
+# Vertex AI 설정 (플랫폼 관련, 선택사항 - gcloud config로 설정하면 불필요)
+VERTEX_AI_PROJECT_ID=your_project_id_here
+VERTEX_AI_LOCATION=us-central1
+
+# BigQuery 설정 (시계열 데이터 가져오기)
+BIGQUERY_DATASET_ID=your_dataset_id
+BIGQUERY_TABLE_ID=your_table_id
+BIGQUERY_DATE_COLUMN=time
+# 단일 컬럼: BIGQUERY_VALUE_COLUMN=value
+# 여러 컬럼: 쉼표로 구분 (예: BIGQUERY_VALUE_COLUMN=price,volume,market_cap)
+BIGQUERY_VALUE_COLUMN=value
+BIGQUERY_BASE_DATE=2026-01-23
+BIGQUERY_DAYS=30
+
+# 서버 설정
+API_HOST=0.0.0.0
+API_PORT=8000
+DEBUG=false
