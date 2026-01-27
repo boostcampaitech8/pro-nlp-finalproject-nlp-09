@@ -1,0 +1,513 @@
+[
+    {
+        "id": "04ff788d6da94efc83d9c66ef1a2e5ce",
+        "title": "What Are the Facts About US Corn?",
+        "doc_url": "https://www.barchart.com/story/news/37212260/what-are-the-facts-about-us-corn",
+        "all_text": "<ol><li>In the US, the corn market remains the King of the Ag sector given the country is the world leader in production, usage, and exports.\r\n</li><li>In its January WASDE report, USDA did what it w… [+7195 chars]",
+        "authors": "Darin Newsom",
+        "publish_date": "2026-01-24 13:35:06",
+        "meta_site_name": "Barchart.com",
+        "description": "Since the release of USDA's January WASDE report, I've seen countless charts and studies dissecting 2025 corn production. Those are irrelevant to the main...",
+        "key_word": "corn AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:28",
+        "filter_status": "T",
+        "named_entities": [
+            "US",
+            "USDA",
+            "Corn",
+            "WASDE"
+        ],
+        "triples": [
+            [
+                "US",
+                "leads",
+                "corn production"
+            ],
+            [
+                "US",
+                "dominates",
+                "corn usage"
+            ],
+            [
+                "US",
+                "is top",
+                "corn exporter"
+            ],
+            [
+                "USDA",
+                "released",
+                "January WASDE report"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "f0d481857780042a0625e7a8d48197c3",
+        "title": "Corn Rallies into the Weekend as Export Business Booms to Multi-Year High",
+        "doc_url": "https://www.barchart.com/story/news/37206048/corn-rallies-into-the-weekend-as-export-business-booms-to-multi-year-high",
+        "all_text": "Corn futures posted 5 to 6 ½ cent gains across most contracts on Friday, as the late week strength took the weekly gain to 5 ¾ cents. This mornings Export Sales report showed international buyers tak… [+1325 chars]",
+        "authors": "Austin Schroeder",
+        "publish_date": "2026-01-23 22:46:29",
+        "meta_site_name": "Barchart.com",
+        "description": "Corn futures posted 5 to 6 ½ cent gains across most contracts on Friday, as the late week strength took the weekly gain to 5 ¾ cents. This morning’s Export...",
+        "key_word": "corn AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:28",
+        "filter_status": "T",
+        "named_entities": [
+            "Corn",
+            "USDA",
+            "Export Sales",
+            "international buyers"
+        ],
+        "triples": [
+            [
+                "Corn futures",
+                "posted",
+                "gains across most contracts"
+            ],
+            [
+                "Export Sales report",
+                "showed",
+                "international buyers taking action"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "243ebc63edf1273c73bfe424ada24cec",
+        "title": "Corn Rallying as Export Business Shoots to Multi-Year High",
+        "doc_url": "https://www.barchart.com/story/news/37200479/corn-rallying-as-export-business-shoots-to-multi-year-high",
+        "all_text": "Corn futures are trading with 5 to 7 cent gains at Fridays midday. This mornings Export Sales report showed international buyers taking advantage of last weeks price break. The CmdtyView national ave… [+878 chars]",
+        "authors": "Austin Schroeder",
+        "publish_date": "2026-01-23 18:19:02",
+        "meta_site_name": "Barchart.com",
+        "description": "Corn futures are trading with 5 to 7 cent gains at Friday’s midday. This morning’s Export Sales report showed international buyers taking advantage of last...",
+        "key_word": "corn AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:28",
+        "filter_status": "T",
+        "named_entities": [
+            "Corn",
+            "Export Sales",
+            "CmdtyView"
+        ],
+        "triples": [
+            [
+                "Corn futures",
+                "are trading with",
+                "5 to 7 cent gains"
+            ],
+            [
+                "International buyers",
+                "are taking advantage of",
+                "last week's price break"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "1b848b14345498efb25a2f14552ca5de",
+        "title": "Soybean Rally Holding on Wednesday",
+        "doc_url": "https://www.barchart.com/story/news/37162154/soybean-rally-holding-on-wednesday",
+        "all_text": "Soybeans futures held on to the Wednesday gains as contracts were up 8 to 11 ½ cents across most months.  The cmdtyView national average Cash Bean price was 12 1/4 cents lower at $9.94. Soymeal futur… [+1054 chars]",
+        "authors": "Austin Schroeder",
+        "publish_date": "2026-01-21 23:01:12",
+        "meta_site_name": "Barchart.com",
+        "description": "Soybeans futures held on to the Wednesday gains as contracts were up 8 to 11 ½ cents across most months. The cmdtyView national average Cash Bean price was...",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:29",
+        "filter_status": "T",
+        "named_entities": [
+            "Soybeans",
+            "cmdtyView"
+        ],
+        "triples": [
+            [
+                "Soybeans futures",
+                "held on to",
+                "Wednesday gains"
+            ],
+            [
+                "Contracts",
+                "were up",
+                "8 to 11 ½ cents"
+            ],
+            [
+                "Cash Bean price",
+                "was lower",
+                "$9.94"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "93f1706fbe0ba83ff8cc811a5b65fb47",
+        "title": "Soybean Rally Holding on Wednesday",
+        "doc_url": "https://www.barchart.com/story/news/37156958/soybean-rally-holding-on-wednesday",
+        "all_text": "Soybeans futures are trading with 12 to 13 cent gains in the nearbys on Wednesday.  The cmdtyView national average Cash Bean price is 13 1/4 cents lower at $9.95. Soymeal futures are down 40 to 70 ce… [+931 chars]",
+        "authors": "Austin Schroeder",
+        "publish_date": "2026-01-21 18:22:17",
+        "meta_site_name": "Barchart.com",
+        "description": "Soybeans futures are trading with 12 to 13 cent gains in the nearbys on Wednesday. The cmdtyView national average Cash Bean price is 13 1/4 cents lower at...",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:29",
+        "filter_status": "T",
+        "named_entities": [
+            "Soybeans",
+            "cmdtyView"
+        ],
+        "triples": [
+            [
+                "Soybeans futures",
+                "are trading",
+                "with 12 to 13 cent gains"
+            ],
+            [
+                "Cash Bean price",
+                "is",
+                "$9.95"
+            ],
+            [
+                "Soymeal futures",
+                "are down",
+                "40 to 70 cents"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "c8e9a8406a217d5de39210ddef3ce368",
+        "title": "Vietnam Soybean Import Guide Report 2025: Exporters Can Tap Into Expanding Imports Driven by Livestock Industry Growth and Crushing Capacity Expansion",
+        "doc_url": "https://www.globenewswire.com/news-release/2026/01/21/3223064/28124/en/Vietnam-Soybean-Import-Guide-Report-2025-Exporters-Can-Tap-Into-Expanding-Imports-Driven-by-Livestock-Industry-Growth-and-Crushing-Capacity-Expansion.html",
+        "all_text": "Dublin, Jan. 21, 2026 (GLOBE NEWSWIRE) -- The \"Vietnam Soybean Import Guide 2023-2025\" report has been added to ResearchAndMarkets.com's offering.\r\nTo help global soybean manufacturers, exporters, an… [+7741 chars]",
+        "authors": "Research and Markets",
+        "publish_date": "2026-01-21 16:22:00",
+        "meta_site_name": "GlobeNewswire",
+        "description": "Vietnam's soybean market offers growth opportunities due to low self-sufficiency and rising demand for feed and processed products. Exporters can tap into expanding imports driven by livestock industry growth and crushing capacity expansion. Political stabili…",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:29",
+        "filter_status": "T",
+        "named_entities": [
+            "Vietnam",
+            "USDA",
+            "soybean",
+            "Vietnam Soybean Import Guide 2023-2025"
+        ],
+        "triples": [
+            [
+                "Vietnam",
+                "expands",
+                "soybean imports"
+            ],
+            [
+                "livestock industry growth",
+                "drives",
+                "soybean imports"
+            ],
+            [
+                "crushing capacity expansion",
+                "increases",
+                "soybean imports"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "b146ffb5560b2bf5e715c6254a99cd50",
+        "title": "China buys all 12 million tons of soybeans it promised, just in time for Trump to announce new tariffs",
+        "doc_url": "https://fortune.com/2026/01/21/china-buys-all-12-million-tons-of-soybeans-it-promised-just-in-time-for-trump-to-announce-new-tariffs/",
+        "all_text": "China has fulfilled its initial commitment to buy 12 million metric tons of soybeans from the U.S., but its not clear if the trade agreement announced in October can withstand President Donald Trumps… [+3956 chars]",
+        "authors": "Josh Funk, The Associated Press",
+        "publish_date": "2026-01-21 13:50:11",
+        "meta_site_name": "Fortune",
+        "description": "Beijing paused any purchase of U.S. soybeans last summer but agreed to resume after Trump and Chinese leader Xi Jinping met in South Korea.",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:29",
+        "filter_status": "T",
+        "named_entities": [
+            "China",
+            "U.S.",
+            "Donald Trump",
+            "soybeans",
+            "trade agreement"
+        ],
+        "triples": [
+            [
+                "China",
+                "buys",
+                "12 million metric tons of soybeans"
+            ],
+            [
+                "trade agreement",
+                "is announced",
+                "in October"
+            ],
+            [
+                "Trump",
+                "announces",
+                "new tariffs"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "3961ef080bf0859f408bd2b182d685b5",
+        "title": "China meets initial soybean purchase goal, but Trump’s shifting trade policy could disrupt deal",
+        "doc_url": "https://www.bostonherald.com/2026/01/20/trump-china-trade-soybeans/",
+        "all_text": "By JOSH FUNK\r\nChina has fulfilled its initial commitment to buy 12 million metric tons of soybeans from the U.S., but its not clear if the trade agreement announced in October can withstand President… [+4077 chars]",
+        "authors": "Associated Press",
+        "publish_date": "2026-01-20 23:10:18",
+        "meta_site_name": "Boston Herald",
+        "description": "American farmers are still dealing with high production costs.",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:29",
+        "filter_status": "T",
+        "named_entities": [
+            "China",
+            "U.S.",
+            "soybeans",
+            "Trump",
+            "trade agreement"
+        ],
+        "triples": [
+            [
+                "China",
+                "fulfilled commitment to buy",
+                "12 million metric tons of soybeans from the U.S."
+            ],
+            [
+                "trade agreement",
+                "can withstand",
+                "Trump’s shifting trade policy"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "5aea8137b9d1bdf558d1224d085eca3a",
+        "title": "China meets initial soybean purchase goal, but Trump's shifting trade policy could disrupt deal",
+        "doc_url": "https://japantoday.com/category/business/china-meets-initial-soybean-purchase-goal-but-trump%27s-shifting-trade-policy-could-disrupt-deal",
+        "all_text": "China has fulfilled its initial commitment to buy 12 million metric tons of soybeans from the U.S., but it's not clear if the trade agreement announced in October can withstand President Donald Trump… [+3964 chars]",
+        "authors": null,
+        "publish_date": "2026-01-20 21:49:44",
+        "meta_site_name": "Japan Today",
+        "description": "China has fulfilled its initial commitment to buy 12 million metric tons of soybeans from the U.S., but it's not clear if the trade agreement announced in October can withstand President Donald Trump's ever-shifting trade policy as American farmers are still …",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:29",
+        "filter_status": "T",
+        "named_entities": [
+            "China",
+            "United States",
+            "Donald Trump",
+            "soybeans"
+        ],
+        "triples": [
+            [
+                "China",
+                "fulfilled",
+                "initial commitment to buy 12 million metric tons of soybeans"
+            ],
+            [
+                "Trump's shifting trade policy",
+                "could disrupt",
+                "trade agreement"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "2bf04517470af5cee89733144cc407d7",
+        "title": "China meets initial soybean purchase goal, but Trump's shifting trade policy could disrupt deal",
+        "doc_url": "https://abcnews.go.com/US/wireStory/china-meets-initial-soybean-purchase-goal-trumps-shifting-129394306",
+        "all_text": "China has fulfilled its initial commitment to buy 12 million metric tons of soybeans from the U.S., but it's not clear if the trade agreement announced in October can withstand President Donald Trump… [+3856 chars]",
+        "authors": "JOSH FUNK AP business writer",
+        "publish_date": "2026-01-20 20:37:50",
+        "meta_site_name": "ABC News",
+        "description": "The Trump administration says China has fulfilled its initial commitment to buy 12 million metric tons of soybeans, but it’s not clear if the trade agreement announced in October can withstand President Donald Trump’s ever-shifting trade policy as Amer...",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:29",
+        "filter_status": "T",
+        "named_entities": [
+            "China",
+            "U.S.",
+            "Donald Trump",
+            "soybeans"
+        ],
+        "triples": [
+            [
+                "China",
+                "fulfilled",
+                "initial commitment to buy 12 million metric tons of soybeans from the U.S."
+            ],
+            [
+                "trade agreement",
+                "can withstand",
+                "President Donald Trump's policy changes"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "bcf499a82002b06e20c81efdc8292ad0",
+        "title": "Grain Market Bulls Are Showing Some Signs of Life. Can ‘King Corn’ Lead the Way Higher?",
+        "doc_url": "https://www.barchart.com/story/news/37129141/grain-market-bulls-are-showing-some-signs-of-life-can-king-corn-lead-the-way-higher",
+        "all_text": "Corn (ZCH26), soybean (ZSH26), and winter wheat (KEH26) (ZWH26) futures markets saw decent price recoveries on Friday, Jan. 16, including technically bullish weekly high closes, following an early we… [+4078 chars]",
+        "authors": "Jim Wyckoff",
+        "publish_date": "2026-01-20 15:00:02",
+        "meta_site_name": "Barchart.com",
+        "description": "Corn, soybeans, and winter wheat are looking to recover from a bearish USDA report last week.",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:29",
+        "filter_status": "T",
+        "named_entities": [
+            "Corn",
+            "Soybean",
+            "Winter Wheat",
+            "USDA"
+        ],
+        "triples": [
+            [
+                "Corn futures",
+                "saw",
+                "price recovery"
+            ],
+            [
+                "Soybean futures",
+                "saw",
+                "price recovery"
+            ],
+            [
+                "Winter Wheat futures",
+                "saw",
+                "price recovery"
+            ],
+            [
+                "Technically bullish weekly high closes",
+                "followed",
+                "price recovery"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "e7d340885caf1af10eb78abc7f852d8e",
+        "title": "Brazil’s soy trap: More land, falling yields and rising climate risk",
+        "doc_url": "https://www.thehindubusinessline.com/economy/agri-business/brazils-soy-trap-more-land-falling-yields-and-rising-climate-risk/article70519072.ece",
+        "all_text": "Agriculture lies at the heart of the climate debate. While vital for human survival, it is a major source of greenhouse gas emissions, land-use change and is highly vulnerable to heat, uneven rainfal… [+5076 chars]",
+        "authors": "Anupam  Barik",
+        "publish_date": "2026-01-18 04:15:00",
+        "meta_site_name": "BusinessLine",
+        "description": "As climate risks grow, stronger safeguards, transparent monitoring and science-based planning are essential",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:29",
+        "filter_status": "T",
+        "named_entities": [
+            "Brazil",
+            "USDA",
+            "soybeans",
+            "climate change"
+        ],
+        "triples": [
+            [
+                "Agriculture",
+                "is",
+                "vital for human survival"
+            ],
+            [
+                "Agriculture",
+                "is a source of",
+                "greenhouse gas emissions"
+            ],
+            [
+                "Agriculture",
+                "is vulnerable to",
+                "heat and uneven rainfall"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "0c5e7ff4b67c9b488be6c16f11774d2f",
+        "title": "Wheat production hinges on M.P., Rajasthan as area dips in UP & Punjab",
+        "doc_url": "https://www.thehindubusinessline.com/economy/agri-business/wheat-production-hinges-on-mp-rajasthan-as-area-dips-in-up-punjab/article70543180.ece",
+        "all_text": "A marginal drop in wheat area this year in Uttar Pradesh, Punjab and Bihar has been compensated by a significant rise of over 8 lakh hectares (lh) in Madhya Pradesh and about 4 lh in Rajasthan. The i… [+2808 chars]",
+        "authors": "Prabhudatta  Mishra",
+        "publish_date": "2026-01-23 16:08:40",
+        "meta_site_name": "BusinessLine",
+        "description": "Wheat production is shifting to M.P. and Rajasthan, with February temperatures critical for yield amid declining acreage in UP and Punjab.",
+        "key_word": "wheat AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 04:31:29",
+        "filter_status": "T",
+        "named_entities": [
+            "Uttar Pradesh",
+            "Punjab",
+            "Bihar",
+            "Madhya Pradesh",
+            "Rajasthan",
+            "wheat"
+        ],
+        "triples": [
+            [
+                "Uttar Pradesh",
+                "experiences a drop in",
+                "wheat area"
+            ],
+            [
+                "Punjab",
+                "experiences a drop in",
+                "wheat area"
+            ],
+            [
+                "Bihar",
+                "experiences a drop in",
+                "wheat area"
+            ],
+            [
+                "Madhya Pradesh",
+                "compensates with an increase in",
+                "wheat area"
+            ],
+            [
+                "Rajasthan",
+                "compensates with an increase in",
+                "wheat area"
+            ]
+        ],
+        "article_embedding": null
+    },
+    {
+        "id": "ba1f6d2098dae7c2cdbd9eea8c4633b2",
+        "title": "Weak rupee forces India to scrap South American soy oil shipments",
+        "doc_url": "https://www.bloomberg.com/news/articles/2026-01-23/india-scraps-more-south-american-soy-oil-cargoes-as-rupee-slumps",
+        "all_text": "India, the worlds largest vegetable oil buyer, canceled more soybean oil shipments from South America as the rupees slump to a record low widened the price gap between local and imported oil.\r\nAbout … [+1944 chars]",
+        "authors": "Bloomberg",
+        "publish_date": "2026-01-23 09:44:50",
+        "meta_site_name": "Bloomberg",
+        "description": "India has canceled soybean oil shipments from South America as a weak rupee and high global prices make imports costly, boosting palm oil demand.",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-01-27 05:00:08",
+        "filter_status": "T",
+        "named_entities": [
+            "India",
+            "South America",
+            "soybean oil"
+        ],
+        "triples": [
+            [
+                "India",
+                "canceled",
+                "soybean oil shipments from South America"
+            ],
+            [
+                "rupee",
+                "slumped",
+                "record low"
+            ],
+            [
+                "price gap",
+                "widened",
+                "between local and imported oil"
+            ]
+        ],
+        "article_embedding": null
+    }
+]
