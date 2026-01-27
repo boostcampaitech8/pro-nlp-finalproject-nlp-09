@@ -157,6 +157,7 @@ class CornPricePredictor:
             raise ValueError("가격 데이터에 'time' 또는 'date' 컬럼이 필요합니다.")
         
         required_price_cols = ['close', 'ret_1d']
+        price_history['ret_1d'] = np.log(price_history['close'] / price_history['close'].shift(1))
         missing_price_cols = [col for col in required_price_cols if col not in price_history.columns]
         if missing_price_cols:
             raise ValueError(f"가격 데이터에 필수 컬럼이 누락되었습니다: {missing_price_cols}")
