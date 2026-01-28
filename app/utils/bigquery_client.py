@@ -145,6 +145,102 @@ class BigQueryClient:
         # DataFrame으로 반환 (db-dtypes 필요)
         return self.client.query(query).to_dataframe()
 
+    def get_news_for_prediction(
+        self,
+        target_date: str,
+        lookback_days: int = 7,
+        dataset_id: Optional[str] = None,
+        table_id: str = "news_article"
+    ) -> pd.DataFrame:
+        """
+        뉴스 감성 모델 예측용 뉴스 데이터를 가져옵니다.
+        
+        Args:
+            target_date: 기준 날짜 (YYYY-MM-DD)
+            lookback_days: 조회할 과거 일수 (기본 7일)
+            dataset_id: 데이터셋 ID
+            table_id: 뉴스 테이블 ID
+            
+        Returns:
+            pd.DataFrame: 뉴스 데이터 (publish_date, title, article_embedding, scores...)
+        """
+        dataset = dataset_id or self.dataset_id or BIGQUERY_DATASET_ID
+        
+        # 날짜 계산
+        try:
+            target_dt = datetime.strptime(target_date, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError(f"Invalid date format: {target_date}")
+            
+        start_dt = target_dt - timedelta(days=lookback_days)
+        start_date_str = start_dt.strftime("%Y-%m-%d")
+        
+        # 필요한 컬럼들 조회
+        query = f"""
+            SELECT 
+                publish_date, 
+                title, 
+                description as all_text,
+                article_embedding,
+                price_impact_score,
+                sentiment_confidence,
+                positive_score,
+                negative_score,
+                triples,
+                filter_status
+            FROM `{self.project_id}.{dataset}.{table_id}`
+            WHERE publish_date >= '{start_date_str}'
+              AND publish_date <= '{target_date}'
+              AND filter_status = 'T'
+            ORDER BY publish_date ASC
+        """
+        
+        return self.client.query(query).to_dataframe()
+
+    def get_price_history(
+        self,
+        target_date: str,
+        lookback_days: int = 30,
+        dataset_id: Optional[str] = None,
+        table_id: str = "corn_price"
+    ) -> pd.DataFrame:
+        """
+        뉴스 감성 모델 예측용 가격 데이터를 가져옵니다.
+        
+        Args:
+            target_date: 기준 날짜
+            lookback_days: 조회할 과거 일수 (기본 30일)
+            dataset_id: 데이터셋 ID
+            table_id: 가격 테이블 ID
+            
+        Returns:
+            pd.DataFrame: 가격 데이터 (date, close, ret_1d)
+        """
+        dataset = dataset_id or self.dataset_id or BIGQUERY_DATASET_ID
+        
+        try:
+            target_dt = datetime.strptime(target_date, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError(f"Invalid date format: {target_date}")
+            
+        start_dt = target_dt - timedelta(days=lookback_days)
+        start_date_str = start_dt.strftime("%Y-%m-%d")
+        
+        # time 컬럼을 date로 별칭 지정하여 호환성 확보
+        query = f"""
+            SELECT 
+                time as date,
+                time,
+                close,
+                ret_1d
+            FROM `{self.project_id}.{dataset}.{table_id}`
+            WHERE time >= '{start_date_str}'
+              AND time <= '{target_date}'
+            ORDER BY time ASC
+        """
+        
+        return self.client.query(query).to_dataframe()
+
     def get_timeseries_data(
         self,
         dataset_id: Optional[str] = None,

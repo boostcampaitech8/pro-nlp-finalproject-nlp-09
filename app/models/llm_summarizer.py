@@ -2,6 +2,7 @@ from typing import Optional, List
 from datetime import datetime
 from langchain_core.tools import tool
 import subprocess
+import json
 from google.auth import default
 from google.auth.transport.requests import Request
 from langchain_core.messages import HumanMessage, AIMessage
@@ -28,39 +29,39 @@ REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
 
 | 항목 | 내용 |
 |------|------|
-| **입력 데이터 길이** | X일 (YYYY-MM-DD 부터 YYYY-MM-DD까지) |
-| **마지막 관측값** | XXX.XX |
-| **시계열 예측값** | XXX.XX |
-| **신뢰도** | XX.XX % |
+| **입력 데이터 길이** | 5년 (Prophet Features) |
+| **마지막 관측값** | [Last Observed Value] |
+| **시계열 예측값** | [Forecast Value] |
+| **신뢰도** | [Confidence Score] % |
 
 - **추세 분석**
-  - [최근 기간 평균과 전 기간 평균 비교]
-  - [최근 변동 추이 설명]
-  - [시계열 예측값 해석 및 신뢰도 평가]
+  - **최근 기간 평균** (7일) : [Recent Mean]
+  - **전 기간 평균** : [All-time Mean]
+  - **최근 변동 추이** : [Trend Analysis: Rising/Falling 등 설명]
+  - **시계열 예측값 해석** : [Forecast Direction] 방향으로 예측되며, 신뢰도는 [Confidence Score]% 입니다.
 
 - **예측값 해석**
-  - [현재 수준 대비 예측값 의미]
-  - [단기 변동성 평가]
+  - **현재 수준 대비** : [Last Value] 대비 [Forecast Value] 로 변동 예상.
+  - **단기 변동성 평가** : 변동성 지표 [Volatility Index] 수준.
 
 ---
 
 ### 2. 📰 뉴스 감성분석 결과 분석
 > [뉴스 기사 감성분석 한줄 평가]
 
-| 기사 번호 | 내용 요약 | 감성 |
-|-----------|-----------|------|
-| 1 | [기사 요약] | 긍정/부정/중립 |
-| 2 | [기사 요약] | 긍정/부정/중립 |
-| ... | ... | ... |
+| 기사 번호 | 제목 | 영향력 점수 | 요약 |
+|-----------|------|-------------|------|
+| 1 | [기사 제목] | [점수] | [내용 요약] |
+| 2 | [기사 제목] | [점수] | [내용 요약] |
+| ... | ... | ... | ... |
 
-- **감성 비율**
-  - 긍정: X개 (XX %)
-  - 부정: X개 (XX %)
-  - 중립: X개 (XX %)
-  - **종합 감성**: 긍정/부정/중립
+- **시장 영향력 분석**
+  - **상승 확률**: [Probability] %
+  - **종합 의견**: [뉴스 기반 상승/하락 예측 의견]
 
 - **텍스트적 근거**
   - [각 기사가 시장에 미치는 영향 분석]
+  - [주요 키워드 및 관계 정보(Triple) 활용]
 
 ---
 
@@ -68,9 +69,9 @@ REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
 
 | 구분 | 근거 | 전망 |
 |------|------|------|
-| **단기(1–3일)** | [근거 요약] | **[전망]** [상세 설명] |
-| **중기(1주)** | [근거 요약] | **[전망]** [상세 설명] |
-| **장기(1개월)** | [근거 요약] | **[전망]** [상세 설명] |
+| **단기(1–3일)** | [시계열 예측 결과 및 뉴스 단기 영향] | **[전망]** [상세 설명] |
+| **중기(1주)** | [뉴스 트렌드 및 중기 이슈] | **[전망]** [상세 설명] |
+| **장기(1개월)** | [거시 경제 및 정책 뉴스] | **[전망]** [상세 설명] |
 
 - **위험 요인**
   - [주요 위험 요인 나열]
@@ -101,16 +102,16 @@ SYSTEM_PROMPT = """당신은 전문 금융 분석가입니다.
 **사용 가능한 도구**:
 1. timeseries_predictor: 시계열 데이터 기반 시장 예측
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
-   - 설명: 지정된 날짜의 시장 추세(상승/하락), 예측값, 신뢰도, 변동성 등을 반환합니다.
+   - 설명: 지정된 날짜의 가격 추세, 예측값, 신뢰도 등을 반환합니다.
 
-2. news_sentiment_analyzer: 뉴스 기사 감성분석
-   - texts: "[기사 1]\\n내용\\n\\n[기사 2]\\n내용" 형식의 뉴스 기사 문자열
+2. news_sentiment_analyzer: 뉴스 기반 시장 영향력 분석 및 근거 추출
+   - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
+   - 설명: 해당 날짜 전후의 뉴스를 분석하여 시장 상승/하락 확률을 예측하고, 예측의 핵심 근거가 된 주요 뉴스들을 반환합니다.
 
 **도구 사용 규칙**:
-- 분석 대상 날짜(target_date)가 주어지면 반드시 `timeseries_predictor`를 호출하여 시장 데이터를 확보하세요.
-- 뉴스 기사 텍스트가 주어지면 `news_sentiment_analyzer`를 호출하여 감성 분석 결과를 확보하세요.
-- 각 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요.
-- 시계열 예측 결과와 뉴스 감성 결과가 상충될 경우, 두 관점을 모두 서술하고 보수적인 결론을 도출하세요.
+- 분석 대상 날짜(target_date)가 주어지면 반드시 두 도구(`timeseries_predictor`, `news_sentiment_analyzer`)를 모두 호출하여 데이터를 확보하세요.
+- `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 뉴스 감성분석 결과 분석' 섹션의 핵심 근거로 사용하세요. 각 뉴스의 제목과 시장 영향력 점수(price_impact_score)를 보고서 표에 포함하세요.
+- 두 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요. 시계열 지표와 뉴스 분석 결과가 서로 보완되도록 서술하세요.
 
 **보고서 작성 형식 (반드시 이 형식을 따라야 합니다)**:
 
@@ -132,74 +133,20 @@ def timeseries_predictor(target_date: str) -> str:
     return predict_market_trend(target_date)
 
 
-def _format_sentiment_results(text_list: List[str], results: List[dict]) -> str:
-    """감성 분석 결과를 포맷팅하여 반환"""
-    sentiment_map = {"positive": "긍정", "negative": "부정", "neutral": "중립"}
-    
-    # 감성별 개수 계산
-    counts = {
-        "positive": sum(1 for r in results if r.get("sentiment") == "positive"),
-        "negative": sum(1 for r in results if r.get("sentiment") == "negative"),
-        "neutral": sum(1 for r in results if r.get("sentiment") == "neutral"),
-    }
-    total = len(results)
-    
-    # 기사별 상세 결과 생성
-    detailed_results = []
-    for i, (text, result) in enumerate(zip(text_list, results), 1):
-        sentiment_en = result.get("sentiment", "neutral")
-        sentiment_ko = sentiment_map.get(sentiment_en, "중립")
-        detailed_results.append(f"기사 {i}: [{sentiment_ko}] {text}")
-    
-    # 종합 감성 결정
-    if counts["positive"] > counts["negative"]:
-        overall = "긍정"
-    elif counts["negative"] > counts["positive"]:
-        overall = "부정"
-    else:
-        overall = "중립"
-    
-    return f"""뉴스 감성분석 결과:
-- 분석된 기사 수: {total}개
-- 긍정: {counts['positive']}개 ({counts['positive']/total*100:.1f}%)
-- 부정: {counts['negative']}개 ({counts['negative']/total*100:.1f}%)
-- 중립: {counts['neutral']}개 ({counts['neutral']/total*100:.1f}%)
-- 종합 감성: {overall}
-
-기사별 감성 분석:
-{chr(10).join(detailed_results)}
-""".strip()
-
-
 @tool
-def news_sentiment_analyzer(texts: str) -> str:
+def news_sentiment_analyzer(target_date: str) -> str:
     """
-    FinBERT 모델을 사용하여 뉴스 기사들의 감성을 분석합니다.
+    특정 날짜의 뉴스를 분석하여 시장 영향력을 예측하고 주요 근거 뉴스(제목, 영향력 점수, 관계 정보 등)를 제공합니다.
     
     Args:
-        texts: "[기사 1]\\n내용\\n\\n[기사 2]\\n내용" 형식의 뉴스 기사 문자열
+        target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
     
     Returns:
-        각 기사의 감성 분석 결과와 종합 감성
+        JSON 형식의 예측 결과 문자열 (상승 확률, 근거 뉴스 리스트, 피처 요약 포함)
     """
-    import re
-    
-    # [기사 N] 패턴으로 기사 추출 (라벨과 내용을 함께 하나의 기사로 인식)
-    article_pattern = r'\[기사\s*\d+\]\s*\n(.+?)(?=\n\n\[기사\s*\d+\]|$)'
-    matches = re.finditer(article_pattern, texts, re.DOTALL)
-    
-    text_list = []
-    for match in matches:
-        article_text = match.group(1).strip()
-        if article_text:
-            text_list.append(article_text)
-    
-    if not text_list:
-        return "분석할 기사가 없습니다."
-    
     analyzer = SentimentAnalyzer()
-    results = analyzer.analyze_batch(text_list)
-    return _format_sentiment_results(text_list, results)
+    result = analyzer.predict_market_impact(target_date)
+    return json.dumps(result, ensure_ascii=False)
 
 
 class LLMSummarizer:
@@ -294,48 +241,17 @@ class LLMSummarizer:
     def _build_user_input(
         self,
         context: str,
-        target_date: Optional[str] = None, # New param
-        timeseries_table_id: Optional[str] = None,
-        timeseries_value_column: Optional[str] = None,
-        timeseries_days: Optional[int] = None,
-        news_table_id: Optional[str] = None,
-        news_value_column: Optional[str] = None,
-        news_days: Optional[int] = None,
-        timeseries_data: Optional[List[float]] = None,
-        news_texts: Optional[List[str]] = None
+        target_date: str,
     ) -> str:
-        """Agent에게 전달할 사용자 입력 메시지 생성
+        """Agent에게 전달할 사용자 입력 메시지 생성"""
         
-        Args:
-            context: 분석 맥락
-            target_date: 분석 기준 날짜 (YYYY-MM-DD)
-            timeseries_data: 직접 전달할 시계열 데이터
-            news_texts: 직접 전달할 뉴스 텍스트
-        """
         user_input = f"""다음 정보를 바탕으로 전문적인 금융 시장 분석 보고서를 작성해주세요.
 
 **분석 맥락**: {context or "최근 시장 상황 분석"}
+**분석 기준 일자**: {target_date}
 
+- `timeseries_predictor`와 `news_sentiment_analyzer` 도구를 모두 사용하여 {target_date}의 시장 데이터를 분석하세요.
 """
-        # 분석 기준일 설정
-        analysis_date = target_date if target_date else datetime.now().strftime("%Y-%m-%d")
-        user_input += f"**분석 기준 일자**: {analysis_date}\n\n"
-
-        # 시계열 데이터 처리 (New: 날짜 기반)
-        if target_date:
-            user_input += f"- `timeseries_predictor` 도구를 호출하여 {analysis_date}의 시장 예측 데이터를 확보하세요.\n"
-        # 시계열 데이터 처리 (Old: 리스트 기반 - 하위 호환성)
-        elif timeseries_data:
-            data_str = ", ".join(map(str, timeseries_data))
-            user_input += f"**시계열 데이터**: {data_str}\n\n"
-            user_input += "- 이 데이터를 timeseries_predictor 도구에 전달하여 예측을 수행하세요.\n"
-        
-        # 뉴스 기사 직접 포함
-        if news_texts:
-            texts_str = "\n\n".join([f"[기사 {i+1}]\n{text}" for i, text in enumerate(news_texts)])
-            user_input += f"**분석할 뉴스 기사**:\n{texts_str}\n\n"
-            user_input += "- 이 데이터를 news_sentiment_analyzer 도구에 전달하여 감성분석을 수행하세요.\n"
-        
         return user_input
     
     def _validate_output_format(self, summary: str) -> bool:
@@ -362,7 +278,7 @@ class LLMSummarizer:
                 content = content.strip().rstrip('\\')
                 
                 # JSON 형식의 tool call arguments는 건너뛰기
-                if content.startswith("{") and content.strip().endswith("}"):
+                if content.startswith("{{") and content.strip().endswith("}}"):
                     try:
                         # JSON 파싱 시도
                         parsed = json.loads(content)
@@ -394,48 +310,24 @@ class LLMSummarizer:
     def summarize(
         self,
         context: str = "",
-        target_date: Optional[str] = None, # New param
-        timeseries_table_id: Optional[str] = None,
-        timeseries_value_column: Optional[str] = None,
-        timeseries_days: Optional[int] = None,
-        news_table_id: Optional[str] = None,
-        news_value_column: Optional[str] = None,
-        news_days: Optional[int] = None,
-        timeseries_data: Optional[List[float]] = None,
-        news_texts: Optional[List[str]] = None,
+        target_date: Optional[str] = None,
         max_retries: int = 2,
     ) -> dict:
         """LangChain Agent를 이용한 LLM 요약 생성
         
         Args:
-            context: 분석 맥락 (시간 범위, 시장 상황 등)
-            timeseries_table_id: 시계열 데이터 테이블명 (기본값: "corn_price")
-            timeseries_value_column: 시계열 값 컬럼명 (기본값: "close")
-            timeseries_days: 시계열 데이터 가져올 일수 (기본값: 30)
-            news_table_id: 뉴스 테이블명 (기본값: "news_article")
-            news_value_column: 뉴스 텍스트 컬럼명 (기본값: "description")
-            news_days: 뉴스 가져올 일수 (기본값: 3)
-            timeseries_data: 시계열 예측에 사용할 데이터 (하위 호환성, 권장하지 않음)
-            news_texts: 감성분석에 사용할 뉴스 텍스트 리스트 (하위 호환성, 권장하지 않음)
-            max_retries: 출력 형식이 맞지 않을 때 최대 재시도 횟수 (기본값: 2)
-        
-        Returns:
-            dict: {
-                'summary': str,  # LLM 요약
-                'agent_result': dict,  # Agent 실행 결과 전체 (Tool 메시지 포함)
-            }
+            context: 분석 맥락
+            target_date: 분석 기준 날짜 (YYYY-MM-DD)
+            max_retries: 재시도 횟수
         """
+        # 날짜 기본값 (오늘)
+        if not target_date:
+            from datetime import datetime
+            target_date = datetime.now().strftime("%Y-%m-%d")
+            
         user_input = self._build_user_input(
             context=context,
-            target_date=target_date,
-            timeseries_table_id=timeseries_table_id,
-            timeseries_value_column=timeseries_value_column,
-            timeseries_days=timeseries_days,
-            news_table_id=news_table_id,
-            news_value_column=news_value_column,
-            news_days=news_days,
-            timeseries_data=timeseries_data,
-            news_texts=news_texts
+            target_date=target_date
         )
         
         for attempt in range(max_retries + 1):

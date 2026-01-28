@@ -1,7 +1,6 @@
+import json
 from fastapi import APIRouter
 from schema.models import OrchestratorInput, OrchestratorOutput, TimeSeriesPrediction, SentimentAnalysis
-from models.timeseries_predictor import TimeSeriesPredictor
-from models.sentiment_analyzer import SentimentAnalyzer
 from models.llm_summarizer import LLMSummarizer
 from datetime import datetime
 from typing import Optional, Tuple, List, Union
@@ -10,8 +9,6 @@ import re
 router = APIRouter(prefix="/api/orchestrator", tags=["orchestrator"])
 
 # 모델 초기화 (Lazy initialization)
-timeseries_predictor = None
-sentiment_analyzer = None
 llm_summarizer = None
 
 def get_llm_summarizer():
@@ -21,8 +18,6 @@ def get_llm_summarizer():
         llm_summarizer = LLMSummarizer()
     return llm_summarizer
 
-
-import json
 
 def parse_agent_result(agent_result: dict) -> Tuple[TimeSeriesPrediction, list]:
     """
@@ -37,8 +32,8 @@ def parse_agent_result(agent_result: dict) -> Tuple[TimeSeriesPrediction, list]:
     
     for msg in messages:
         if isinstance(msg, ToolMessage):
+            # 시계열 예측 결과 파싱 (JSON)
             if msg.name == "timeseries_predictor":
-                # 신규 JSON 형식 파싱 시도
                 try:
                     ts_data = json.loads(msg.content)
                     if "error" not in ts_data:
@@ -48,51 +43,33 @@ def parse_agent_result(agent_result: dict) -> Tuple[TimeSeriesPrediction, list]:
                             timestamp=ts_data.get("target_date", datetime.now().isoformat())
                         )
                 except json.JSONDecodeError:
-                    # 기존 텍스트 형식 파싱 (Fallback)
-                    timeseries_text = msg.content
-                    prediction_match = re.search(r'예측값:\s*([\d.]+)', timeseries_text)
-                    confidence_match = re.search(r'신뢰도:\s*([\d.]+)%', timeseries_text)
-                    
-                    if prediction_match and confidence_match:
-                        timeseries_prediction = TimeSeriesPrediction(
-                            prediction=float(prediction_match.group(1)),
-                            confidence=float(confidence_match.group(1)) / 100,
-                            timestamp=datetime.now().isoformat()
-                        )
+                    print(f"Warning: Failed to parse timeseries JSON: {msg.content[:50]}...")
             
+            # 뉴스 분석 결과 파싱 (JSON)
             elif msg.name == "news_sentiment_analyzer":
-                # 감성분석 결과 파싱
-                sentiment_text = msg.content
-                
-                # 기사별 감성 분석 추출
-                # 패턴: "기사 1: [긍정] 텍스트 내용"
-                article_pattern = r'기사\s*(\d+):\s*\[(긍정|부정|중립)\]\s*(.+?)(?=\n기사\s*\d+:|$)'
-                matches = re.finditer(article_pattern, sentiment_text, re.DOTALL)
-                
-                sentiment_map = {"긍정": "positive", "부정": "negative", "중립": "neutral"}
-                
-                for match in matches:
-                    sentiment_ko = match.group(2)
-                    text = match.group(3).strip()
-                    
-                    sentiment_en = sentiment_map.get(sentiment_ko, "neutral")
-                    
-                    # 점수 추출 (기본값)
-                    scores = {"positive": 0.33, "negative": 0.33, "neutral": 0.34}
-                    if sentiment_en == "positive":
-                        scores = {"positive": 0.7, "negative": 0.2, "neutral": 0.1}
-                    elif sentiment_en == "negative":
-                        scores = {"positive": 0.2, "negative": 0.7, "neutral": 0.1}
-                    
-                    sentiment_analysis.append(
-                        SentimentAnalysis(
-                            text=text,
-                            sentiment=sentiment_en,
-                            scores=scores
-                        )
-                    )
+                try:
+                    news_res = json.loads(msg.content)
+                    if "error" not in news_res:
+                        # 근거 뉴스들을 SentimentAnalysis 형식으로 변환하여 추가
+                        for news in news_res.get("evidence_news", []):
+                            impact = news.get("price_impact_score", 0.0)
+                            # 점수 정규화 및 할당
+                            scores = {
+                                "positive": max(0.0, impact) if impact > 0 else 0.1,
+                                "negative": abs(impact) if impact < 0 else 0.1,
+                                "neutral": 0.5
+                            }
+                            sentiment_analysis.append(
+                                SentimentAnalysis(
+                                    text=f"[{news.get('title', '제목없음')}] {news.get('all_text', '')[:200]}...",
+                                    sentiment="positive" if impact > 0 else ("negative" if impact < 0 else "neutral"),
+                                    scores=scores
+                                )
+                            )
+                except json.JSONDecodeError:
+                    print(f"Warning: Failed to parse news analysis JSON: {msg.content[:50]}...")
     
-    # 기본값 설정 (Tool 결과가 없는 경우)
+    # 기본값 설정
     if not timeseries_prediction:
         timeseries_prediction = TimeSeriesPrediction(
             prediction=0.0,
@@ -105,32 +82,22 @@ def parse_agent_result(agent_result: dict) -> Tuple[TimeSeriesPrediction, list]:
 
 def orchestrate_analysis(
     target_date: Optional[str] = None,
-    timeseries_data: Optional[List[float]] = None,
-    news_articles: Optional[List[str]] = None,
     context: str = "금융 시장 분석",
-    timeseries_table_id: Optional[str] = None,
-    timeseries_value_column: Optional[str] = None,
-    timeseries_days: Optional[int] = None,
-    news_table_id: Optional[str] = None,
-    news_value_column: Optional[str] = None,
-    news_days: Optional[int] = None,
-    return_agent_result: bool = False
+    return_agent_result: bool = False,
+    **kwargs
 ) -> Union[OrchestratorOutput, Tuple[OrchestratorOutput, dict]]:
     """
     Orchestrator 분석 로직
     """
     summarizer = get_llm_summarizer()
+    
+    # 분석 기준일이 없으면 오늘 날짜 사용
+    if not target_date:
+        target_date = datetime.now().strftime("%Y-%m-%d")
+        
     result = summarizer.summarize(
         context=context,
-        target_date=target_date,
-        timeseries_data=timeseries_data,
-        news_texts=news_articles,
-        timeseries_table_id=timeseries_table_id,
-        timeseries_value_column=timeseries_value_column,
-        timeseries_days=timeseries_days,
-        news_table_id=news_table_id,
-        news_value_column=news_value_column,
-        news_days=news_days
+        target_date=target_date
     )
     
     agent_result = result.get('agent_result', {})
@@ -150,31 +117,9 @@ def orchestrate_analysis(
 @router.post("/summarize", response_model=OrchestratorOutput)
 async def orchestrate_summary(input_data: OrchestratorInput):
     """
-    FastAPI 엔드포인트
+    FastAPI 엔드포인트: 날짜 기반 금융 분석 파이프라인
     """
     return orchestrate_analysis(
         target_date=input_data.target_date,
-        timeseries_data=input_data.timeseries_data,
-        news_articles=input_data.news_articles,
-        context=input_data.context or "금융 시장 분석",
-        timeseries_table_id=input_data.timeseries_table_id,
-        timeseries_value_column=input_data.timeseries_value_column,
-        timeseries_days=input_data.timeseries_days,
-        news_table_id=input_data.news_table_id,
-        news_value_column=input_data.news_value_column,
-        news_days=input_data.news_days
+        context=input_data.context or "금융 시장 분석"
     )
-
-
-@router.get("/health")
-async def health_check():
-    """Orchestrator 상태 확인"""
-    return {
-        "status": "healthy",
-        "components": {
-            "timeseries": "ready",
-            "sentiment": "ready",
-            "llm": "ready"
-        },
-        "timestamp": datetime.now().isoformat()
-    }

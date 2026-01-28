@@ -194,14 +194,22 @@ def load_news_dataframe(news_path='corn_all_news_with_sentiment.csv',
 class CornPricePredictor:
     """옥수수 가격 예측 모델 클래스"""
     
-    def __init__(self, model_dir='models'):
+    def __init__(self, model_dir=None):
         """
         모델 초기화
         
         Args:
-            model_dir: 모델 파일들이 저장된 디렉토리
+            model_dir: 모델 파일들이 저장된 디렉토리 (None이면 자동 탐색)
         """
-        self.model_dir = model_dir
+        # 기본 경로 설정: 현재 파일의 디렉토리
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        
+        # 우선순위: 1. 인자값 2. 환경변수 3. 로컬 기본값
+        if model_dir:
+            self.model_dir = model_dir
+        else:
+            self.model_dir = os.getenv('NEWS_MODEL_PATH', base_dir)
+            
         self.model = None
         self.pca = None
         self.feature_columns = None

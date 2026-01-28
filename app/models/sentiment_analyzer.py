@@ -1,77 +1,101 @@
+import sys
+import os
+import json
 from typing import List, Dict, Any
+import pandas as pd
+import traceback
+
+# 프로젝트 루트 경로 추가 (models 패키지 import용)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+root_dir = os.path.dirname(os.path.dirname(current_dir))
+if root_dir not in sys.path:
+    sys.path.append(root_dir)
+
+# 1. 뉴스 모델 컴포넌트 임포트
+try:
+    from models.news_sentiment_model.inference_with_evidence import CornPricePredictor
+    from models.news_sentiment_model.preprocessing import preprocess_news_data
+except ImportError as e:
+    print(f"경고: 뉴스 감성 모델 모듈 임포트 실패: {e}")
+    CornPricePredictor = None
+
+# 2. BigQuery 클라이언트 임포트
+try:
+    from app.utils.bigquery_client import BigQueryClient
+except ImportError as e:
+    print(f"경고: BigQueryClient 임포트 실패: {e}")
+    BigQueryClient = None
 
 
 class SentimentAnalyzer:
-    """FinBERT 감성분석 (테스트용 틀)"""
+    """
+    뉴스 감성 분석 및 시장 영향력 예측기 (Adapter)
+    """
     
-    def __init__(self, model_name: str = None):
-        self.model_name = model_name
-        self.tokenizer = None
-        self.model = None
-        self.pipeline = None
+    def __init__(self):
+        self.predictor = None
+        self._initialize_models()
+
+    def _initialize_models(self):
+        """모델 지연 초기화"""
+        try:
+            if CornPricePredictor:
+                self.predictor = CornPricePredictor()
+                self.predictor.load_model()
+        except Exception as e:
+            print(f"모델 초기화 중 오류 발생: {e}")
+
+    def predict_market_impact(self, target_date: str) -> Dict[str, Any]:
+        """
+        특정 날짜의 뉴스 기반 시장 예측 (근거 뉴스 포함)
+        
+        Args:
+            target_date: 분석할 날짜 (YYYY-MM-DD)
+            
+        Returns:
+            Dict: 예측 결과 및 근거 뉴스 리스트
+        """
+        if not self.predictor:
+            return {"error": "뉴스 예측 모델이 로드되지 않았습니다."}
+        
+        if not BigQueryClient:
+            return {"error": "BigQueryClient를 사용할 수 없습니다."}
+            
+        try:
+            bq = BigQueryClient()
+            
+            # 1. 데이터 가져오기 (뉴스 7일치, 가격 30일치)
+            news_df = bq.get_news_for_prediction(target_date, lookback_days=7)
+            price_df = bq.get_price_history(target_date, lookback_days=30)
+            
+            if news_df.empty:
+                return {"error": f"{target_date} 기준 최근 뉴스 데이터가 없습니다."}
+            if price_df.empty:
+                return {"error": f"{target_date} 기준 최근 가격 데이터가 없습니다."}
+            
+            # 2. 전처리 (문자열 임베딩 -> 배열 변환 등)
+            processed_news = preprocess_news_data(news_df)
+            
+            # 3. 예측 수행 (근거 뉴스 포함)
+            # news_df_full에 원본 news_df를 넘겨서 BQ에서 가져온 데이터를 그대로 근거 추출에 사용
+            result = self.predictor.predict_with_evidence(
+                news_data=processed_news,
+                price_history=price_df,
+                target_date=target_date,
+                news_df_full=news_df,  # 이미 로드한 데이터 재사용
+                top_k=3                # 상위 3개 근거 뉴스 추출
+            )
+            
+            return result
+            
+        except Exception as e:
+            traceback.print_exc()
+            return {"error": f"시장 예측 중 오류 발생: {str(e)}"}
+
+if __name__ == "__main__":
+    # 테스트 코드
+    analyzer = SentimentAnalyzer()
     
-    def analyze(self, text: str) -> Dict[str, Any]:
-        """텍스트 감성분석 (한국어/영어 지원)"""
-        # 테스트용 더미 구현
-        text_lower = text.lower()
-        
-        # 긍정 키워드 (한국어 + 영어)
-        positive_keywords = [
-            # 일반 긍정
-            "상승", "호실적", "긍정", "긍정적", "증가", "성장", "개선", "회복",
-            # 금융/시장 긍정
-            "rise", "increase", "positive", "growth", "gain", "gains", "up", 
-            "surge", "boost", "profit", "success", "improve", "better",
-            # 가격 상승 관련
-            "higher", "rising", "climb", "advance", "rally", "soar",
-            # 시장 전망 긍정
-            "projected", "expected", "forecast", "outlook", "cagr", "expand",
-            "set to grow", "will grow", "is growing", "growing",
-            # 정책/행동 긍정
-            "approved", "ending", "end", "support", "anticipate", "ease",
-            "reduction", "reductions", "cut", "cuts", "lower prices",
-            # 농업/에너지 긍정
-            "harvest", "yield", "production", "demand", "strong demand"
-        ]
-        
-        # 부정 키워드 (한국어 + 영어)
-        negative_keywords = [
-            # 일반 부정
-            "하락", "침체", "부정", "부정적", "감소", "위기", "위험", "불안",
-            # 금융/시장 부정
-            "fall", "decrease", "negative", "decline", "drop", "down", "lower",
-            "loss", "losses", "crisis", "fail", "failure", "recession", "worse",
-            # 가격 하락 관련
-            "plunge", "crash", "collapse", "sink", "tumble", "slump",
-            # 시장 부정
-            "struggle", "stalled", "squeeze", "stress", "pressure", "dangerous",
-            "threat", "risk", "risks", "uncertainty", "volatility",
-            # 공급 과잉/부족
-            "glut", "surplus", "oversupply", "shortage", "deficit",
-            # 정책/상황 부정
-            "shutdown", "shut down", "disaster", "reckoning", "populism",
-            # 농업/에너지 부정
-            "spreading", "outbreak", "killing", "decline in production",
-            "sharp decline", "sharp rise in costs"
-        ]
-        
-        if any(word in text_lower for word in positive_keywords):
-            sentiment = "positive"
-            scores = {"positive": 0.7, "negative": 0.2, "neutral": 0.1}
-        elif any(word in text_lower for word in negative_keywords):
-            sentiment = "negative"
-            scores = {"positive": 0.2, "negative": 0.7, "neutral": 0.1}
-        else:
-            sentiment = "neutral"
-            scores = {"positive": 0.33, "negative": 0.33, "neutral": 0.34}
-        
-        return {
-            "text": text,
-            "sentiment": sentiment,
-            "scores": scores
-        }
-    
-    def analyze_batch(self, texts: List[str]) -> List[Dict]:
-        """배치 감성분석"""
-        return [self.analyze(text) for text in texts]
-3
+    # 시장 예측 테스트 (BQ 연결 필요)
+    print("\n시장 예측 테스트 (2026-01-27):")
+    print(analyzer.predict_market_impact("2026-01-27"))
