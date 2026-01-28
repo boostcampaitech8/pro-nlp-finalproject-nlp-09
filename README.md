@@ -26,11 +26,14 @@
 ```
 1. run_sentiment_analysis.py (또는 finbert.py 모듈)
    뉴스 텍스트 → 감성 점수 생성 (한 번만 실행)
+
+2. preprocess.py
+   감성 점수 평균, 가격 데이터 일일 수익율 생성
    
-2. train.py
+3. train.py
    감성 점수 + 가격 데이터 → 모델 학습
    
-3. inference.py
+4. inference.py
    새로운 뉴스 + 가격 → 가격 예측
 ```
 
