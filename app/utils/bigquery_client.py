@@ -5,6 +5,7 @@ Google Cloud BigQuery에서 시계열 데이터를 가져옵니다.
 
 import sys
 from pathlib import Path
+import pandas as pd
 
 # 프로젝트 루트를 Python 경로에 추가 (스크립트 직접 실행 시)
 project_root = Path(__file__).parent.parent.parent
@@ -96,6 +97,54 @@ class BigQueryClient:
         
         self.client = bigquery.Client(project=self.project_id, credentials=credentials)
     
+    def get_prophet_features(
+        self,
+        target_date: str,
+        lookback_days: int = 60,
+        dataset_id: Optional[str] = None,
+        table_id: Optional[str] = None,
+        date_column: str = "ds"
+    ) -> pd.DataFrame:
+        """
+        Prophet/XGBoost 모델용 피처 데이터를 DataFrame 형태로 가져옵니다.
+        지정된 날짜(target_date) 포함 과거 N일(lookback_days) 데이터를 조회합니다.
+        
+        Args:
+            target_date: 기준 날짜 (YYYY-MM-DD)
+            lookback_days: 과거 조회 기간 (일 단위, 기본값 60)
+            dataset_id: 데이터셋 ID (옵션)
+            table_id: 테이블 ID (옵션)
+            date_column: 날짜 컬럼명 (기본값 'ds')
+            
+        Returns:
+            pd.DataFrame: 피처 데이터프레임 (날짜 오름차순 정렬됨)
+        """
+        dataset = dataset_id or self.dataset_id
+        table = table_id or self.table_id
+        
+        if not dataset or not table:
+             raise ValueError("dataset_id와 table_id가 설정되지 않았습니다.")
+
+        # 날짜 계산
+        try:
+            target_dt = datetime.strptime(target_date, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError(f"Invalid date format: {target_date}")
+            
+        start_dt = target_dt - timedelta(days=lookback_days)
+        start_date_str = start_dt.strftime("%Y-%m-%d")
+        
+        query = f"""
+            SELECT *
+            FROM `{self.project_id}.{dataset}.{table}`
+            WHERE {date_column} >= '{start_date_str}'
+              AND {date_column} <= '{target_date}'
+            ORDER BY {date_column} ASC
+        """
+        
+        # DataFrame으로 반환 (db-dtypes 필요)
+        return self.client.query(query).to_dataframe()
+
     def get_timeseries_data(
         self,
         dataset_id: Optional[str] = None,

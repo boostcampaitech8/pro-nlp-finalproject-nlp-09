@@ -1,4 +1,5 @@
 from typing import Optional, List
+from datetime import datetime
 from langchain_core.tools import tool
 import subprocess
 from google.auth import default
@@ -12,7 +13,7 @@ from config.settings import (
     GENERATE_MODEL_NAME, GENERATE_MODEL_TEMPERATURE, GENERATE_MODEL_MAX_TOKENS,
     VERTEX_AI_PROJECT_ID, VERTEX_AI_LOCATION,
 )
-from models.timeseries_predictor import TimeSeriesPredictor
+from models.timeseries_predictor import predict_market_trend
 from models.sentiment_analyzer import SentimentAnalyzer
 
 
@@ -98,17 +99,18 @@ REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
 SYSTEM_PROMPT = """당신은 전문 금융 분석가입니다.
 
 **사용 가능한 도구**:
-1. timeseries_predictor: 시계열 데이터 예측
-   - data: 쉼표로 구분된 숫자 문자열 (예: "100.5,101.2,102.3")
+1. timeseries_predictor: 시계열 데이터 기반 시장 예측
+   - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
+   - 설명: 지정된 날짜의 시장 추세(상승/하락), 예측값, 신뢰도, 변동성 등을 반환합니다.
 
 2. news_sentiment_analyzer: 뉴스 기사 감성분석
    - texts: "[기사 1]\\n내용\\n\\n[기사 2]\\n내용" 형식의 뉴스 기사 문자열
 
 **도구 사용 규칙**:
-- 사용자 입력에 제공된 시계열 데이터를 timeseries_predictor 도구에 전달하여 예측을 수행하세요.
-- 사용자 입력에 제공된 뉴스 기사를 news_sentiment_analyzer 도구에 전달하여 감성분석을 수행하세요.
-- 각 도구는 필요한 만큼 사용하세요.
-- 도구 실행 결과를 받은 후 종합 분석을 수행하세요.
+- 분석 대상 날짜(target_date)가 주어지면 반드시 `timeseries_predictor`를 호출하여 시장 데이터를 확보하세요.
+- 뉴스 기사 텍스트가 주어지면 `news_sentiment_analyzer`를 호출하여 감성 분석 결과를 확보하세요.
+- 각 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요.
+- 시계열 예측 결과와 뉴스 감성 결과가 상충될 경우, 두 관점을 모두 서술하고 보수적인 결론을 도출하세요.
 
 **보고서 작성 형식 (반드시 이 형식을 따라야 합니다)**:
 
@@ -117,27 +119,17 @@ SYSTEM_PROMPT = """당신은 전문 금융 분석가입니다.
 
 # LangChain Tools 정의
 @tool
-def timeseries_predictor(data: str) -> str:
+def timeseries_predictor(target_date: str) -> str:
     """
-    시계열 데이터를 예측합니다.
+    특정 날짜의 금융 시장 추세(상승/하락)와 가격을 예측합니다.
     
     Args:
-        data: 쉼표로 구분된 숫자 문자열 (예: "100.5,101.2,102.3")
+        target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
     
     Returns:
-        예측값과 신뢰도를 포함한 분석 결과
+        JSON 형식의 예측 결과 문자열 (예측값, 방향, 신뢰도, 추세 분석 등 포함)
     """
-    data_list = [float(x.strip()) for x in data.split(",") if x.strip()]
-    predictor = TimeSeriesPredictor()
-    prediction, confidence = predictor.predict(data_list)
-    
-    result = f"""
-시계열 예측 결과:
-- 예측값: {prediction:.2f}
-- 신뢰도: {confidence:.2%}
-- 입력 데이터 길이: {len(data_list)}
-"""
-    return result.strip()
+    return predict_market_trend(target_date)
 
 
 def _format_sentiment_results(text_list: List[str], results: List[dict]) -> str:
@@ -302,6 +294,7 @@ class LLMSummarizer:
     def _build_user_input(
         self,
         context: str,
+        target_date: Optional[str] = None, # New param
         timeseries_table_id: Optional[str] = None,
         timeseries_value_column: Optional[str] = None,
         timeseries_days: Optional[int] = None,
@@ -315,21 +308,27 @@ class LLMSummarizer:
         
         Args:
             context: 분석 맥락
+            target_date: 분석 기준 날짜 (YYYY-MM-DD)
             timeseries_data: 직접 전달할 시계열 데이터
             news_texts: 직접 전달할 뉴스 텍스트
-            나머지 파라미터는 하위 호환성을 위해 유지하지만 사용하지 않음
         """
         user_input = f"""다음 정보를 바탕으로 전문적인 금융 시장 분석 보고서를 작성해주세요.
 
 **분석 맥락**: {context or "최근 시장 상황 분석"}
 
 """
-        
-        # 시계열 데이터 직접 포함
-        if timeseries_data:
+        # 분석 기준일 설정
+        analysis_date = target_date if target_date else datetime.now().strftime("%Y-%m-%d")
+        user_input += f"**분석 기준 일자**: {analysis_date}\n\n"
+
+        # 시계열 데이터 처리 (New: 날짜 기반)
+        if target_date:
+            user_input += f"- `timeseries_predictor` 도구를 호출하여 {analysis_date}의 시장 예측 데이터를 확보하세요.\n"
+        # 시계열 데이터 처리 (Old: 리스트 기반 - 하위 호환성)
+        elif timeseries_data:
             data_str = ", ".join(map(str, timeseries_data))
             user_input += f"**시계열 데이터**: {data_str}\n\n"
-            user_input += "- 이 데이터를 timeseries_predictor 도구에 전달하여 예측을 수행하세요.\n\n"
+            user_input += "- 이 데이터를 timeseries_predictor 도구에 전달하여 예측을 수행하세요.\n"
         
         # 뉴스 기사 직접 포함
         if news_texts:
@@ -368,7 +367,7 @@ class LLMSummarizer:
                         # JSON 파싱 시도
                         parsed = json.loads(content)
                         # tool call arguments 형식인지 확인 (texts, data 등의 키가 있으면 건너뛰기)
-                        if isinstance(parsed, dict) and any(key in parsed for key in ["texts", "data"]):
+                        if isinstance(parsed, dict) and any(key in parsed for key in ["texts", "data", "target_date"]):
                             continue
                     except (json.JSONDecodeError, ValueError):
                         # JSON이 아니면 계속 진행
@@ -395,6 +394,7 @@ class LLMSummarizer:
     def summarize(
         self,
         context: str = "",
+        target_date: Optional[str] = None, # New param
         timeseries_table_id: Optional[str] = None,
         timeseries_value_column: Optional[str] = None,
         timeseries_days: Optional[int] = None,
@@ -427,6 +427,7 @@ class LLMSummarizer:
         """
         user_input = self._build_user_input(
             context=context,
+            target_date=target_date,
             timeseries_table_id=timeseries_table_id,
             timeseries_value_column=timeseries_value_column,
             timeseries_days=timeseries_days,

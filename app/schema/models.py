@@ -25,9 +25,11 @@ class SentimentAnalysis(BaseModel):
 class OrchestratorInput(BaseModel):
     """Orchestrator 입력 데이터
     
-    주의: timeseries_data와 news_articles는 하위 호환성을 위해 유지되지만,
-    권장 방식은 BigQuery 파라미터를 사용하여 Tool이 데이터를 직접 조회하는 것입니다.
+    권장 방식: target_date를 사용하여 특정 시점의 데이터를 분석합니다.
+    하위 호환성: timeseries_data와 news_articles는 유지됩니다.
     """
+    target_date: Optional[str] = Field(None, description="분석 기준 날짜 (YYYY-MM-DD), 미입력시 최근 데이터 사용")
+    
     # 하위 호환성 필드 (권장하지 않음)
     timeseries_data: Optional[List[float]] = Field(None, description="시계열 데이터 리스트 (하위 호환성, 권장하지 않음)")
     news_articles: Optional[List[str]] = Field(None, description="뉴스 기사 텍스트 리스트 (하위 호환성, 권장하지 않음)")

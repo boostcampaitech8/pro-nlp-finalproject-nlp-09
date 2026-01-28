@@ -13,9 +13,11 @@ langchain-core>=0.1.0
 
 # 머신러닝
 numpy>=1.24.0
+pandas>=1.5.0
 torch>=2.0.0
 transformers>=4.35.0
 sentencepiece>=0.1.99
+xgboost>=2.0.0
 
 # 유틸리티
 python-dotenv>=1.0.0
@@ -31,3 +33,4 @@ google-auth-oauthlib>=1.1.0
 google-auth-httplib2>=0.1.1
 google-cloud-aiplatform>=1.38.0
 google-cloud-bigquery>=3.13.0
+db-dtypes>=1.0.0
