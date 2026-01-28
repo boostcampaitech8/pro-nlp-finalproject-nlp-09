@@ -5,13 +5,18 @@
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Step 0: 감성 분석 (최초 1회)                    │
-│                        finbert.py                                │
+│                  run_sentiment_analysis.py                       │
 └─────────────────────────────────────────────────────────────────┘
                               ↓
         ┌─────────────────────────────────────────────┐
-        │   news_articles_corn.csv                    │
+        │   news_articles_resources.csv               │
         │   (원본 뉴스: title, description, text)      │
+        │   + filter_status, key_word                 │
         └─────────────────────────────────────────────┘
+                              ↓
+                  [자동 필터링 적용]
+                  - filter_status == 'T'
+                  - key_word == 'corn and (price or...)'
                               ↓
                     [FinBERT 감성 분석]
                     - GPU 환경 권장
@@ -34,16 +39,17 @@
                               ↓
         ┌─────────────────────────────────────────────┐
         │   corn_all_news_with_sentiment.csv          │
-        │   corn_future_price_processed.csv           │
+        │   corn_future_price.csv                     │
         └─────────────────────────────────────────────┘
                               ↓
                   [preprocessing.py 사용]
                   1. 뉴스 데이터 전처리
                   2. 일별 뉴스 집계
-                  3. 날짜 보정 (주말/휴일)
-                  4. 뉴스-가격 병합
-                  5. PCA 차원 축소 (512→50)
-                  6. Lag 피처 생성
+                  3. 가격 데이터 전처리 (ret_1d 자동 계산)
+                  4. 날짜 보정 (주말/휴일)
+                  5. 뉴스-가격 병합
+                  6. PCA 차원 축소 (512→50)
+                  7. Lag 피처 생성
                               ↓
                     [XGBoost 학습]
                     - 클래스 불균형 처리
@@ -90,19 +96,21 @@
 
 ## 🔑 핵심 포인트
 
-### 1. finbert.py (감성 분석)
+### 0. run_sentiment_analysis.py (감성 분석)
 - **실행 시점**: 새 뉴스 수집 시에만
 - **소요 시간**: 1000건당 약 5-10분 (GPU 기준)
 - **출력**: 감성 점수 + 임베딩이 추가된 CSV
 - **의존성**: transformers, torch
+- **필터링**: filter_status='T', 특정 키워드 자동 적용
 
-### 2. train.py (모델 학습)
+### 1. train.py (모델 학습)
 - **실행 시점**: 주기적 재학습 (주 1회 또는 월 1회)
 - **소요 시간**: 약 1-2분
 - **출력**: 모델 파일 3개 (model, pca, features)
 - **의존성**: xgboost, sklearn
+- **자동 계산**: ret_1d (일일 수익률) 자동 생성
 
-### 3. inference.py (실시간 예측)
+### 2. inference.py (실시간 예측)
 - **실행 시점**: 매일 또는 실시간
 - **소요 시간**: 1초 미만
 - **출력**: JSON 예측 결과
@@ -110,7 +118,7 @@
 
 ## 🎯 왜 이렇게 분리했나?
 
-### ✅ finbert.py 별도 유지 이유:
+### ✅ run_sentiment_analysis.py 별도 유지 이유:
 1. **비용 차이**: GPU 필요 vs CPU만으로 가능
 2. **실행 빈도**: 한 번 vs 자주
 3. **의존성**: 무거운 transformers vs 가벼운 sklearn
@@ -120,13 +128,14 @@
 1. **일관성**: 학습과 추론에서 동일한 전처리
 2. **유지보수**: 한 곳만 수정하면 양쪽 반영
 3. **테스트**: 전처리 로직 독립적 테스트 가능
+4. **자동화**: ret_1d 계산 등 반복 작업 자동화
 
 ## 💡 실제 운영 시나리오
 
 ### 시나리오 1: 최초 구축
 ```bash
 # 1. 감성 분석 (GPU 서버에서)
-python finbert.py
+python run_sentiment_analysis.py
 
 # 2. 모델 학습
 python train.py
@@ -147,7 +156,7 @@ python inference.py  # 또는 API로 호출
 ### 시나리오 3: 새 뉴스 추가 + 재학습
 ```bash
 # 1. 새 뉴스 감성 분석
-python finbert.py
+python run_sentiment_analysis.py
 
 # 2. 모델 재학습
 python train.py
