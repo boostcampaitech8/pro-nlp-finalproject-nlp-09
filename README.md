@@ -7,34 +7,51 @@
 
 ```
 .
-├── finbert.py                    # 감성 분석 모듈 (순수 함수/클래스)
-├── run_sentiment_analysis.py    # 감성 분석 실행 스크립트
-├── examples_finbert.py           # finbert 사용 예시
-├── preprocessing.py              # 공통 전처리 함수 모듈
-├── train.py                      # 학습 코드
-├── inference.py                  # 추론 코드
-├── models/                       # 학습된 모델 저장 디렉토리
-│   ├── xgb_model.json                   # XGBoost 모델
-│   ├── pca_transformer.pkl              # PCA 객체
-│   └── feature_columns.json             # 피처 컬럼 리스트
-├── README.md                     # 문서 (이 파일)
-└── PIPELINE.md                   # 전체 파이프라인 상세 설명
+├── finbert.py                        # 감성 분석 모듈 (순수 함수/클래스)
+├── run_sentiment_analysis.py         # 감성 분석 실행 스크립트
+├── preprocessing.py                  # 공통 전처리 함수 모듈
+├── train.py                          # 학습 코드
+├── inference.py                      # 추론 코드
+├── test_inference.py                 # inference 테스트 실행
+│
+├── models/                           # 학습된 모델 저장 디렉토리
+│   ├── xgb_model.json                       # XGBoost 모델
+│   ├── pca_transformer.pkl                  # PCA 객체
+│   └── feature_columns.json                 # 피처 컬럼 리스트
+│
+├── README.md                         # 문서 (이 파일)
+├── PIPELINE.md                       # 전체 파이프라인 상세 설명
+├── FILTERING_GUIDE.md                # 뉴스 필터링 가이드
+├── PRICE_DATA_UPDATE.md              # 가격 데이터 전처리 가이드
+└── TEST_GUIDE.md                     # Inference 테스트 가이드
 ```
 
 ## 🔄 전체 파이프라인
 
 ```
-1. run_sentiment_analysis.py (또는 finbert.py 모듈)
-   뉴스 텍스트 → 감성 점수 생성 (한 번만 실행)
+Step 0: 감성 분석 (최초 1회)
+   run_sentiment_analysis.py
+   news_articles_resources.csv → corn_all_news_with_sentiment.csv
+   
+Step 1: 모델 학습
+   train.py
+   corn_all_news_with_sentiment.csv + corn_future_price.csv → models/
+   
+Step 2: 예측 수행
+   inference.py
+   최근 뉴스 + 최근 가격 → 가격 예측
+```
 
-2. preprocess.py
-   감성 점수 평균, 가격 데이터 일일 수익율 생성
-   
-3. train.py
-   감성 점수 + 가격 데이터 → 모델 학습
-   
-4. inference.py
-   새로운 뉴스 + 가격 → 가격 예측
+**빠른 시작:**
+```bash
+# 1. 감성 분석
+python run_sentiment_analysis.py
+
+# 2. 모델 학습
+python train.py
+
+# 3. 예측
+python inference.py
 ```
 
 ## 🚀 사용 방법
@@ -154,6 +171,16 @@ print(f"피처 요약: {result['features_summary']}")
 }
 ```
 
+### 3. 테스트 (선택사항)
+
+모델 성능을 검증하려면 `test_inference.py`를 사용하세요.
+
+```bash
+python test_inference.py
+```
+
+자세한 내용은 [TEST_GUIDE.md](TEST_GUIDE.md) 참조
+
 ## 📊 데이터 요구사항
 
 ### 뉴스 데이터 (news_data)
@@ -258,8 +285,21 @@ response = agent.run("옥수수 가격 전망 보고서를 작성해주세요.")
 - 뉴스: 최소 3일치 (Lag 피처 생성을 위해)
 - 가격: 최소 5일치 (이동평균 계산을 위해)
 
-### 4. 모델 재학습
+### 4. 가격 데이터 (중요!)
+- `corn_future_price.csv`에는 `close` 컬럼만 필수
+- `ret_1d` (일일 수익률)은 **자동 계산**됨
+- 계산식: `ret_1d = log(close_today / close_yesterday)`
+- 자세한 내용: [PRICE_DATA_UPDATE.md](PRICE_DATA_UPDATE.md)
+
+### 5. 모델 재학습
 - 새로운 데이터로 재학습 시 모든 아티팩트(모델, PCA, 피처) 재생성 필요
+
+## 📚 추가 문서
+
+- **[PIPELINE.md](PIPELINE.md)** - 전체 파이프라인 상세 설명
+- **[FILTERING_GUIDE.md](FILTERING_GUIDE.md)** - 뉴스 필터링 가이드
+- **[PRICE_DATA_UPDATE.md](PRICE_DATA_UPDATE.md)** - 가격 데이터 전처리 가이드
+- **[TEST_GUIDE.md](TEST_GUIDE.md)** - Inference 테스트 가이드
 
 ## 📈 성능 개선 팁
 
