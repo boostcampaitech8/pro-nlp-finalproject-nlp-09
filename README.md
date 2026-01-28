@@ -11,7 +11,8 @@
 ├── run_sentiment_analysis.py         # 감성 분석 실행 스크립트
 ├── preprocessing.py                  # 공통 전처리 함수 모듈
 ├── train.py                          # 학습 코드
-├── inference.py                      # 추론 코드
+├── inference.py                      # 추론 코드 (기본)
+├── inference_with_evidence.py        # 추론 코드 (근거 뉴스 포함)
 ├── test_inference.py                 # inference 테스트 실행
 │
 ├── models/                           # 학습된 모델 저장 디렉토리
@@ -38,8 +39,8 @@ Step 1: 모델 학습
    corn_all_news_with_sentiment.csv + corn_future_price.csv → models/
    
 Step 2: 예측 수행
-   inference.py
-   최근 뉴스 + 최근 가격 → 가격 예측
+   inference.py (기본) 또는 inference_with_evidence.py (근거 뉴스 포함)
+   최근 뉴스 + 최근 가격 → 가격 예측 (+ 근거 뉴스)
 ```
 
 **빠른 시작:**
@@ -51,7 +52,9 @@ python run_sentiment_analysis.py
 python train.py
 
 # 3. 예측
-python inference.py
+python inference.py                    # 기본 예측
+# 또는
+python inference_with_evidence.py      # 근거 뉴스 포함 예측
 ```
 
 ## 🚀 사용 방법
@@ -137,6 +140,8 @@ python train.py
 
 ### 2. 추론 (예측)
 
+#### 방법 1: 기본 예측 (inference.py)
+
 ```python
 import pandas as pd
 from inference import predict_next_day
@@ -170,6 +175,76 @@ print(f"피처 요약: {result['features_summary']}")
     }
 }
 ```
+
+#### 방법 2: 근거 뉴스 포함 예측 (inference_with_evidence.py) ⭐ 권장
+
+```python
+import pandas as pd
+from inference_with_evidence import predict_with_evidence
+
+# 최근 뉴스 데이터 로드 (최소 3일치 권장)
+news_data = pd.read_csv('recent_news.csv')
+
+# 최근 가격 데이터 로드 (최소 5일치 권장)
+price_history = pd.read_csv('recent_prices.csv')
+
+# 근거 뉴스를 포함한 예측 수행
+result = predict_with_evidence(
+    news_data=news_data,
+    price_history=price_history,
+    target_date='2025-11-15',
+    news_path='corn_all_news_with_sentiment.csv',
+    model_dir='models',
+    top_k=2  # 상위 2개 근거 뉴스 추출
+)
+
+# 결과 확인
+print(f"예측: {'상승' if result['prediction'] == 1 else '하락'}")
+print(f"신뢰도: {result['confidence']:.2%}")
+
+# 근거 뉴스 확인
+for i, news in enumerate(result['evidence_news'], 1):
+    print(f"\n[근거 뉴스 {i}]")
+    print(f"제목: {news['title']}")
+    print(f"날짜: {news['publish_date']}")
+    print(f"가격 영향 점수: {news['price_impact_score']:.3f}")
+```
+
+**출력 형식:**
+```json
+{
+    "prediction": 1,
+    "probability": 0.85,
+    "confidence": 0.85,
+    "target_date": "2025-11-15",
+    "features_summary": {
+        "latest_news_count": 15,
+        "avg_sentiment": 0.72,
+        "avg_price_impact": 0.65,
+        "latest_price": 425.50,
+        "data_points_used": 10
+    },
+    "evidence_news": [
+        {
+            "title": "Corn prices surge on strong export demand",
+            "publish_date": "2025-11-13",
+            "price_impact_score": 0.856,
+            "all_text": "Strong export demand from China...",
+            "triples_text": "corn exports → increase → prices"
+        },
+        {
+            "title": "Weather concerns support corn market",
+            "publish_date": "2025-11-12",
+            "price_impact_score": 0.734,
+            "all_text": "Dry weather conditions...",
+            "triples_text": "weather → affect → supply"
+        }
+    ]
+}
+```
+
+**중요:** 근거 뉴스는 예측에 실제 사용된 뉴스 날짜 범위 내에서 추출됩니다.
+- 예: `news_data`가 11/12~11/14 뉴스라면, 근거 뉴스도 11/12~11/14에서 찾습니다.
 
 ### 3. 테스트 (선택사항)
 
@@ -213,6 +288,27 @@ python test_inference.py
 - **날짜 보정**: 주말/휴일 뉴스를 다음 거래일에 반영
 - **임베딩 차원 축소**: PCA를 통해 512 → 50차원 축소
 - **시계열 피처**: Lag(T-1, T-2) 및 이동평균(MA3, MA5)
+- **자동 수익률 계산**: ret_1d 자동 생성 (preprocessing.py)
+
+### 2. 감성 분석 (FinBERT)
+- **모델**: ProsusAI/finbert 사용
+- **출력**: 긍정/부정/중립 점수 + 512차원 임베딩
+- **가격 영향 점수**: positive_score - negative_score
+
+### 3. 예측 모델 (XGBoost)
+- **알고리즘**: Gradient Boosting (300 estimators)
+- **입력 피처**: 
+  - 뉴스 임베딩 (PCA 50차원)
+  - 감성 점수 + 가격 영향 점수
+  - 가격 시계열 피처 (Lag, MA)
+- **출력**: 이진 분류 (0: 하락, 1: 상승)
+
+### 4. 근거 뉴스 추출 ⭐ 신규
+- **방식**: price_impact_score 기준 정렬
+- **상승 예측 시**: 높은 점수 뉴스 추출 (긍정적 뉴스)
+- **하락 예측 시**: 낮은 점수 뉴스 추출 (부정적 뉴스)
+- **검색 범위**: 예측에 사용된 뉴스 날짜 범위 내
+- **활용**: LLM 보고서 생성, 예측 근거 설명
 
 ### 2. 모델 아키텍처
 - **알고리즘**: XGBoost (Gradient Boosting)
@@ -227,20 +323,19 @@ python test_inference.py
 
 ## 🔗 LangChain 연동 예시
 
+### 방법 1: 기본 예측
+
 ```python
 from langchain.tools import Tool
 from inference import predict_next_day
 
 def corn_price_prediction_tool(input_data):
     """옥수수 가격 예측 도구"""
-    # 최근 데이터 로드
     news_data = load_recent_news()
     price_history = load_recent_prices()
     
-    # 예측 수행
     result = predict_next_day(news_data, price_history)
     
-    # LLM에게 전달할 보고서 생성
     report = f"""
     옥수수 선물 가격 예측 결과:
     - 예측: {'상승' if result['prediction'] == 1 else '하락'}
@@ -251,12 +346,59 @@ def corn_price_prediction_tool(input_data):
       * 최근 가격: ${result['features_summary']['latest_price']:.2f}
     """
     return report
+```
+
+### 방법 2: 근거 뉴스 포함 (권장) ⭐
+
+```python
+from langchain.tools import Tool
+from inference_with_evidence import predict_with_evidence
+
+def corn_price_prediction_with_evidence_tool(target_date):
+    """옥수수 가격 예측 도구 (근거 포함)"""
+    news_data = load_recent_news()
+    price_history = load_recent_prices()
+    
+    # 근거 뉴스를 포함한 예측
+    result = predict_with_evidence(
+        news_data=news_data,
+        price_history=price_history,
+        target_date=target_date,
+        top_k=2
+    )
+    
+    # 상세 보고서 생성
+    report = f"""
+옥수수 선물 가격 예측 결과 ({result['target_date']})
+
+【예측 결과】
+- 예측: {'상승' if result['prediction'] == 1 else '하락'}
+- 신뢰도: {result['confidence']:.1%}
+
+【분석 데이터】
+- 뉴스 기사 수: {result['features_summary']['latest_news_count']}개
+- 평균 감성 점수: {result['features_summary']['avg_sentiment']:.2f}
+- 최근 가격: ${result['features_summary']['latest_price']:.2f}
+
+【근거 뉴스】
+"""
+    
+    # 근거 뉴스 추가
+    for i, news in enumerate(result['evidence_news'], 1):
+        report += f"""
+[뉴스 {i}] {news['title']}
+- 발행일: {news['publish_date']}
+- 가격 영향 점수: {news['price_impact_score']:.3f}
+- 내용: {news['all_text'][:200]}...
+"""
+    
+    return report
 
 # LangChain Tool 등록
 prediction_tool = Tool(
-    name="CornPricePrediction",
-    func=corn_price_prediction_tool,
-    description="옥수수 선물 가격의 다음날 상승/하락을 예측합니다."
+    name="CornPricePredictionWithEvidence",
+    func=corn_price_prediction_with_evidence_tool,
+    description="옥수수 선물 가격을 예측하고 근거 뉴스를 제공합니다."
 )
 
 # LLM 에이전트에 도구 추가
