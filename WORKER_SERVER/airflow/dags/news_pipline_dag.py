@@ -9,14 +9,14 @@ import os
 import sys
 
 # 프로젝트 루트 경로를 path에 추가 (crawler, processor 모듈을 불러오기 위함)
-sys.path.append('/data/ephemeral/home/TeamProject-Repo/worker_server') 
+sys.path.append('/data/ephemeral/home/pro-nlp-finalproject-nlp-09/WORKER_SERVER') 
 
 from crawler.main_crawler import fetch_and_standardize
 from processor.news_processor import NewsProcessor
 from processor.embedder import TitanEmbedder
 # 환경 설정 (Airflow Variables 우선, 없으면 환경변수)
 OPENAI_API_KEY = Variable.get("OPENAI_API_KEY", default_var=None) or os.getenv("OPENAI_API_KEY")
-DATA_DIR = "/data/ephemeral/home/TeamProject-Repo/worker_server/data" # 로컬 볼륨과 연결된 경로
+DATA_DIR = "/data/ephemeral/home/pro-nlp-finalproject-nlp-09/WORKER_SERVER/data" # 로컬 볼륨과 연결된 경로
 
 os.makedirs(os.path.join(DATA_DIR, 'raw'), exist_ok=True)
 os.makedirs(os.path.join(DATA_DIR, 'processed'), exist_ok=True)
@@ -112,7 +112,7 @@ with DAG(
                 text_to_embed = f"{art['title']}\n\n{art.get('description', '')}"
                 
                 print(f"🔄 임베딩 생성 중: {art['title'][:20]}...")
-                vector = embedder.generate_embedding(text_to_embed)
+                vector = embedder.generate_embedding(text_to_embed, dimensions=512)
                 
                 if vector:
                     art['article_embedding'] = vector
@@ -130,7 +130,7 @@ with DAG(
                 entity_id = compute_mdhash_id(entity_text, prefix="entity-")
                 if entity_id in existing_entity_ids:
                     continue
-                vector = embedder.generate_embedding(entity_text)
+                vector = embedder.generate_embedding(entity_text, dimensions=1024)
                 if vector:
                     new_entities.append({
                         "hash_id": entity_id,
@@ -146,7 +146,7 @@ with DAG(
                 triple_id = compute_mdhash_id(triple_text, prefix="triple-")
                 if triple_id in existing_triple_ids:
                     continue
-                vector = embedder.generate_embedding(triple_text)
+                vector = embedder.generate_embedding(triple_text, dimensions=1024)
                 if vector:
                     new_triples.append({
                         "hash_id": triple_id,
