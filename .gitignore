@@ -5,6 +5,8 @@
 **/logs/
 **/log/
 *.log
+*.pkl
+*.json
 
 
 ###############################################
@@ -161,3 +163,5 @@ cython_debug/
 
 # Streamlit
 .streamlit/secrets.toml
+
+*outputs

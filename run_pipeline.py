@@ -1,7 +1,7 @@
 """
 금융 분석 파이프라인 - 직접 실행 스크립트
 매일 1회 실행으로 시계열 예측 + 감성분석 + LLM 요약 수행
-Vertex AI를 사용하는 LangChain Agent 방식
+Vertex AI를 사용하는 LangChain Agent 방식 (날짜 기반 자동 조회)
 """
 
 import sys
@@ -15,112 +15,54 @@ app_dir = os.path.join(project_root, 'app')
 sys.path.insert(0, app_dir)
 
 from routes.orchestrator import orchestrate_analysis
-from utils.bigquery_client import BigQueryClient
-
-
-# def get_sample_timeseries_data() -> List[float]:
-#     """예시 시계열 데이터 생성 (실제 데이터로 대체 가능)"""
-#     # 60일치 예시 주가 데이터 (상승 추세)
-#     import random
-#     base_price = 100.0
-#     data = []
-#     for i in range(60):
-#         base_price += random.uniform(-2, 3)
-#         data.append(round(base_price, 2))
-#     return data
-
-
-# 하위 호환성을 위한 함수들 (현재는 사용되지 않음)
-# 현재는 Agent가 Tool을 통해 BigQuery에서 직접 데이터를 가져오므로 이 함수들은 사용되지 않습니다.
-# 필요시 주석을 해제하여 사용할 수 있습니다.
-
-def get_timeseries_data() -> List[float]:
-    """BigQuery에서 corn_price 테이블의 close 컬럼 데이터 가져오기"""
-    client = BigQueryClient()
-    data = client.get_timeseries_data(
-        table_id="corn_price",
-        value_column="close",
-        date_column="time",
-        days=30
-    )
-    # close 컬럼 값만 추출하여 리스트로 변환
-    values = []
-    for item in data:
-        value = item.get('close')
-        if value is not None:
-            values.append(float(value))
-    return values
-
-
-def get_news_texts() -> List[str]:
-    """BigQuery에서 news_article 테이블의 description 컬럼 데이터 가져오기"""
-    client = BigQueryClient()
-    data = client.get_timeseries_data(
-        table_id="news_article",
-        value_column="description",
-        date_column="publish_date",
-        where_clause="filter_status = 'T'",
-        days=3
-    )
-    # description 컬럼만 추출하여 리스트로 변환
-    descriptions = []
-    for item in data:
-        desc = item.get('description')
-        if desc:
-            descriptions.append(str(desc))
-    return descriptions
-
 
 def main():
     """메인 파이프라인 실행"""
     
+    # 분석 기준 날짜 설정 (기본값: 오늘, 또는 테스트용 특정 날짜)
+    # 실제 운영시에는 datetime.now().strftime('%Y-%m-%d') 사용
+    target_date = "2025-11-14"
+    
     print("=" * 70)
     print("금융 분석 파이프라인 시작 (Vertex AI + LangChain Agent)")
     print(f"실행 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"분석 기준일: {target_date}")
     print("=" * 70)
     
     try:
-        # 1. BigQuery에서 데이터 가져오기
-        print("\n[단계 1] BigQuery에서 데이터 가져오기...")
-        
-        print("   - 시계열 데이터 가져오는 중...")
-        timeseries_data = get_timeseries_data()
-        print(f"     → {len(timeseries_data)}개 데이터 포인트 가져옴")
-        
-        print("   - 뉴스 기사 가져오는 중...")
-        news_articles = get_news_texts()
-        print(f"     → {len(news_articles)}개 기사 가져옴")
-        
-        # 2. Orchestrator를 통한 분석 실행
-        print("\n[단계 2] Orchestrator 분석 실행 중...")
+        # 1. Orchestrator를 통한 분석 실행
+        print(f"\n[단계 1] Orchestrator 분석 실행 중 ({target_date})...")
         print("   Orchestrator가 다음 작업을 수행합니다:")
         print("   1. LangChain Agent 초기화")
-        print("   2. 시계열 예측 Tool 호출")
-        print("   3. 뉴스 감성분석 Tool 호출")
-        print("   4. 결과를 바탕으로 통합 요약 생성")
+        print("   2. Agent가 날짜를 기반으로 도구(Tool) 호출")
+        print("      - timeseries_predictor: BigQuery 피처 조회 -> XGBoost 예측")
+        print("      - news_sentiment_analyzer: BigQuery 뉴스 조회 -> 시장 영향력 예측")
+        print("   3. 결과를 바탕으로 통합 요약 생성")
         print("-" * 70)
         
-        # Orchestrator 함수 직접 호출 (agent_result도 함께 받음)
-        # 직접 데이터를 전달
+        # Orchestrator 함수 직접 호출
         result, agent_result = orchestrate_analysis(
-            context=f"일일 금융 시장 분석 ({datetime.now().strftime('%Y-%m-%d')})",
-            timeseries_data=timeseries_data,
-            news_articles=news_articles,
+            target_date=target_date,
+            context=f"일일 금융 시장 분석 ({target_date})",
             return_agent_result=True
         )
         
-        # 3. 결과 출력
-        print("\n[단계 3] 분석 결과")
+        # 2. 결과 출력
+        print("\n[단계 2] 분석 결과")
         print("=" * 70)
         print(result.llm_summary)
         print("=" * 70)
         
-        # Tool 결과도 출력 (선택사항)
-        print(f"\n[Tool 실행 결과]")
-        print(f"  - 시계열 예측: {result.timeseries_prediction.prediction:.2f} (신뢰도: {result.timeseries_prediction.confidence:.2%})")
-        print(f"  - 감성분석: {len(result.sentiment_analysis)}개 기사 분석 완료")
+        # Tool 결과 요약
+        print(f"\n[Tool 실행 결과 요약]")
+        if result.timeseries_prediction:
+            print(f"  - 시계열 예측: {result.timeseries_prediction.prediction:.2f} (신뢰도: {result.timeseries_prediction.confidence:.2%})")
+        if result.sentiment_analysis:
+            print(f"  - 근거 뉴스: {len(result.sentiment_analysis)}건 추출됨")
+            for i, news in enumerate(result.sentiment_analysis[:3], 1):
+                print(f"    {i}. [{news.sentiment}] {news.text[:50]}...")
         
-        # 4. 결과 저장 (summary와 agent 결과를 별도 파일로 저장)
+        # 3. 결과 저장
         save_results_from_orchestrator(result, agent_result)
         
         print("\n✅ 파이프라인 완료!")
