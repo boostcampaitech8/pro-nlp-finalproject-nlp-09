@@ -107,35 +107,38 @@ class BigQueryService(GCPServiceBase):
         self,
         target_date: str,
         lookback_days: int = 60,
+        commodity: str = "corn",
         dataset_id: Optional[str] = None,
-        table_id: Optional[str] = None,
-        date_column: str = "ds"
+        table_id: str = "daily_prices",
+        date_column: str = "date"
     ) -> pd.DataFrame:
         """
-        Get Prophet/XGBoost model features for a target date
+        Get Prophet/XGBoost model features for a target date from daily_prices
 
         Retrieves data from (target_date - lookback_days) to target_date inclusive.
+        Returns data formatted for Prophet (ds, y columns) with additional features.
 
         Args:
             target_date: Target date (YYYY-MM-DD)
             lookback_days: Number of days to look back (default 60)
+            commodity: Commodity name (default 'corn')
             dataset_id: Dataset ID (if None, uses instance default)
-            table_id: Table ID
-            date_column: Date column name (default 'ds')
+            table_id: Table ID (default 'daily_prices')
+            date_column: Date column name (default 'date')
 
         Returns:
-            pd.DataFrame: Feature data sorted by date ascending
+            pd.DataFrame: Feature data with ds, y, and additional columns
 
         Example:
             >>> df = bq.get_prophet_features(
             ...     target_date="2025-01-20",
             ...     lookback_days=60,
-            ...     table_id="corn_price"
+            ...     commodity="corn"
             ... )
         """
         dataset = dataset_id or self.dataset_id
-        if not dataset or not table_id:
-            raise ValueError("dataset_id and table_id are required")
+        if not dataset:
+            raise ValueError("dataset_id is required")
 
         # Calculate date range
         try:
@@ -147,9 +150,17 @@ class BigQueryService(GCPServiceBase):
         start_date_str = start_dt.strftime("%Y-%m-%d")
 
         query = f"""
-            SELECT *
+            SELECT
+                {date_column} as ds,
+                close as y,
+                open,
+                high,
+                low,
+                ema,
+                volume
             FROM `{self.project_id}.{dataset}.{table_id}`
-            WHERE {date_column} >= '{start_date_str}'
+            WHERE commodity = '{commodity}'
+              AND {date_column} >= '{start_date_str}'
               AND {date_column} <= '{target_date}'
             ORDER BY {date_column} ASC
         """
@@ -221,25 +232,28 @@ class BigQueryService(GCPServiceBase):
         self,
         target_date: str,
         lookback_days: int = 30,
+        commodity: str = "corn",
         dataset_id: Optional[str] = None,
-        table_id: str = "corn_price"
+        table_id: str = "daily_prices"
     ) -> pd.DataFrame:
         """
-        Get price history for news sentiment model
+        Get price history from daily_prices table for news sentiment model
 
         Args:
             target_date: Target date (YYYY-MM-DD)
             lookback_days: Number of days to look back (default 30)
+            commodity: Commodity name (default 'corn')
             dataset_id: Dataset ID (if None, uses instance default)
-            table_id: Price table ID (default 'corn_price')
+            table_id: Price table ID (default 'daily_prices')
 
         Returns:
-            pd.DataFrame: Price data with date, close, ret_1d columns
+            pd.DataFrame: Price data with commodity, date, open, high, low, close, ema, volume
 
         Example:
             >>> df = bq.get_price_history(
             ...     target_date="2025-01-20",
-            ...     lookback_days=30
+            ...     lookback_days=30,
+            ...     commodity="corn"
             ... )
         """
         dataset = dataset_id or self.dataset_id
@@ -254,17 +268,22 @@ class BigQueryService(GCPServiceBase):
         start_dt = target_dt - timedelta(days=lookback_days)
         start_date_str = start_dt.strftime("%Y-%m-%d")
 
-        # Use time column as date for compatibility
         query = f"""
             SELECT
-                time as date,
-                time,
+                commodity,
+                date,
+                open,
+                high,
+                low,
                 close,
-                ret_1d
+                ema,
+                volume,
+                ingested_at
             FROM `{self.project_id}.{dataset}.{table_id}`
-            WHERE time >= '{start_date_str}'
-              AND time <= '{target_date}'
-            ORDER BY time ASC
+            WHERE commodity = '{commodity}'
+              AND date >= '{start_date_str}'
+              AND date <= '{target_date}'
+            ORDER BY date ASC
         """
 
         return self.execute_query(query)
@@ -403,3 +422,107 @@ class BigQueryService(GCPServiceBase):
             return []
 
         return df[value_column].tolist()
+
+    def test_read_daily_prices(
+        self,
+        commodity: str = "corn",
+        limit: int = 10,
+        dataset_id: Optional[str] = None
+    ) -> pd.DataFrame:
+        """
+        Test query to verify daily_prices table connectivity (safe with LIMIT)
+
+        This is a safe test method that only fetches a limited number of rows.
+        Use this to verify BigQuery connectivity without scanning too much data.
+
+        Args:
+            commodity: Commodity name (default: 'corn')
+            limit: Number of rows to fetch (default: 10)
+            dataset_id: Dataset ID (if None, uses instance default)
+
+        Returns:
+            pd.DataFrame: Sample data from daily_prices table
+
+        Example:
+            >>> df = bq.test_read_daily_prices(commodity="corn", limit=5)
+            >>> print(df.head())
+        """
+        dataset = dataset_id or self.dataset_id
+        if not dataset:
+            raise ValueError("dataset_id is required")
+
+        query = f"""
+            SELECT
+                commodity,
+                date,
+                open,
+                high,
+                low,
+                close,
+                ema,
+                volume,
+                ingested_at
+            FROM `{self.project_id}.{dataset}.daily_prices`
+            WHERE commodity = '{commodity}'
+            ORDER BY date DESC
+            LIMIT {limit}
+        """
+
+        return self.execute_query(query)
+
+    def get_daily_prices(
+        self,
+        commodity: str,
+        start_date: str,
+        end_date: str,
+        dataset_id: Optional[str] = None
+    ) -> pd.DataFrame:
+        """
+        Get price data from daily_prices table for a specific commodity
+
+        Args:
+            commodity: Commodity name (e.g., 'corn', 'wheat', 'soybean')
+            start_date: Start date (YYYY-MM-DD)
+            end_date: End date (YYYY-MM-DD)
+            dataset_id: Dataset ID (if None, uses instance default)
+
+        Returns:
+            pd.DataFrame: Price data with all columns
+
+        Example:
+            >>> df = bq.get_daily_prices(
+            ...     commodity="corn",
+            ...     start_date="2025-01-01",
+            ...     end_date="2025-01-20"
+            ... )
+        """
+        dataset = dataset_id or self.dataset_id
+        if not dataset:
+            raise ValueError("dataset_id is required")
+
+        # Validate date formats
+        try:
+            datetime.strptime(start_date, "%Y-%m-%d")
+            datetime.strptime(end_date, "%Y-%m-%d")
+        except ValueError as e:
+            raise ValueError(f"Invalid date format. Use YYYY-MM-DD: {e}")
+
+        query = f"""
+            SELECT
+                commodity,
+                date,
+                open,
+                high,
+                low,
+                close,
+                ema,
+                volume,
+                ingested_at
+            FROM `{self.project_id}.{dataset}.daily_prices`
+            WHERE commodity = '{commodity}'
+              AND date >= '{start_date}'
+              AND date <= '{end_date}'
+            ORDER BY date ASC
+        """
+
+        return self.execute_query(query)

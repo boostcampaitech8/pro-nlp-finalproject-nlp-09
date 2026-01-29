@@ -5,6 +5,8 @@
 **/logs/
 **/log/
 *.log
+*.tar.gz
+*.zip
 
 ###############################################
 ############# vive coding rules  ##############
@@ -166,3 +168,11 @@ cython_debug/
 
 # Streamlit
 .streamlit/secrets.toml
+references/bq_tutorial/.python-version
+references/bq_tutorial/bq_tutorial.py
+references/bq_tutorial/bq_update_table_simple.py
+references/bq_tutorial/bq_update_table.py
+references/bq_tutorial/gcloud_manual.md
+references/bq_tutorial/pyproject.toml
+references/bq_tutorial/run_bq_update.sh
+references/bq_tutorial/uv.lock

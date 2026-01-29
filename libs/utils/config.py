@@ -3,12 +3,36 @@ Centralized configuration management with Pydantic
 
 This module provides type-safe configuration loading from environment variables.
 All configuration models use Pydantic for validation and type checking.
+
+Environment variables are loaded from libs/gcp/.env
+Only essential/sensitive values are loaded from .env, rest use sensible defaults.
 """
 
 import os
-from typing import Optional
+from pathlib import Path
+from typing import Optional, List
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# .env file location: libs/gcp/.env
+_ENV_FILE = Path(__file__).parent.parent / "gcp" / ".env"
+
+
+class GCPConfig(BaseSettings):
+    """
+    Common GCP configuration
+
+    This configuration is shared across all GCP services.
+    """
+
+    project_id: Optional[str] = Field(default=None, alias="GCP_PROJECT_ID")
+    location: str = Field(default="us-east1", alias="GCP_LOCATION")
+
+    model_config = SettingsConfigDict(
+        env_file=str(_ENV_FILE),
+        env_file_encoding="utf-8",
+        extra="ignore"
+    )
 
 
 class VertexAIConfig(BaseSettings):
@@ -16,15 +40,12 @@ class VertexAIConfig(BaseSettings):
 
     project_id: Optional[str] = Field(default=None, alias="VERTEX_AI_PROJECT_ID")
     location: str = Field(default="us-central1", alias="VERTEX_AI_LOCATION")
-    model_name: str = Field(
-        default="meta/llama-3.1-70b-instruct-maas",
-        alias="GENERATE_MODEL_NAME"
-    )
+    model_name: str = Field(default="meta/llama-3.1-70b-instruct-maas", alias="GENERATE_MODEL_NAME")
     temperature: float = Field(default=0.7, alias="GENERATE_MODEL_TEMPERATURE")
     max_tokens: int = Field(default=2048, alias="GENERATE_MODEL_MAX_TOKENS")
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
         extra="ignore"
     )
@@ -45,17 +66,22 @@ class VertexAIConfig(BaseSettings):
 
 
 class BigQueryConfig(BaseSettings):
-    """BigQuery configuration"""
+    """
+    BigQuery configuration for daily_prices table
+
+    Table schema: commodity, date, open, high, low, close, ema, volume, ingested_at
+    """
 
     dataset_id: Optional[str] = Field(default=None, alias="BIGQUERY_DATASET_ID")
-    table_id: Optional[str] = Field(default=None, alias="BIGQUERY_TABLE_ID")
-    date_column: str = Field(default="time", alias="BIGQUERY_DATE_COLUMN")
+    table_id: str = Field(default="daily_prices", alias="BIGQUERY_TABLE_ID")
+    date_column: str = Field(default="date", alias="BIGQUERY_DATE_COLUMN")
     value_column: str = Field(default="close", alias="BIGQUERY_VALUE_COLUMN")
+    commodity: str = Field(default="corn", alias="BIGQUERY_COMMODITY")
     base_date: Optional[str] = Field(default=None, alias="BIGQUERY_BASE_DATE")
     days: int = Field(default=30, alias="BIGQUERY_DAYS")
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
         extra="ignore"
     )
@@ -72,6 +98,7 @@ class BigQueryConfig(BaseSettings):
     def validate_base_date(cls, v: Optional[str]) -> Optional[str]:
         if v is not None and v:
             from datetime import datetime
+
             try:
                 datetime.strptime(v, "%Y-%m-%d")
             except ValueError:
@@ -85,7 +112,7 @@ class StorageConfig(BaseSettings):
     bucket_name: Optional[str] = Field(default=None, alias="GCS_BUCKET_NAME")
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
         extra="ignore"
     )
@@ -99,7 +126,7 @@ class APIConfig(BaseSettings):
     debug: bool = Field(default=False, alias="DEBUG")
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
         extra="ignore"
     )
@@ -121,6 +148,7 @@ class APIConfig(BaseSettings):
         return bool(v)
 
 
+# TODO: __init__ 메서드 생성 방식 데코레이를 활용한 패턴으로 변경
 class AppConfig:
     """
     Complete application configuration container
@@ -130,6 +158,7 @@ class AppConfig:
     """
 
     def __init__(self):
+        self.gcp = GCPConfig()
         self.vertex_ai = VertexAIConfig()
         self.bigquery = BigQueryConfig()
         self.storage = StorageConfig()
@@ -138,6 +167,7 @@ class AppConfig:
     def __repr__(self) -> str:
         return (
             f"AppConfig(\n"
+            f"  gcp={self.gcp},\n"
             f"  vertex_ai={self.vertex_ai},\n"
             f"  bigquery={self.bigquery},\n"
             f"  storage={self.storage},\n"
