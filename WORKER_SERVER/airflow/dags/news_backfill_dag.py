@@ -25,7 +25,8 @@ os.makedirs(os.path.join(DATA_DIR, 'processed'), exist_ok=True)
 default_args = {
     'owner': 'sehun',
     'depends_on_past': False,
-    'start_date': datetime(2026, 1, 1),
+    'start_date': datetime(2026, 1, 13),
+    'end_date': datetime(2026, 1, 28),
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
