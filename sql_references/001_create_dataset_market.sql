@@ -1,0 +1,1 @@
+CREATE SCHEMA IF NOT EXISTS `db-tutorial1-485202.market`;
