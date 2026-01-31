@@ -5,7 +5,6 @@ FastAPI 요청/응답 스키마
 
 from pydantic import BaseModel, Field
 from typing import List, Optional
-from datetime import datetime
 
 
 class TimeSeriesPrediction(BaseModel):

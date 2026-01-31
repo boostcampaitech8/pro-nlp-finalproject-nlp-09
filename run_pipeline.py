@@ -7,7 +7,6 @@ Vertex AI를 사용하는 LangChain Agent 방식 (날짜 기반 자동 조회)
 import sys
 import os
 from datetime import datetime
-from typing import List
 
 # 프로젝트 경로 설정
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -54,7 +53,7 @@ def main():
         print("=" * 70)
         
         # Tool 결과 요약
-        print(f"\n[Tool 실행 결과 요약]")
+        print("\n[Tool 실행 결과 요약]")
         if result.timeseries_prediction:
             print(f"  - 시계열 예측: {result.timeseries_prediction.prediction:.2f} (신뢰도: {result.timeseries_prediction.confidence:.2%})")
         if result.sentiment_analysis:
@@ -139,7 +138,7 @@ def save_results_from_orchestrator(result, agent_result: dict):
                     f.write("\n")
                 
                 elif isinstance(msg, ToolMessage):
-                    f.write(f"타입: ToolMessage\n")
+                    f.write("타입: ToolMessage\n")
                     f.write(f"Tool 이름: {msg.name}\n")
                     f.write(f"결과:\n{msg.content}\n\n")
                 

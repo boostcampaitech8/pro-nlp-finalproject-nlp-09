@@ -14,6 +14,7 @@ PACKAGES=(
     "vim"       # 에디터
     "git"       # 버전 관리
     "man"       # 매뉴얼 페이지
+    "language-pack-ko" # 한국어 언어 팩
 )
 
 # 2. apt 업데이트 및 설치

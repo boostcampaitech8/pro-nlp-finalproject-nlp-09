@@ -18,7 +18,6 @@ from sklearn.metrics import (
 )
 from sklearn.decomposition import PCA
 import xgboost as xgb
-import lightgbm as lgb
 
 # 공통 전처리 모듈
 from preprocessing import (
@@ -88,7 +87,7 @@ def prepare_training_data(news_df, price_df):
     print("\n가격 데이터 전처리 중...")
     price_df = preprocess_price_data(price_df, time_column='time')
     print(f"가격 데이터 기간: {price_df['date'].min()} ~ {price_df['date'].max()}")
-    print(f"✓ ret_1d (일일 수익률) 계산 완료")
+    print("✓ ret_1d (일일 수익률) 계산 완료")
     
     # 4. 날짜 보정 (주말/휴일 뉴스 처리)
     print("\n날짜 보정 (주말/휴일 뉴스 → 다음 거래일 반영)...")
@@ -302,7 +301,7 @@ def main():
     print(f"총 데이터 포인트: {len(merged_df)}")
     print(f"학습 데이터: {len(X_train)}, 테스트 데이터: {len(X_test)}")
     print(f"총 피처 개수: {len(feature_cols)}")
-    print(f"\n최종 성능 (Test Set):")
+    print("\n최종 성능 (Test Set):")
     print(f"  - Accuracy:  {metrics['accuracy']:.4f}")
     print(f"  - Precision: {metrics['precision']:.4f}")
     print(f"  - Recall:    {metrics['recall']:.4f}")

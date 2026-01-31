@@ -95,7 +95,7 @@ def main():
     print(f"모델: {args.model}")
     
     if args.no_filter:
-        print(f"필터링: 미적용 (전체 데이터 분석)")
+        print("필터링: 미적용 (전체 데이터 분석)")
     else:
         print(f"필터링: filter_status='{args.filter_status}', keyword='{args.keyword}'")
     
@@ -129,7 +129,7 @@ def main():
             df_to_analyze = df_to_analyze[df_to_analyze['key_word'] == args.keyword].copy()
             print(f"✓ keyword 필터링: {before_count} → {len(df_to_analyze)}")
         elif 'key_word' not in df.columns and args.keyword:
-            print(f"⚠️ 'key_word' 컬럼이 없어 키워드 필터링을 건너뜁니다.")
+            print("⚠️ 'key_word' 컬럼이 없어 키워드 필터링을 건너뜁니다.")
     
     print(f"\n✓ 최종 분석 대상: {len(df_to_analyze)} 기사")
     
@@ -169,7 +169,7 @@ def main():
     
     print(f"\n평균 신뢰도: {summary['avg_confidence']:.3f}")
     print(f"평균 가격 영향 점수: {summary['avg_price_impact']:.3f}")
-    print(f"  (positive_score - negative_score의 평균)")
+    print("  (positive_score - negative_score의 평균)")
     
     # 7. 일별 트렌드 (publish_date가 있는 경우)
     if 'publish_date' in df_with_sentiment.columns:
@@ -177,7 +177,7 @@ def main():
         print("=" * 80)
         
         daily_trend = get_daily_sentiment_trend(df_with_sentiment)
-        print(f"\n최근 10일 트렌드:")
+        print("\n최근 10일 트렌드:")
         print(daily_trend.tail(10).to_string(index=False))
     
     # 8. 결과 저장

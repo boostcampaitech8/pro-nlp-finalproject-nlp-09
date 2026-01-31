@@ -6,7 +6,6 @@
 import pandas as pd
 import numpy as np
 import ast
-from datetime import datetime, timedelta
 
 
 def parse_embedding(embedding_str):

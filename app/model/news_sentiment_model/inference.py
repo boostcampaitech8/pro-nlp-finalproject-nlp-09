@@ -3,7 +3,6 @@
 저장된 모델을 로드하여 새로운 데이터에 대한 예측을 수행합니다.
 """
 
-import pandas as pd
 import numpy as np
 import json
 import pickle

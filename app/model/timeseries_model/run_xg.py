@@ -297,7 +297,7 @@ def print_results(results_df, metrics, config):
     
     # 모델 정보
     if 'avg_n_estimators_used' in metrics:
-        print(f"\n[모델 정보]")
+        print("\n[모델 정보]")
         print(f"  평균 사용 트리 개수: {metrics['avg_n_estimators_used']:.1f}/{config['xgboost']['n_estimators']}")
     
     # 혼동 행렬
