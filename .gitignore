@@ -181,3 +181,6 @@ references/bq_tutorial/uv.lock
 
 
 *outputs
+backup/CLAUDE_0.0.0_backup.md
+backup/CLAUDE_0.0.1_backup.md
+backup/CLAUDE_libs_0.0.0.md
