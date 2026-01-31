@@ -5,16 +5,10 @@ from typing import List, Dict, Any
 import pandas as pd
 import traceback
 
-# 프로젝트 루트 경로 추가 (models 패키지 import용)
-current_dir = os.path.dirname(os.path.abspath(__file__))
-root_dir = os.path.dirname(os.path.dirname(current_dir))
-if root_dir not in sys.path:
-    sys.path.append(root_dir)
-
 # 1. 뉴스 모델 컴포넌트 임포트
 try:
-    from models.news_sentiment_model.inference_with_evidence import CornPricePredictor
-    from models.news_sentiment_model.preprocessing import preprocess_news_data
+    from model.news_sentiment_model.inference_with_evidence import CornPricePredictor
+    from model.news_sentiment_model.preprocessing import preprocess_news_data
 except ImportError as e:
     print(f"경고: 뉴스 감성 모델 모듈 임포트 실패: {e}")
     CornPricePredictor = None

@@ -227,12 +227,12 @@ class BigQueryClient:
         start_date_str = start_dt.strftime("%Y-%m-%d")
         
         # time 컬럼을 date로 별칭 지정하여 호환성 확보
+        # ret_1d는 테이블에 없을 수 있으므로 쿼리에서 제외 (preprocessing.py에서 자동 계산됨)
         query = f"""
             SELECT 
                 time as date,
                 time,
-                close,
-                ret_1d
+                close
             FROM `{self.project_id}.{dataset}.{table_id}`
             WHERE time >= '{start_date_str}'
               AND time <= '{target_date}'

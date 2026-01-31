@@ -16,8 +16,16 @@ warnings.filterwarnings('ignore')
 
 import xgboost as xgb
 
-# 공통 전처리 모듈
-from preprocessing import prepare_inference_features
+# 공통 전처리 모듈 임포트 (패키지 실행 vs 단독 실행 호환)
+try:
+    from .preprocessing import prepare_inference_features
+except ImportError:
+    try:
+        from preprocessing import prepare_inference_features
+    except ImportError:
+        # 패키지 구조에 따른 절대 경로 시도
+        from app.model.news_sentiment_model.preprocessing import prepare_inference_features
+
 
 
 # ============================================
@@ -427,7 +435,8 @@ class CornPricePredictor:
         if 'time' not in price_history.columns and 'date' not in price_history.columns:
             raise ValueError("가격 데이터에 'time' 또는 'date' 컬럼이 필요합니다.")
         
-        required_price_cols = ['close', 'ret_1d']
+        # ret_1d는 preprocessing 단계에서 자동 계산되므로 필수 아님
+        required_price_cols = ['close']
         missing_price_cols = [col for col in required_price_cols if col not in price_history.columns]
         if missing_price_cols:
             raise ValueError(f"가격 데이터에 필수 컬럼이 누락되었습니다: {missing_price_cols}")

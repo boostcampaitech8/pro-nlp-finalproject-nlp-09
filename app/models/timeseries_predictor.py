@@ -10,7 +10,7 @@ if root_dir not in sys.path:
     sys.path.append(root_dir)
 
 try:
-    from models.timeseries_model.inference import TimeSeriesInference
+    from model.timeseries_model.inference import TimeSeriesInference
 except ImportError as e:
     print(f"경고: TimeSeriesInference를 임포트할 수 없습니다. 오류: {e}")
     TimeSeriesInference = None

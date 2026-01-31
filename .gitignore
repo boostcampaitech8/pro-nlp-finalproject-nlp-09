@@ -7,6 +7,8 @@
 *.log
 *.tar.gz
 *.zip
+*.json
+*.pkl
 
 ###############################################
 ############# vive coding rules  ##############
@@ -176,3 +178,6 @@ references/bq_tutorial/gcloud_manual.md
 references/bq_tutorial/pyproject.toml
 references/bq_tutorial/run_bq_update.sh
 references/bq_tutorial/uv.lock
+
+
+*outputs
