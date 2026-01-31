@@ -1,5 +1,4 @@
-from typing import Optional, List
-from datetime import datetime
+from typing import Optional
 from langchain_core.tools import tool
 import subprocess
 import json
@@ -11,8 +10,11 @@ from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 
 from config.settings import (
-    GENERATE_MODEL_NAME, GENERATE_MODEL_TEMPERATURE, GENERATE_MODEL_MAX_TOKENS,
-    VERTEX_AI_PROJECT_ID, VERTEX_AI_LOCATION,
+    GENERATE_MODEL_NAME,
+    GENERATE_MODEL_TEMPERATURE,
+    GENERATE_MODEL_MAX_TOKENS,
+    VERTEX_AI_PROJECT_ID,
+    VERTEX_AI_LOCATION,
 )
 from models.timeseries_predictor import predict_market_trend
 from models.sentiment_analyzer import SentimentAnalyzer
@@ -97,7 +99,8 @@ REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
 - 각 섹션은 "---"로 구분하세요.
 - 언어는 반드시 순수 한국어(한글)만 사용하세요."""
 
-SYSTEM_PROMPT = """당신은 전문 금융 분석가입니다.
+SYSTEM_PROMPT = (
+    """당신은 전문 금융 분석가입니다.
 
 **사용 가능한 도구**:
 1. timeseries_predictor: 시계열 데이터 기반 시장 예측
@@ -115,7 +118,9 @@ SYSTEM_PROMPT = """당신은 전문 금융 분석가입니다.
 
 **보고서 작성 형식 (반드시 이 형식을 따라야 합니다)**:
 
-""" + REPORT_FORMAT
+"""
+    + REPORT_FORMAT
+)
 
 
 # LangChain Tools 정의
@@ -123,10 +128,10 @@ SYSTEM_PROMPT = """당신은 전문 금융 분석가입니다.
 def timeseries_predictor(target_date: str) -> str:
     """
     특정 날짜의 금융 시장 추세(상승/하락)와 가격을 예측합니다.
-    
+
     Args:
         target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
-    
+
     Returns:
         JSON 형식의 예측 결과 문자열 (예측값, 방향, 신뢰도, 추세 분석 등 포함)
     """
@@ -137,10 +142,10 @@ def timeseries_predictor(target_date: str) -> str:
 def news_sentiment_analyzer(target_date: str) -> str:
     """
     특정 날짜의 뉴스를 분석하여 시장 영향력을 예측하고 주요 근거 뉴스(제목, 영향력 점수, 관계 정보 등)를 제공합니다.
-    
+
     Args:
         target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
-    
+
     Returns:
         JSON 형식의 예측 결과 문자열 (상승 확률, 근거 뉴스 리스트, 피처 요약 포함)
     """
@@ -151,13 +156,8 @@ def news_sentiment_analyzer(target_date: str) -> str:
 
 class LLMSummarizer:
     """Vertex AI를 사용하는 LangChain Agent를 이용한 통합 분석"""
-    
-    def __init__(
-        self, 
-        model_name: str = None,
-        project_id: str = None,
-        location: str = None
-    ):
+
+    def __init__(self, model_name: str = None, project_id: str = None, location: str = None):
         """
         Args:
             model_name: 생성 모델 이름 (기본값: 설정 파일의 GENERATE_MODEL_NAME)
@@ -170,16 +170,13 @@ class LLMSummarizer:
         self.llm = None
         self.agent = None
         self._initialize()
-    
+
     # TODO project id .env로 관리
     def _get_project_id(self) -> str:
         """gcloud config에서 프로젝트 ID를 가져옴"""
         try:
             result = subprocess.run(
-                ["gcloud", "config", "get-value", "project"],
-                capture_output=True,
-                text=True,
-                timeout=2
+                ["gcloud", "config", "get-value", "project"], capture_output=True, text=True, timeout=2
             )
             if result.returncode == 0 and result.stdout.strip():
                 return result.stdout.strip()
@@ -192,7 +189,7 @@ class LLMSummarizer:
                 f"또는 환경변수 GOOGLE_CLOUD_PROJECT를 설정하세요.\n"
                 f"오류: {e}"
             )
-    
+
     # TODO token 중앙 관리
     def _get_access_token(self) -> str:
         """Google Cloud 인증 토큰 가져오기"""
@@ -200,14 +197,14 @@ class LLMSummarizer:
         if not credentials.valid:
             credentials.refresh(Request())
         return credentials.token
-    
+
     def _build_base_url(self) -> str:
         """Vertex AI OpenAI 호환 API base URL 생성"""
         return (
             f"https://{self.location}-aiplatform.googleapis.com/v1/"
             f"projects/{self.project_id}/locations/{self.location}/endpoints/openapi"
         )
-    
+
     def _create_llm(self, access_token: str) -> ChatOpenAI:
         """ChatOpenAI 인스턴스 생성"""
         return ChatOpenAI(
@@ -220,33 +217,29 @@ class LLMSummarizer:
                 "parallel_tool_calls": False,
             },
         )
-    
-    
+
     def _initialize(self):
         """LLM 및 Agent 초기화"""
         access_token = self._get_access_token()
         self.llm = self._create_llm(access_token)
         print(f"✅ ChatOpenAI (Vertex AI OpenAI 호환 API) 사용: {self.model_name}")
-        
-        tools = [
-            timeseries_predictor,
-            news_sentiment_analyzer
-        ]
+
+        tools = [timeseries_predictor, news_sentiment_analyzer]
         llm_with_tools = self.llm.bind_tools(tools)
-        
+
         self.agent = create_agent(
             model=llm_with_tools,
             tools=tools,
             system_prompt=SYSTEM_PROMPT,
         )
-    
+
     def _build_user_input(
         self,
         context: str,
         target_date: str,
     ) -> str:
         """Agent에게 전달할 사용자 입력 메시지 생성"""
-        
+
         user_input = f"""다음 정보를 바탕으로 전문적인 금융 시장 분석 보고서를 작성해주세요.
 
 **분석 맥락**: {context or "최근 시장 상황 분석"}
@@ -255,30 +248,31 @@ class LLMSummarizer:
 - `timeseries_predictor`와 `news_sentiment_analyzer` 도구를 모두 사용하여 {target_date}의 시장 데이터를 분석하세요.
 """
         return user_input
-    
+
     def _validate_output_format(self, summary: str) -> bool:
         """출력 형식이 올바른지 검증 (최소 검증)
-        
+
         Returns:
             bool: 형식이 올바르면 True, 그렇지 않으면 False
         """
         # 최소한의 길이 확인
         if not summary or len(summary.strip()) < 100:
             return False
-        
+
         return True
-    
+
     def _extract_summary_from_result(self, result: dict) -> str:
         """Agent 실행 결과에서 요약 텍스트 추출"""
         import json
+
         messages = result.get("messages", [])
-        
+
         # messages에서 마지막 AIMessage의 content 추출
         for msg in reversed(messages):
             if isinstance(msg, AIMessage):
                 content = str(msg.content) if msg.content else ""
-                content = content.strip().rstrip('\\')
-                
+                content = content.strip().rstrip("\\")
+
                 # JSON 형식의 tool call arguments는 건너뛰기
                 if content.startswith("{{") and content.strip().endswith("}}"):
                     try:
@@ -290,25 +284,25 @@ class LLMSummarizer:
                     except (json.JSONDecodeError, ValueError):
                         # JSON이 아니면 계속 진행
                         pass
-                
+
                 # GPT-OSS-20B 특수 형식 제거 (<|channel|> 등)
                 # tool calling 형식인 경우 실제 텍스트가 없으면 건너뛰기
                 if content.startswith("<|channel|>") and "<|call|>" in content:
                     # tool calling 형식이고 실제 보고서 내용이 없으면 건너뛰기
                     if not any(keyword in content for keyword in ["보고서", "분석", "의견", "전망", "시장"]):
                         continue
-                
+
                 if content and len(content) > 50:  # 의미있는 내용이 있는 경우만
                     return content
-        
+
         # messages에서 찾지 못한 경우 output 필드 확인
         output = result.get("output") or result.get("final_output")
         if output:
-            return str(output).strip().rstrip('\\')
-        
+            return str(output).strip().rstrip("\\")
+
         # 모든 방법 실패 시 전체 결과를 문자열로 변환
-        return str(result).strip().rstrip('\\')
-    
+        return str(result).strip().rstrip("\\")
+
     # TODO 재시도 로직 점검
     def summarize(
         self,
@@ -317,7 +311,7 @@ class LLMSummarizer:
         max_retries: int = 2,
     ) -> dict:
         """LangChain Agent를 이용한 LLM 요약 생성
-        
+
         Args:
             context: 분석 맥락
             target_date: 분석 기준 날짜 (YYYY-MM-DD)
@@ -326,47 +320,41 @@ class LLMSummarizer:
         # 날짜 기본값 (오늘)
         if not target_date:
             from datetime import datetime
+
             target_date = datetime.now().strftime("%Y-%m-%d")
-            
-        user_input = self._build_user_input(
-            context=context,
-            target_date=target_date
-        )
-        
+
+        user_input = self._build_user_input(context=context, target_date=target_date)
+
         for attempt in range(max_retries + 1):
             # Agent 실행 (LangChain이 자동으로 tool call을 처리함)
             if attempt == 0:
-                result = self.agent.invoke({
-                    "messages": [HumanMessage(content=user_input)]
-                })
+                result = self.agent.invoke({"messages": [HumanMessage(content=user_input)]})
             else:
                 # 재시도 시 기존 메시지 사용
-                result = self.agent.invoke({
-                    "messages": result.get('messages', [])
-                })
-            
+                result = self.agent.invoke({"messages": result.get("messages", [])})
+
             # 결과 추출
             if isinstance(result, dict):
-                messages = result.get('messages', [])
-                
+                messages = result.get("messages", [])
+
                 summary = self._extract_summary_from_result(result)
                 agent_result = result
-                
+
                 # 디버깅: 메시지 상태 확인
                 print(f"\n[디버깅] 총 메시지 수: {len(messages)}")
                 tool_call_count = sum(1 for msg in messages if isinstance(msg, AIMessage) and msg.tool_calls)
-                tool_result_count = sum(1 for msg in messages if hasattr(msg, 'name') and msg.name)
+                tool_result_count = sum(1 for msg in messages if hasattr(msg, "name") and msg.name)
                 print(f"  Tool 호출: {tool_call_count}회, Tool 결과: {tool_result_count}개")
             else:
-                summary = str(result).strip().rstrip('\\')
-                agent_result = {'messages': []}
-            
+                summary = str(result).strip().rstrip("\\")
+                agent_result = {"messages": []}
+
             # 요약이 비어있거나 너무 짧은 경우 확인
             if not summary or len(summary.strip()) < 50:
                 print(f"\n⚠️ 요약이 비어있거나 너무 짧습니다 (길이: {len(summary)}자)")
                 # 마지막 AIMessage에서 실제 텍스트 찾기
                 if isinstance(result, dict):
-                    messages = result.get('messages', [])
+                    messages = result.get("messages", [])
                     for msg in reversed(messages):
                         if isinstance(msg, AIMessage) and msg.content:
                             content = str(msg.content)
@@ -375,21 +363,21 @@ class LLMSummarizer:
                                 summary = content.strip()
                                 print(f"  → 대체 텍스트 발견 (길이: {len(summary)}자)")
                                 break
-            
+
             # 출력 형식 검증
             if summary and len(summary.strip()) > 50 and self._validate_output_format(summary):
                 return {
-                    'summary': summary or '',
-                    'agent_result': agent_result,
+                    "summary": summary or "",
+                    "agent_result": agent_result,
                 }
-            
+
             # 형식이 맞지 않으면 재시도
             if attempt < max_retries:
                 print(f"\n⚠️ 출력 형식이 올바르지 않습니다. 재시도 중... ({attempt + 1}/{max_retries})")
                 print(f"현재 요약 길이: {len(summary)}자")
                 if summary:
                     print(f"요약 미리보기 (처음 500자):\n{summary[:500]}...\n")
-                
+
                 user_input = f"""{user_input}
 
 **중요**: 이전 응답의 형식이 올바르지 않았습니다. 반드시 다음 형식을 정확히 따라주세요:
@@ -408,8 +396,8 @@ class LLMSummarizer:
                 if summary:
                     print(f"요약 미리보기: {summary[:200]}...")
                 print("검증을 통과하지 못했지만 결과를 반환합니다.")
-        
+
         return {
-            'summary': summary or '',
-            'agent_result': agent_result,
+            "summary": summary or "",
+            "agent_result": agent_result,
         }
