@@ -1,0 +1,28 @@
+[project]
+name = "app-and-libs"
+version = "0.1.0"
+description = "Common libraries: GCP service abstraction and utilities"
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    # GCP dependencies
+    "google-auth",
+    "google-auth-oauthlib",
+    "google-auth-httplib2",
+    "google-cloud-bigquery",
+    "google-cloud-storage",
+    "google-cloud-aiplatform",
+    "db-dtypes",
+    "pandas",
+    # Utils dependencies
+    "pydantic",
+    "pydantic-settings",
+    "python-dotenv",
+    "pytest",
+    "pytest-cov",
+    "langchain>=1.2.7",
+    "langchain-openai>=1.1.7",
+    "xgboost>=3.1.3",
+    "scikit-learn>=1.8.0",
+    "streamlit>=1.53.1",
+]
