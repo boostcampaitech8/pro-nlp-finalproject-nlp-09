@@ -8,7 +8,9 @@ import json
 import pickle
 import warnings
 import os
-warnings.filterwarnings('ignore')
+
+# TODO warnings 무시 설정 제거 필요할 수 있음
+warnings.filterwarnings("ignore")
 
 import xgboost as xgb
 
@@ -18,11 +20,11 @@ from preprocessing import prepare_inference_features
 
 class CornPricePredictor:
     """옥수수 가격 예측 모델 클래스"""
-    
-    def __init__(self, model_dir='models'):
+
+    def __init__(self, model_dir="models"):
         """
         모델 초기화
-        
+
         Args:
             model_dir: 모델 파일들이 저장된 디렉토리
         """
@@ -30,58 +32,58 @@ class CornPricePredictor:
         self.model = None
         self.pca = None
         self.feature_columns = None
-        
+
     def load_model(self):
         """저장된 모델, PCA 객체, 피처 컬럼 로드"""
         print("=" * 80)
         print("모델 로딩 중...")
         print("=" * 80)
-        
+
         # 1. XGBoost 모델 로드
-        model_path = os.path.join(self.model_dir, 'xgb_model.json')
+        model_path = os.path.join(self.model_dir, "xgb_model.json")
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"모델 파일을 찾을 수 없습니다: {model_path}")
-        
+
         self.model = xgb.XGBClassifier()
         self.model.load_model(model_path)
         print(f"✓ 모델 로드 완료: {model_path}")
-        
+
         # 2. PCA 객체 로드
-        pca_path = os.path.join(self.model_dir, 'pca_transformer.pkl')
+        pca_path = os.path.join(self.model_dir, "pca_transformer.pkl")
         if not os.path.exists(pca_path):
             raise FileNotFoundError(f"PCA 파일을 찾을 수 없습니다: {pca_path}")
-        
-        with open(pca_path, 'rb') as f:
+
+        with open(pca_path, "rb") as f:
             self.pca = pickle.load(f)
         print(f"✓ PCA 객체 로드 완료: {pca_path}")
-        
+
         # 3. 피처 컬럼 로드
-        feature_path = os.path.join(self.model_dir, 'feature_columns.json')
+        feature_path = os.path.join(self.model_dir, "feature_columns.json")
         if not os.path.exists(feature_path):
             raise FileNotFoundError(f"피처 컬럼 파일을 찾을 수 없습니다: {feature_path}")
-        
-        with open(feature_path, 'r') as f:
+
+        with open(feature_path, "r") as f:
             self.feature_columns = json.load(f)
         print(f"✓ 피처 컬럼 로드 완료: {feature_path}")
         print(f"  - 총 피처 개수: {len(self.feature_columns)}")
-        
+
         print("\n모든 모델 구성요소가 성공적으로 로드되었습니다!")
         print("=" * 80)
-        
+
     def predict_next_day(self, news_data, price_history):
         """
         다음 날 가격 상승 여부 예측
-        
+
         Args:
             news_data: 최근 뉴스 데이터 (DataFrame)
-                필수 컬럼: ['publish_date', 'article_embedding', 'price_impact_score', 
+                필수 컬럼: ['publish_date', 'article_embedding', 'price_impact_score',
                         'sentiment_confidence', 'positive_score', 'negative_score']
                 최소 3일치 데이터 권장
-            
+
             price_history: 최근 가격 데이터 (DataFrame)
                 필수 컬럼: ['time' 또는 'date', 'close', 'ret_1d']
                 최소 5일치 데이터 권장
-        
+
         Returns:
             dict: 예측 결과
                 {
@@ -98,97 +100,103 @@ class CornPricePredictor:
         # 모델 로드 확인
         if self.model is None or self.pca is None or self.feature_columns is None:
             raise RuntimeError("모델이 로드되지 않았습니다. load_model()을 먼저 호출하세요.")
-        
+
         print("\n" + "=" * 80)
         print("예측 데이터 전처리 중...")
         print("=" * 80)
-        
+
         # 입력 데이터 검증
         self._validate_input_data(news_data, price_history)
-        
+
         # 전처리 및 피처 생성
         try:
             X = prepare_inference_features(
                 news_data=news_data,
                 price_history=price_history,
                 pca_transformer=self.pca,
-                feature_columns=self.feature_columns
+                feature_columns=self.feature_columns,
             )
             print(f"✓ 전처리 완료: 피처 shape = {X.shape}")
         except Exception as e:
             raise ValueError(f"데이터 전처리 중 오류 발생: {str(e)}")
-        
+
         # 예측 수행
         print("\n예측 수행 중...")
         prediction = self.model.predict(X)[0]
         probability = self.model.predict_proba(X)[0, 1]  # 상승(1) 확률
-        
+
         # 결과 요약 생성
         features_summary = self._create_features_summary(news_data, price_history)
-        
+
         # 결과 딕셔너리 생성
         result = {
             "prediction": int(prediction),
             "probability": float(probability),
-            "features_summary": features_summary
+            "features_summary": features_summary,
         }
-        
+
         print("=" * 80)
         print("예측 완료!")
         print("=" * 80)
         print(f"예측 결과: {'상승(1)' if prediction == 1 else '하락(0)'}")
         print(f"상승 확률: {probability:.2%}")
         print("=" * 80)
-        
+
         return result
-    
+
     def _validate_input_data(self, news_data, price_history):
         """입력 데이터 검증"""
         # 뉴스 데이터 검증
-        required_news_cols = ['publish_date', 'article_embedding', 'price_impact_score', 
-                            'sentiment_confidence', 'positive_score', 'negative_score']
+        required_news_cols = [
+            "publish_date",
+            "article_embedding",
+            "price_impact_score",
+            "sentiment_confidence",
+            "positive_score",
+            "negative_score",
+        ]
         missing_news_cols = [col for col in required_news_cols if col not in news_data.columns]
         if missing_news_cols:
             raise ValueError(f"뉴스 데이터에 필수 컬럼이 누락되었습니다: {missing_news_cols}")
-        
+
         # 가격 데이터 검증
-        if 'time' not in price_history.columns and 'date' not in price_history.columns:
+        if "time" not in price_history.columns and "date" not in price_history.columns:
             raise ValueError("가격 데이터에 'time' 또는 'date' 컬럼이 필요합니다.")
-        
-        required_price_cols = ['close', 'ret_1d']
-        price_history['ret_1d'] = np.log(price_history['close'] / price_history['close'].shift(1))
+
+        required_price_cols = ["close", "ret_1d"]
+        price_history["ret_1d"] = np.log(price_history["close"] / price_history["close"].shift(1))
         missing_price_cols = [col for col in required_price_cols if col not in price_history.columns]
         if missing_price_cols:
             raise ValueError(f"가격 데이터에 필수 컬럼이 누락되었습니다: {missing_price_cols}")
-        
+
         # 데이터 개수 확인
         if len(news_data) < 3:
             print(f"경고: 뉴스 데이터가 {len(news_data)}개로 부족합니다. 최소 3일치 권장")
-        
+
         if len(price_history) < 5:
             print(f"경고: 가격 데이터가 {len(price_history)}개로 부족합니다. 최소 5일치 권장")
-    
+
     def _create_features_summary(self, news_data, price_history):
         """피처 요약 정보 생성"""
         summary = {
             "latest_news_count": int(len(news_data)),
-            "avg_sentiment": float(news_data['sentiment_confidence'].mean()),
-            "avg_price_impact": float(news_data['price_impact_score'].mean()),
-            "latest_price": float(price_history['close'].iloc[-1]),
-            "data_points_used": int(len(price_history))
+            "avg_sentiment": float(news_data["sentiment_confidence"].mean()),
+            "avg_price_impact": float(news_data["price_impact_score"].mean()),
+            "latest_price": float(price_history["close"].iloc[-1]),
+            "data_points_used": int(len(price_history)),
         }
         return summary
 
 
-def predict_next_day(news_data, price_history, model_dir='models'):
+def predict_next_day(news_data, price_history, model_dir="models"):
     """
     편의 함수: 다음 날 가격 상승 여부 예측
-    
+
     Args:
         news_data: 최근 뉴스 데이터 (DataFrame)
         price_history: 최근 가격 데이터 (DataFrame)
         model_dir: 모델 파일들이 저장된 디렉토리
-    
+
     Returns:
         dict: 예측 결과
     """
@@ -201,14 +209,14 @@ def predict_next_day(news_data, price_history, model_dir='models'):
 # ============================================
 # 사용 예시
 # ============================================
-if __name__ == '__main__':
+if __name__ == "__main__":
     """
     추론 코드 사용 예시
     """
     print("\n" + "=" * 80)
     print("추론 코드 사용 예시")
     print("=" * 80)
-    
+
     # 예시 데이터 생성 (실제로는 최근 데이터를 로드해야 함)
     print("\n※ 실제 사용 시에는 아래처럼 최근 데이터를 로드하세요:")
     print("""
@@ -226,7 +234,7 @@ if __name__ == '__main__':
     print(f"상승 확률: {result['probability']:.2%}")
     print(f"피처 요약: {result['features_summary']}")
     """)
-    
+
     print("\n" + "=" * 80)
     print("LangChain 연동 예시")
     print("=" * 80)
@@ -272,5 +280,5 @@ if __name__ == '__main__':
     response = agent.run("옥수수 가격 전망 보고서를 작성해주세요.")
     print(response)
     """)
-    
+
     print("\n" + "=" * 80)
