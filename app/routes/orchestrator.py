@@ -1,12 +1,9 @@
 import json
-from fastapi import APIRouter
 from schema.models import OrchestratorInput, OrchestratorOutput, TimeSeriesPrediction, SentimentAnalysis
 from models.llm_summarizer import LLMSummarizer
 from datetime import datetime
 from typing import Optional, Tuple, List, Union
 import re
-
-router = APIRouter(prefix="/api/orchestrator", tags=["orchestrator"])
 
 # 모델 초기화 (Lazy initialization)
 llm_summarizer = None
@@ -112,14 +109,3 @@ def orchestrate_analysis(
     if return_agent_result:
         return output, agent_result
     return output
-
-
-@router.post("/summarize", response_model=OrchestratorOutput)
-async def orchestrate_summary(input_data: OrchestratorInput):
-    """
-    FastAPI 엔드포인트: 날짜 기반 금융 분석 파이프라인
-    """
-    return orchestrate_analysis(
-        target_date=input_data.target_date,
-        context=input_data.context or "금융 시장 분석"
-    )
