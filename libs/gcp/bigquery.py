@@ -3,8 +3,10 @@ BigQuery service abstraction
 
 This module provides a clean interface for BigQuery operations,
 including time-series data queries and SQL file execution.
+SQL queries are loaded from files in libs/gcp/sql/ directory.
 """
 
+import logging
 import pandas as pd
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -13,6 +15,10 @@ from google.cloud import bigquery
 from google.auth.credentials import Credentials
 
 from .base import GCPServiceBase
+from .sql import SQLQueryLoader
+
+
+logger = logging.getLogger(__name__)
 
 
 class BigQueryService(GCPServiceBase):
@@ -21,13 +27,14 @@ class BigQueryService(GCPServiceBase):
 
     This class provides a clean interface for common BigQuery operations,
     particularly for time-series data and news article queries.
+    SQL queries are loaded from files and parameterized for execution.
     """
 
     def __init__(
         self,
         project_id: Optional[str] = None,
         dataset_id: Optional[str] = None,
-        credentials: Optional[Credentials] = None
+        credentials: Optional[Credentials] = None,
     ):
         """
         Initialize BigQuery service
@@ -39,6 +46,8 @@ class BigQueryService(GCPServiceBase):
         """
         super().__init__(project_id=project_id, credentials=credentials)
         self.dataset_id = dataset_id
+        self._sql_loader = SQLQueryLoader()
+        logger.debug(f"BigQueryService initialized with project_id={project_id}, dataset_id={dataset_id}")
 
     def _default_scopes(self) -> list:
         """Default OAuth scopes for BigQuery"""
@@ -51,242 +60,98 @@ class BigQueryService(GCPServiceBase):
 
     def _initialize_client(self):
         """Initialize BigQuery client"""
-        return bigquery.Client(
-            project=self.project_id,
-            credentials=self.credentials
-        )
+        return bigquery.Client(project=self.project_id, credentials=self.credentials)
 
-    def execute_query(self, query: str) -> pd.DataFrame:
-        """
-        Execute a raw SQL query and return results as DataFrame
-
-        Args:
-            query: SQL query string
-
-        Returns:
-            pd.DataFrame: Query results
-
-        Example:
-            >>> df = bq.execute_query("SELECT * FROM table LIMIT 10")
-        """
-        return self.client.query(query).to_dataframe()
-
-    def execute_query_file(
+    def _load_and_execute_query(
         self,
-        file_path: Union[str, Path],
-        **params
+        query_name: str,
+        params: Optional[Dict[str, Any]] = None,
     ) -> pd.DataFrame:
         """
-        Execute SQL from a file with parameter substitution
+        SQL 파일을 로드하고 파라미터와 조합하여 쿼리 실행
 
         Args:
-            file_path: Path to SQL file
-            **params: Parameters for string formatting
+            query_name: Query name in format "domain.query_file"
+                       (e.g., "prices.get_prophet_features")
+            params: Parameters for string formatting (optional)
 
         Returns:
             pd.DataFrame: Query results
 
-        Example:
-            >>> df = bq.execute_query_file(
-            ...     "queries/get_data.sql",
-            ...     table_id="corn_price",
-            ...     start_date="2025-01-01"
-            ... )
+        Raises:
+            FileNotFoundError: SQL 파일이 없을 경우
+            ValueError: 쿼리 실행 중 에러 발생시
         """
-        path = Path(file_path)
-        if not path.exists():
-            raise FileNotFoundError(f"SQL file not found: {file_path}")
-
-        query = path.read_text()
         if params:
-            query = query.format(**params)
+            query = self._sql_loader.load_with_params(query_name, **params)
+            logger.debug(f"Loaded query '{query_name}' with params: {list(params.keys())}")
+        else:
+            query = self._sql_loader.load(query_name)
+            logger.debug(f"Loaded query '{query_name}' without params")
 
         return self.execute_query(query)
 
-    def get_prophet_features(
-        self,
-        target_date: str,
-        lookback_days: int = 60,
-        commodity: str = "corn",
-        dataset_id: Optional[str] = None,
-        table_id: str = "daily_prices",
-        date_column: str = "date"
-    ) -> pd.DataFrame:
-        """
-        Get Prophet/XGBoost model features for a target date from daily_prices
+    # def get_prophet_features(
+    #     self,
+    #     target_date: str,
+    #     lookback_days: int = 60,
+    #     commodity: str = "corn",
+    #     dataset_id: Optional[str] = None,
+    #     table_id: str = "daily_prices",
+    #     date_column: str = "date",
+    # ) -> pd.DataFrame:
+    #     """
+    #     Get Prophet/XGBoost model features for a target date from daily_prices
 
-        Retrieves data from (target_date - lookback_days) to target_date inclusive.
-        Returns data formatted for Prophet (ds, y columns) with additional features.
+    #     Retrieves data from (target_date - lookback_days) to target_date inclusive.
+    #     Returns data formatted for Prophet (ds, y columns) with additional features.
 
-        Args:
-            target_date: Target date (YYYY-MM-DD)
-            lookback_days: Number of days to look back (default 60)
-            commodity: Commodity name (default 'corn')
-            dataset_id: Dataset ID (if None, uses instance default)
-            table_id: Table ID (default 'daily_prices')
-            date_column: Date column name (default 'date')
+    #     Args:
+    #         target_date: Target date (YYYY-MM-DD)
+    #         lookback_days: Number of days to look back (default 60)
+    #         commodity: Commodity name (default 'corn')
+    #         dataset_id: Dataset ID (if None, uses instance default)
+    #         table_id: Table ID (default 'daily_prices')
+    #         date_column: Date column name (default 'date')
 
-        Returns:
-            pd.DataFrame: Feature data with ds, y, and additional columns
+    #     Returns:
+    #         pd.DataFrame: Feature data with ds, y, and additional columns
 
-        Example:
-            >>> df = bq.get_prophet_features(
-            ...     target_date="2025-01-20",
-            ...     lookback_days=60,
-            ...     commodity="corn"
-            ... )
-        """
-        dataset = dataset_id or self.dataset_id
-        if not dataset:
-            raise ValueError("dataset_id is required")
+    #     Example:
+    #         >>> df = bq.get_prophet_features(
+    #         ...     target_date="2025-01-20",
+    #         ...     lookback_days=60,
+    #         ...     commodity="corn"
+    #         ... )
+    #     """
+    #     dataset = dataset_id or self.dataset_id
+    #     if not dataset:
+    #         raise ValueError("dataset_id is required")
 
-        # Calculate date range
-        try:
-            target_dt = datetime.strptime(target_date, "%Y-%m-%d")
-        except ValueError:
-            raise ValueError(f"Invalid date format: {target_date}. Use YYYY-MM-DD")
+    #     # Calculate date range
+    #     try:
+    #         target_dt = datetime.strptime(target_date, "%Y-%m-%d")
+    #     except ValueError:
+    #         raise ValueError(f"Invalid date format: {target_date}. Use YYYY-MM-DD")
 
-        start_dt = target_dt - timedelta(days=lookback_days)
-        start_date_str = start_dt.strftime("%Y-%m-%d")
+    #     start_dt = target_dt - timedelta(days=lookback_days)
+    #     start_date_str = start_dt.strftime("%Y-%m-%d")
 
-        query = f"""
-            SELECT
-                {date_column} as ds,
-                close as y,
-                open,
-                high,
-                low,
-                ema,
-                volume
-            FROM `{self.project_id}.{dataset}.{table_id}`
-            WHERE commodity = '{commodity}'
-              AND {date_column} >= '{start_date_str}'
-              AND {date_column} <= '{target_date}'
-            ORDER BY {date_column} ASC
-        """
-
-        return self.execute_query(query)
-
-    def get_news_for_prediction(
-        self,
-        target_date: str,
-        lookback_days: int = 7,
-        dataset_id: Optional[str] = None,
-        table_id: str = "news_article"
-    ) -> pd.DataFrame:
-        """
-        Get news data for sentiment analysis prediction
-
-        Retrieves filtered news articles (filter_status='T') for the date range.
-
-        Args:
-            target_date: Target date (YYYY-MM-DD)
-            lookback_days: Number of days to look back (default 7)
-            dataset_id: Dataset ID (if None, uses instance default)
-            table_id: News table ID (default 'news_article')
-
-        Returns:
-            pd.DataFrame: News data with embeddings and scores
-
-        Example:
-            >>> df = bq.get_news_for_prediction(
-            ...     target_date="2025-01-20",
-            ...     lookback_days=7
-            ... )
-        """
-        dataset = dataset_id or self.dataset_id
-        if not dataset:
-            raise ValueError("dataset_id is required")
-
-        # Calculate date range
-        try:
-            target_dt = datetime.strptime(target_date, "%Y-%m-%d")
-        except ValueError:
-            raise ValueError(f"Invalid date format: {target_date}. Use YYYY-MM-DD")
-
-        start_dt = target_dt - timedelta(days=lookback_days)
-        start_date_str = start_dt.strftime("%Y-%m-%d")
-
-        query = f"""
-            SELECT
-                publish_date,
-                title,
-                description as all_text,
-                article_embedding,
-                price_impact_score,
-                sentiment_confidence,
-                positive_score,
-                negative_score,
-                triples,
-                filter_status
-            FROM `{self.project_id}.{dataset}.{table_id}`
-            WHERE publish_date >= '{start_date_str}'
-              AND publish_date <= '{target_date}'
-              AND filter_status = 'T'
-            ORDER BY publish_date ASC
-        """
-
-        return self.execute_query(query)
-
-    def get_price_history(
-        self,
-        target_date: str,
-        lookback_days: int = 30,
-        commodity: str = "corn",
-        dataset_id: Optional[str] = None,
-        table_id: str = "daily_prices"
-    ) -> pd.DataFrame:
-        """
-        Get price history from daily_prices table for news sentiment model
-
-        Args:
-            target_date: Target date (YYYY-MM-DD)
-            lookback_days: Number of days to look back (default 30)
-            commodity: Commodity name (default 'corn')
-            dataset_id: Dataset ID (if None, uses instance default)
-            table_id: Price table ID (default 'daily_prices')
-
-        Returns:
-            pd.DataFrame: Price data with commodity, date, open, high, low, close, ema, volume
-
-        Example:
-            >>> df = bq.get_price_history(
-            ...     target_date="2025-01-20",
-            ...     lookback_days=30,
-            ...     commodity="corn"
-            ... )
-        """
-        dataset = dataset_id or self.dataset_id
-        if not dataset:
-            raise ValueError("dataset_id is required")
-
-        try:
-            target_dt = datetime.strptime(target_date, "%Y-%m-%d")
-        except ValueError:
-            raise ValueError(f"Invalid date format: {target_date}. Use YYYY-MM-DD")
-
-        start_dt = target_dt - timedelta(days=lookback_days)
-        start_date_str = start_dt.strftime("%Y-%m-%d")
-
-        query = f"""
-            SELECT
-                commodity,
-                date,
-                open,
-                high,
-                low,
-                close,
-                ema,
-                volume,
-                ingested_at
-            FROM `{self.project_id}.{dataset}.{table_id}`
-            WHERE commodity = '{commodity}'
-              AND date >= '{start_date_str}'
-              AND date <= '{target_date}'
-            ORDER BY date ASC
-        """
-
-        return self.execute_query(query)
+    #     query = f"""
+    #         SELECT
+    #             {date_column} as ds,
+    #             close as y,
+    #             open,
+    #             high,
+    #             low,
+    #             ema,
+    #             volume
+    #         FROM `{self.project_id}.{dataset}.{table_id}`
+    #         WHERE commodity = '{commodity}'
+    #           AND {date_column} >= '{start_date_str}'
+    #           AND {date_column} <= '{target_date}'
+    #         ORDER BY {date_column} ASC
+    #     """
 
     def get_timeseries_data(
         self,
@@ -298,7 +163,7 @@ class BigQueryService(GCPServiceBase):
         end_date: Optional[str] = None,
         where_clause: Optional[str] = None,
         order_by: Optional[str] = None,
-        limit: Optional[int] = None
+        limit: Optional[int] = None,
     ) -> pd.DataFrame:
         """
         Get generic time-series data
@@ -364,15 +229,18 @@ class BigQueryService(GCPServiceBase):
         # Build LIMIT clause
         limit_clause = f"LIMIT {limit}" if limit else ""
 
-        query = f"""
-            SELECT {select_cols}
-            FROM `{self.project_id}.{dataset}.{table_id}`
-            WHERE {where_sql}
-            {order_clause}
-            {limit_clause}
-        """
+        params = {
+            "project_id": self.project_id,
+            "dataset_id": dataset,
+            "table_id": table_id,
+            "select_columns": select_cols,
+            "where_clause": where_sql,
+            "order_by": order_clause,
+            "limit": limit_clause,
+        }
 
-        return self.execute_query(query)
+        logger.debug(f"Getting timeseries data from {dataset}.{table_id}")
+        return self._load_and_execute_query("prices.get_timeseries_data", params)
 
     def get_timeseries_values(
         self,
@@ -381,7 +249,7 @@ class BigQueryService(GCPServiceBase):
         date_column: Optional[str] = None,
         value_column: Optional[str] = None,
         start_date: Optional[str] = None,
-        end_date: Optional[str] = None
+        end_date: Optional[str] = None,
     ) -> List[float]:
         """
         Get time-series values as a simple list
@@ -415,7 +283,7 @@ class BigQueryService(GCPServiceBase):
             date_column=date_column,
             value_columns=value_column,
             start_date=start_date,
-            end_date=end_date
+            end_date=end_date,
         )
 
         if df.empty:
@@ -427,13 +295,14 @@ class BigQueryService(GCPServiceBase):
         self,
         commodity: str = "corn",
         limit: int = 10,
-        dataset_id: Optional[str] = None
+        dataset_id: Optional[str] = None,
     ) -> pd.DataFrame:
         """
         Test query to verify daily_prices table connectivity (safe with LIMIT)
 
         This is a safe test method that only fetches a limited number of rows.
         Use this to verify BigQuery connectivity without scanning too much data.
+        SQL 파일: prices/test_read_daily_prices.sql
 
         Args:
             commodity: Commodity name (default: 'corn')
@@ -451,34 +320,27 @@ class BigQueryService(GCPServiceBase):
         if not dataset:
             raise ValueError("dataset_id is required")
 
-        query = f"""
-            SELECT
-                commodity,
-                date,
-                open,
-                high,
-                low,
-                close,
-                ema,
-                volume,
-                ingested_at
-            FROM `{self.project_id}.{dataset}.daily_prices`
-            WHERE commodity = '{commodity}'
-            ORDER BY date DESC
-            LIMIT {limit}
-        """
+        params = {
+            "project_id": self.project_id,
+            "dataset_id": dataset,
+            "commodity": commodity,
+            "limit": limit,
+        }
 
-        return self.execute_query(query)
+        logger.info(f"Testing read from daily_prices: commodity={commodity}, limit={limit}")
+        return self._load_and_execute_query("prices.test_read_daily_prices", params)
 
     def get_daily_prices(
         self,
         commodity: str,
         start_date: str,
         end_date: str,
-        dataset_id: Optional[str] = None
+        dataset_id: Optional[str] = None,
     ) -> pd.DataFrame:
         """
         Get price data from daily_prices table for a specific commodity
+
+        SQL 파일: prices/get_price_history.sql (동일 쿼리 재사용)
 
         Args:
             commodity: Commodity name (e.g., 'corn', 'wheat', 'soybean')
@@ -507,22 +369,90 @@ class BigQueryService(GCPServiceBase):
         except ValueError as e:
             raise ValueError(f"Invalid date format. Use YYYY-MM-DD: {e}")
 
-        query = f"""
-            SELECT
-                commodity,
-                date,
-                open,
-                high,
-                low,
-                close,
-                ema,
-                volume,
-                ingested_at
-            FROM `{self.project_id}.{dataset}.daily_prices`
-            WHERE commodity = '{commodity}'
-              AND date >= '{start_date}'
-              AND date <= '{end_date}'
-            ORDER BY date ASC
-        """
+        params = {
+            "project_id": self.project_id,
+            "dataset_id": dataset,
+            "commodity": commodity,
+            "start_date": start_date,
+            "end_date": end_date,
+        }
 
-        return self.execute_query(query)
+        logger.info(f"Getting daily prices: commodity={commodity}, date_range={start_date} to {end_date}")
+        return self._load_and_execute_query("prices.get_price_history", params)
+
+    # def get_filtered_articles(
+    #     self,
+    #     start_date: Optional[str] = None,
+    #     end_date: Optional[str] = None,
+    #     limit: Optional[int] = None,
+    #     dataset_id: Optional[str] = None,
+    #     table_id: str = "news_article",
+    # ) -> pd.DataFrame:
+    #     """
+    #     Get filtered news articles (filter_status='T')
+
+    #     SQL 파일: news/get_filtered_articles.sql
+
+    #     Args:
+    #         start_date: Start date (YYYY-MM-DD, optional)
+    #         end_date: End date (YYYY-MM-DD, optional)
+    #         limit: Result limit (optional)
+    #         dataset_id: Dataset ID (if None, uses instance default)
+    #         table_id: News table ID (default 'news_article')
+
+    #     Returns:
+    #         pd.DataFrame: Filtered news articles
+
+    #     Example:
+    #         >>> df = bq.get_filtered_articles(
+    #         ...     start_date="2025-01-01",
+    #         ...     end_date="2025-01-20",
+    #         ...     limit=100
+    #         ... )
+    #     """
+    #     dataset = dataset_id or self.dataset_id
+    #     if not dataset:
+    #         raise ValueError("dataset_id is required")
+
+    #     # Build optional date filter
+    #     date_conditions = []
+    #     if start_date:
+    #         date_conditions.append(f"AND publish_date >= '{start_date}'")
+    #     if end_date:
+    #         date_conditions.append(f"AND publish_date <= '{end_date}'")
+    #     date_filter = " ".join(date_conditions)
+
+    #     # Build optional limit clause
+    #     limit_clause = f"LIMIT {limit}" if limit else ""
+
+    #     params = {
+    #         "project_id": self.project_id,
+    #         "dataset_id": dataset,
+    #         "table_id": table_id,
+    #         "date_filter": date_filter,
+    #         "limit_clause": limit_clause,
+    #     }
+
+    #     logger.info(
+    #         f"Getting filtered articles: "
+    #         f"date_range={start_date or 'N/A'} to {end_date or 'N/A'}, "
+    #         f"limit={limit or 'N/A'}"
+    #     )
+    #     return self._load_and_execute_query("news.get_filtered_articles", params)
+
+    def list_available_queries(self, domain: Optional[str] = None) -> Dict[str, list]:
+        """
+        List available SQL query files
+
+        Args:
+            domain: Filter by domain ('prices', 'news') - if None, lists all
+
+        Returns:
+            Dict[str, list]: Dictionary mapping domain to query names
+
+        Example:
+            >>> queries = bq.list_available_queries()
+            >>> print(queries)
+            {'prices': ['get_prophet_features', 'get_price_history', ...], ...}
+        """
+        return self._sql_loader.list_queries(domain)
