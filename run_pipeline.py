@@ -15,7 +15,37 @@ sys.path.insert(0, app_dir)
 
 from routes.orchestrator import orchestrate_analysis
 
+
+def setup_logging():
+    # 1. 환경 변수에서 로그 레벨 가져오기 (기본값: INFO)
+    # 터미널에서 LOG_LEVEL=DEBUG 라고 치면 DEBUG로 변함
+    log_level = os.getenv("LOG_LEVEL", "DEBUG").upper()
+
+    # 2. "루트 로거(Root Logger)" 설정 (이게 핵심!)
+    # 여기서 설정하면 logging.getLogger(__name__)을 쓴 모든 모듈에 전파됨
+    logging.basicConfig(
+        level=log_level,
+        format="[%(levelname)s] [%(name)s] %(message)s",
+        stream=sys.stdout,  # 혹은 sys.stderr
+    )
+
+    noisy_loggers = [
+        "openai",
+        "httpx",
+        "httpcore",
+        "urllib3",
+        "google",
+        "google.auth",
+        "google.api_core",
+    ]
+
+    for logger_name in noisy_loggers:
+        logging.getLogger(logger_name).setLevel(logging.WARNING)
+    logging.getLogger("httpcore").propagate = False
+
+
 def main():
+    setup_logging()
     """메인 파이프라인 실행"""
     
     # 분석 기준 날짜 설정 (기본값: 오늘, 또는 테스트용 특정 날짜)
