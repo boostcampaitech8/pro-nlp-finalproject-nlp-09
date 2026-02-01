@@ -18,6 +18,7 @@ from config.settings import (
 )
 from models.timeseries_predictor import predict_market_trend
 from models.sentiment_analyzer import SentimentAnalyzer
+from models.keyword_analyzer import analyze_keywords as _analyze_keywords
 
 
 # 상수 정의
@@ -63,7 +64,7 @@ REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
 
 - **텍스트적 근거**
   - [각 기사가 시장에 미치는 영향 분석]
-  - [주요 키워드 및 관계 정보(Triple) 활용]
+  - [주요 키워드 및 관계 정보(Triple) 활용] **주요 키워드**: [keyword_analyzer 결과의 top_entities 상위 10개 entity를 한국어로 번역하여 #키워드1 #키워드2 형식으로 표기]
 
 ---
 
@@ -111,10 +112,18 @@ SYSTEM_PROMPT = (
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
    - 설명: 해당 날짜 전후의 뉴스를 분석하여 시장 상승/하락 확률을 예측하고, 예측의 핵심 근거가 된 주요 뉴스들을 반환합니다.
 
+3. keyword_analyzer: 뉴스 기사의 주요 키워드 분석 (Entity Confidence / PageRank 기반)
+   - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
+   - days: 분석할 일수 (기본 3일)
+   - 설명: PageRank 알고리즘을 활용하여 뉴스의 Entity Confidence(중요도) 상위 키워드를 추출합니다.
+   - 반환 값: top_entities (상위 10개, 각 항목: {"entity": "...", "score": ...})
+
 **도구 사용 규칙**:
-- 분석 대상 날짜(target_date)가 주어지면 반드시 두 도구(`timeseries_predictor`, `news_sentiment_analyzer`)를 모두 호출하여 데이터를 확보하세요.
+- 분석 대상 날짜(target_date)가 주어지면 반드시 세 도구(`timeseries_predictor`, `news_sentiment_analyzer`, `keyword_analyzer`)를 모두 호출하여 데이터를 확보하세요.
+- 이전 도구가 오류를 반환하더라도, 세 도구를 반드시 모두 호출한 뒤에만 보고서를 작성하세요.
 - `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 뉴스 감성분석 결과 분석' 섹션의 핵심 근거로 사용하세요. 각 뉴스의 제목과 시장 영향력 점수(price_impact_score)를 보고서 표에 포함하세요.
-- 두 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요. 시계열 지표와 뉴스 분석 결과가 서로 보완되도록 서술하세요.
+- `keyword_analyzer` 결과의 top_entities를 활용할 때: (1) score는 사용하지 마세요. (2) entity 이름만 사용하여 최대한 한국어로 번역하세요. (3) #키워드1 #키워드2 형식으로 표기하세요. 예: #옥수수 #가격 #수출 #미국농무부 #시장
+- 세 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요. 시계열 지표, 뉴스 감성 분석, 키워드 분석 결과가 서로 보완되도록 서술하세요.
 
 **보고서 작성 형식 (반드시 이 형식을 따라야 합니다)**:
 
@@ -152,6 +161,24 @@ def news_sentiment_analyzer(target_date: str) -> str:
     analyzer = SentimentAnalyzer()
     result = analyzer.predict_market_impact(target_date)
     return json.dumps(result, ensure_ascii=False)
+
+
+@tool
+def keyword_analyzer(target_date: str, days: int = 3) -> str:
+    """
+    특정 날짜 기준으로 뉴스 기사의 주요 키워드를 분석합니다.
+    PageRank 알고리즘(Entity Confidence)과 임베딩 기반 클러스터링을 활용하여 핵심 엔티티를 추출합니다.
+
+    Args:
+        target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
+        days: 분석할 일수 (기본 3일, 최대 7일 권장)
+
+    Returns:
+        JSON 형식의 top_entities 리스트 (상위 10개): [{"entity": "...", "score": 0.xxxx}, ...]
+    """
+    result = json.loads(_analyze_keywords(target_date=target_date, days=days, top_k=10))
+    top_entities = result.get("top_entities", [])[:10]
+    return json.dumps({"top_entities": top_entities}, ensure_ascii=False, indent=2)
 
 
 class LLMSummarizer:
@@ -224,7 +251,7 @@ class LLMSummarizer:
         self.llm = self._create_llm(access_token)
         print(f"✅ ChatOpenAI (Vertex AI OpenAI 호환 API) 사용: {self.model_name}")
 
-        tools = [timeseries_predictor, news_sentiment_analyzer]
+        tools = [timeseries_predictor, news_sentiment_analyzer, keyword_analyzer]
         llm_with_tools = self.llm.bind_tools(tools)
 
         self.agent = create_agent(
@@ -245,7 +272,8 @@ class LLMSummarizer:
 **분석 맥락**: {context or "최근 시장 상황 분석"}
 **분석 기준 일자**: {target_date}
 
-- `timeseries_predictor`와 `news_sentiment_analyzer` 도구를 모두 사용하여 {target_date}의 시장 데이터를 분석하세요.
+- `timeseries_predictor`, `news_sentiment_analyzer`, `keyword_analyzer` 도구를 모두 사용하여 {target_date}의 시장 데이터를 분석하세요. (이전 도구가 오류를 반환하더라도 세 도구를 모두 호출해야 합니다)
+- `keyword_analyzer`의 결과(top_entities)를 활용하여 텍스트적 근거 섹션에 주요 키워드를 한국어로 번역 후 #키워드1 #키워드2 형식으로 표기하세요. score는 사용하지 마세요.
 """
         return user_input
 
