@@ -1,0 +1,33 @@
+-- 예측용 뉴스 데이터 조회 (감성 분석 모델 입력용)
+-- 뉴스 기사 메타 + 본문 + 임베딩 + enrichment 정보를 함께 조회합니다.
+--
+-- Parameters:
+--   {project_id}: GCP project ID
+--   {dataset_id}: BigQuery dataset ID
+--   {start_date}: 시작 날짜 (YYYY-MM-DD)
+--   {end_date}: 종료 날짜 (YYYY-MM-DD)
+
+SELECT
+    a.article_id,
+    a.publish_date,
+    a.title,
+    a.description,
+    a.key_word,
+    t.all_text,
+    e.embedding as article_embedding,
+    r.named_entities_json,
+    r.triples_json
+FROM `{project_id}.{dataset_id}.news_articles` a
+LEFT JOIN `{project_id}.{dataset_id}.news_article_texts` t
+    ON a.article_id = t.article_id
+    AND a.publish_date = t.publish_date
+LEFT JOIN `{project_id}.{dataset_id}.article_embeddings` e
+    ON a.article_id = e.article_id
+    AND a.publish_date = e.publish_date
+LEFT JOIN `{project_id}.{dataset_id}.news_article_enrichments_raw` r
+    ON a.article_id = r.article_id
+    AND a.publish_date = r.publish_date
+WHERE a.publish_date >= '{start_date}'
+  AND a.publish_date <= '{end_date}'
+  AND a.filter_status = 'T'
+ORDER BY a.publish_date ASC
