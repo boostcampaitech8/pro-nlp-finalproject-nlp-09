@@ -12,6 +12,9 @@ from typing import Optional, Dict, Tuple
 from google.auth import default
 from google.auth.credentials import Credentials
 from google.auth.transport.requests import Request
+from libs.utils.config import get_config
+
+_config = get_config()
 
 
 class GCPServiceBase(ABC):
@@ -24,7 +27,6 @@ class GCPServiceBase(ABC):
 
     def __init__(
         self,
-        project_id: Optional[str] = None,
         credentials: Optional[Credentials] = None,
         scopes: Optional[list] = None,
     ):
@@ -36,7 +38,7 @@ class GCPServiceBase(ABC):
             credentials: Pre-existing credentials (if None, will be created)
             scopes: OAuth scopes for the service (default: service-specific)
         """
-        self.project_id = self._resolve_project_id(project_id)
+        self.project_id = _config.gcp.project_id
         self.scopes = scopes or self._default_scopes()
         self.credentials = credentials or self._get_credentials()
         self._client = None
@@ -50,61 +52,6 @@ class GCPServiceBase(ABC):
     def _initialize_client(self):
         """Initialize the service-specific client"""
         pass
-
-    def _resolve_project_id(self, project_id: Optional[str] = None) -> str:
-        """
-        Resolve GCP project ID from multiple sources
-
-        Resolution chain:
-        1. Parameter passed to __init__
-        2. VERTEX_AI_PROJECT_ID environment variable
-        3. GOOGLE_CLOUD_PROJECT environment variable
-        4. gcloud config (default project)
-
-        Args:
-            project_id: Explicit project ID
-
-        Returns:
-            str: Resolved project ID
-
-        Raises:
-            ValueError: If project ID cannot be resolved
-        """
-        # 1. Explicit parameter
-        if project_id:
-            return project_id
-
-        # 2. VERTEX_AI_PROJECT_ID environment variable
-        env_project = os.getenv("VERTEX_AI_PROJECT_ID")
-        if env_project:
-            return env_project
-
-        # 3. GOOGLE_CLOUD_PROJECT environment variable
-        gcp_project = os.getenv("GOOGLE_CLOUD_PROJECT")
-        if gcp_project:
-            return gcp_project
-
-        # 4. gcloud config
-        try:
-            result = subprocess.run(
-                ["gcloud", "config", "get-value", "project"],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-            gcloud_project = result.stdout.strip()
-            if gcloud_project and gcloud_project != "(unset)":
-                return gcloud_project
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            pass
-
-        raise ValueError(
-            "프로젝트 ID를 찾을 수 없습니다.\n"
-            "다음 중 하나를 설정하세요:\n"
-            "1. project_id 파라미터 전달\n"
-            "2. VERTEX_AI_PROJECT_ID 환경변수 설정\n"
-            "3. gcloud config set project YOUR_PROJECT_ID\n"
-        )
 
     def _get_credentials(self) -> Credentials:
         """
@@ -226,28 +173,19 @@ class GCPServiceFactory:
             credentials=credentials,
         )
 
-    def get_vertex_ai_credentials(
-        self, project_id: Optional[str] = None
-    ) -> Tuple[str, Credentials]:
-        """
-        Get Vertex AI credentials and access token
+    # def get_vertex_ai_credentials(
+    #     self, project_id: Optional[str] = None
+    # ) -> Credentials:
+    #     """
+    #     Get Vertex AI credentials and access token
 
-        Args:
-            project_id: Project ID (if None, uses factory default)
+    #     Args:
+    #         project_id: Project ID (if None, uses factory default)
 
-        Returns:
-            Tuple[str, Credentials]: (project_id, credentials)
-        """
-        scopes = tuple(["https://www.googleapis.com/auth/cloud-platform"])
-        credentials = self._get_cached_credentials(scopes)
+    #     Returns:
+    #         Tuple[str, Credentials]: (project_id, credentials)
+    #     """
+    #     scopes = tuple(["https://www.googleapis.com/auth/cloud-platform"])
+    #     credentials = self._get_cached_credentials(scopes)
 
-        # Resolve project ID
-        from .base import GCPServiceBase
-
-        resolved_project_id = GCPServiceBase(
-            project_id=project_id or self.project_id,
-            credentials=credentials,
-            scopes=list(scopes),
-        ).project_id
-
-        return resolved_project_id, credentials
+    #     return credentials

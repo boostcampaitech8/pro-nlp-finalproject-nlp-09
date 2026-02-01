@@ -197,10 +197,8 @@ class LLMSummarizer:
         self._factory = GCPServiceFactory()
 
         # 프로젝트 ID 결정 (설정 → GCPServiceFactory)
-        self.project_id = project_id or _config.vertex_ai.project_id
-        if not self.project_id:
-            # GCPServiceFactory를 통해 프로젝트 ID 해결
-            self.project_id, _ = self._factory.get_vertex_ai_credentials()
+        self.project_id = _config.gcp.project_id
+        logger.debug(f"초기화된 프로젝트 ID: {self.project_id}")
 
         self.llm = None
         self.agent = None
@@ -209,7 +207,13 @@ class LLMSummarizer:
     def _get_access_token(self) -> str:
         """GCPServiceFactory를 통해 인증 토큰 가져오기"""
         # TODO 필요하면 오류 수정
-        _, credentials = self._factory.get_vertex_ai_credentials()
+
+        logger.debug(f"_get_access_token called")
+        scopes = tuple(["https://www.googleapis.com/auth/cloud-platform"])
+        credentials = self._factory._get_cached_credentials(scopes)
+        logger.debug(f"credentials: {credentials}")
+        logger.debug(f"credentials type: {type(credentials)}")
+        logger.debug(f"credentials.token: {credentials.token}")
         return credentials.token
 
     def _build_base_url(self) -> str:
