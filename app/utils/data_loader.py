@@ -14,33 +14,28 @@ if project_root not in sys.path:
     sys.path.append(project_root)
 
 from libs.gcp.base import GCPServiceFactory
+from libs.gcp.repositories.price_repository import PriceRepository
 
 
 def load_timeseries_prediction(prediction_data: Dict[str, Any], dataset_id: str = "market") -> None:
     """
     시계열 예측 결과를 BigQuery 'prediction_timeseries' 테이블에 적재합니다.
+    (PriceRepository 사용)
 
     Args:
         prediction_data (dict): 시계열 모델 예측 결과 (JSON 구조)
         dataset_id (str): 대상 BigQuery 데이터셋 ID (기본값: market)
     """
-    if not prediction_data or "error" in prediction_data:
-        print("❌ 적재 실패: 유효하지 않은 예측 데이터입니다.")
-        return
-
-    # 팩토리를 통해 BigQuery 서비스 생성 (인증 자동 처리)
+    # 팩토리를 통해 BigQuery 서비스 생성
     factory = GCPServiceFactory()
     bq_service = factory.get_bigquery_client(dataset_id=dataset_id)
-
-    # 데이터 매핑 (필요한 경우) 및 리스트 감싸기
-    # API는 리스트 형태의 row를 받음
-    rows = [prediction_data]
-
-    # 적재 수행
-    table_id = "prediction_timeseries"
-    errors = bq_service.insert_rows_json(table_id, rows)
-
-    if errors:
-        raise RuntimeError(f"BigQuery 적재 중 오류 발생: {errors}")
-    else:
+    
+    # 리포지토리 초기화 및 저장 수행
+    price_repo = PriceRepository(bq_service)
+    
+    try:
+        price_repo.save_prediction(prediction_data)
         print(f"✅ 시계열 예측 데이터 적재 완료: {prediction_data.get('target_date', 'Unknown Date')}")
+    except Exception as e:
+        print(f"❌ 적재 실패: {str(e)}")
+        raise e
