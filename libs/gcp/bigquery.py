@@ -411,6 +411,59 @@ class BigQueryService(GCPServiceBase):
             end_date=params.target_date,
         )
 
+    # =========================================================================
+    # Legacy Methods (하위 호환성)
+    # =========================================================================
+
+    def _load_and_execute_query(
+        self,
+        query_name: str,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> pd.DataFrame:
+        """
+        Legacy: SQL 파일을 로드하고 파라미터와 조합하여 쿼리 실행
+
+        Note:
+            이 메서드는 하위 호환성을 위해 유지됩니다.
+            새 코드에서는 execute() 메서드를 사용하세요.
+        """
+        if params:
+            return self.execute(query_name, **params)
+        else:
+            return self.execute(query_name)
+
+    def test_read_daily_prices(
+        self,
+        commodity: str = "corn",
+        limit: int = 10,
+        dataset_id: Optional[str] = None,
+    ) -> pd.DataFrame:
+        """
+        테스트용 가격 데이터 조회 (LIMIT으로 안전하게 실행)
+
+        BigQuery 연결 확인용 테스트 메서드입니다.
+
+        Args:
+            commodity: 상품명 (기본값: 'corn')
+            limit: 조회 행 수 (기본값: 10)
+            dataset_id: 데이터셋 ID (없으면 인스턴스 기본값 사용)
+
+        Returns:
+            pd.DataFrame: 샘플 가격 데이터
+        """
+        # 기본 commodity 검증
+        if commodity.lower() not in VALID_COMMODITIES:
+            raise ValueError(f"Invalid commodity: {commodity}. Must be one of: {sorted(VALID_COMMODITIES)}")
+
+        logger.info(f"Testing read from daily_prices: commodity={commodity}, limit={limit}")
+
+        return self.execute(
+            "prices.test_read_daily_prices",
+            dataset_id=dataset_id or self.dataset_id,
+            commodity=commodity.lower(),
+            limit=limit,
+        )
+
     def get_timeseries_data(
         self,
         dataset_id: Optional[str] = None,
@@ -424,30 +477,11 @@ class BigQueryService(GCPServiceBase):
         limit: Optional[int] = None,
     ) -> pd.DataFrame:
         """
-        Get generic time-series data
+        범용 시계열 데이터 조회
 
-        Args:
-            dataset_id: Dataset ID
-            table_id: Table ID
-            date_column: Date column name
-            value_columns: Column(s) to retrieve (string or list)
-            start_date: Start date (YYYY-MM-DD)
-            end_date: End date (YYYY-MM-DD)
-            where_clause: Additional WHERE conditions
-            order_by: ORDER BY clause (default: date_column ASC)
-            limit: Result limit
-
-        Returns:
-            pd.DataFrame: Time-series data
-
-        Example:
-            >>> df = bq.get_timeseries_data(
-            ...     table_id="corn_price",
-            ...     date_column="time",
-            ...     value_columns=["close", "volume"],
-            ...     start_date="2025-01-01",
-            ...     end_date="2025-01-20"
-            ... )
+        Note:
+            새 코드에서는 get_daily_prices() 또는 get_prophet_features()를 사용하세요.
+            이 메서드는 하위 호환성을 위해 유지됩니다.
         """
         dataset = dataset_id or self.dataset_id
         if not dataset or not table_id:
@@ -498,7 +532,7 @@ class BigQueryService(GCPServiceBase):
         }
 
         logger.debug(f"Getting timeseries data from {dataset}.{table_id}")
-        return self._load_and_execute_query("prices.get_timeseries_data", params)
+        return self.execute("prices.get_timeseries_data", **params)
 
     def get_timeseries_values(
         self,
@@ -510,27 +544,11 @@ class BigQueryService(GCPServiceBase):
         end_date: Optional[str] = None,
     ) -> List[float]:
         """
-        Get time-series values as a simple list
+        시계열 값만 리스트로 반환
 
-        Args:
-            dataset_id: Dataset ID
-            table_id: Table ID
-            date_column: Date column name
-            value_column: Value column name
-            start_date: Start date (YYYY-MM-DD)
-            end_date: End date (YYYY-MM-DD)
-
-        Returns:
-            List[float]: Values only
-
-        Example:
-            >>> values = bq.get_timeseries_values(
-            ...     table_id="corn_price",
-            ...     date_column="time",
-            ...     value_column="close",
-            ...     start_date="2025-01-01",
-            ...     end_date="2025-01-20"
-            ... )
+        Note:
+            새 코드에서는 get_daily_prices() 사용 후 필요한 컬럼을 추출하세요.
+            이 메서드는 하위 호환성을 위해 유지됩니다.
         """
         if not value_column:
             raise ValueError("value_column is required")
@@ -549,168 +567,11 @@ class BigQueryService(GCPServiceBase):
 
         return df[value_column].tolist()
 
-    def test_read_daily_prices(
-        self,
-        commodity: str = "corn",
-        limit: int = 10,
-        dataset_id: Optional[str] = None,
-    ) -> pd.DataFrame:
-        """
-        Test query to verify daily_prices table connectivity (safe with LIMIT)
-
-        This is a safe test method that only fetches a limited number of rows.
-        Use this to verify BigQuery connectivity without scanning too much data.
-        SQL 파일: prices/test_read_daily_prices.sql
-
-        Args:
-            commodity: Commodity name (default: 'corn')
-            limit: Number of rows to fetch (default: 10)
-            dataset_id: Dataset ID (if None, uses instance default)
-
-        Returns:
-            pd.DataFrame: Sample data from daily_prices table
-
-        Example:
-            >>> df = bq.test_read_daily_prices(commodity="corn", limit=5)
-            >>> print(df.head())
-        """
-        dataset = dataset_id or self.dataset_id
-        if not dataset:
-            raise ValueError("dataset_id is required")
-
-        params = {
-            "project_id": self.project_id,
-            "dataset_id": dataset,
-            "commodity": commodity,
-            "limit": limit,
-        }
-
-        logger.info(f"Testing read from daily_prices: commodity={commodity}, limit={limit}")
-        return self._load_and_execute_query("prices.test_read_daily_prices", params)
-
-    def get_daily_prices(
-        self,
-        commodity: str,
-        start_date: str,
-        end_date: str,
-        dataset_id: Optional[str] = None,
-    ) -> pd.DataFrame:
-        """
-        Get price data from daily_prices table for a specific commodity
-
-        SQL 파일: prices/get_price_history.sql (동일 쿼리 재사용)
-
-        Args:
-            commodity: Commodity name (e.g., 'corn', 'wheat', 'soybean')
-            start_date: Start date (YYYY-MM-DD)
-            end_date: End date (YYYY-MM-DD)
-            dataset_id: Dataset ID (if None, uses instance default)
-
-        Returns:
-            pd.DataFrame: Price data with all columns
-
-        Example:
-            >>> df = bq.get_daily_prices(
-            ...     commodity="corn",
-            ...     start_date="2025-01-01",
-            ...     end_date="2025-01-20"
-            ... )
-        """
-        dataset = dataset_id or self.dataset_id
-        if not dataset:
-            raise ValueError("dataset_id is required")
-
-        # Validate date formats
-        try:
-            datetime.strptime(start_date, "%Y-%m-%d")
-            datetime.strptime(end_date, "%Y-%m-%d")
-        except ValueError as e:
-            raise ValueError(f"Invalid date format. Use YYYY-MM-DD: {e}")
-
-        params = {
-            "project_id": self.project_id,
-            "dataset_id": dataset,
-            "commodity": commodity,
-            "start_date": start_date,
-            "end_date": end_date,
-        }
-
-        logger.info(f"Getting daily prices: commodity={commodity}, date_range={start_date} to {end_date}")
-        return self._load_and_execute_query("prices.get_price_history", params)
-
-    # def get_filtered_articles(
-    #     self,
-    #     start_date: Optional[str] = None,
-    #     end_date: Optional[str] = None,
-    #     limit: Optional[int] = None,
-    #     dataset_id: Optional[str] = None,
-    #     table_id: str = "news_article",
-    # ) -> pd.DataFrame:
-    #     """
-    #     Get filtered news articles (filter_status='T')
-
-    #     SQL 파일: news/get_filtered_articles.sql
-
-    #     Args:
-    #         start_date: Start date (YYYY-MM-DD, optional)
-    #         end_date: End date (YYYY-MM-DD, optional)
-    #         limit: Result limit (optional)
-    #         dataset_id: Dataset ID (if None, uses instance default)
-    #         table_id: News table ID (default 'news_article')
-
-    #     Returns:
-    #         pd.DataFrame: Filtered news articles
-
-    #     Example:
-    #         >>> df = bq.get_filtered_articles(
-    #         ...     start_date="2025-01-01",
-    #         ...     end_date="2025-01-20",
-    #         ...     limit=100
-    #         ... )
-    #     """
-    #     dataset = dataset_id or self.dataset_id
-    #     if not dataset:
-    #         raise ValueError("dataset_id is required")
-
-    #     # Build optional date filter
-    #     date_conditions = []
-    #     if start_date:
-    #         date_conditions.append(f"AND publish_date >= '{start_date}'")
-    #     if end_date:
-    #         date_conditions.append(f"AND publish_date <= '{end_date}'")
-    #     date_filter = " ".join(date_conditions)
-
-    #     # Build optional limit clause
-    #     limit_clause = f"LIMIT {limit}" if limit else ""
-
-    #     params = {
-    #         "project_id": self.project_id,
-    #         "dataset_id": dataset,
-    #         "table_id": table_id,
-    #         "date_filter": date_filter,
-    #         "limit_clause": limit_clause,
-    #     }
-
-    #     logger.info(
-    #         f"Getting filtered articles: "
-    #         f"date_range={start_date or 'N/A'} to {end_date or 'N/A'}, "
-    #         f"limit={limit or 'N/A'}"
-    #     )
-    #     return self._load_and_execute_query("news.get_filtered_articles", params)
-
     def list_available_queries(self, domain: Optional[str] = None) -> Dict[str, list]:
         """
-        List available SQL query files
+        Legacy: list_queries()의 별칭
 
-        Args:
-            domain: Filter by domain ('prices', 'news') - if None, lists all
-
-        Returns:
-            Dict[str, list]: Dictionary mapping domain to query names
-
-        Example:
-            >>> queries = bq.list_available_queries()
-            >>> print(queries)
-            {'prices': ['get_prophet_features', 'get_price_history', ...], ...}
+        Note:
+            새 코드에서는 list_queries()를 사용하세요.
         """
-        return self._sql_loader.list_queries(domain)
+        return self.list_queries(domain)
