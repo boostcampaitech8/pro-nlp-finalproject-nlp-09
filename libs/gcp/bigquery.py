@@ -22,13 +22,25 @@ Example:
 import logging
 import pandas as pd
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Optional, List, Dict, Any, Union
 from google.cloud import bigquery
 from google.auth.credentials import Credentials
 
 from .base import GCPServiceBase
 from .sql import SQLQueryLoader
+from .query_params import (
+    PriceQueryParams,
+    ProphetFeaturesParams,
+    NewsQueryParams,
+    NewsForPredictionParams,
+)
+from libs.utils.constants import (
+    VALID_COMMODITIES,
+    VALID_FILTER_STATUS,
+    DEFAULT_LOOKBACK_DAYS,
+    DEFAULT_NEWS_LOOKBACK_DAYS,
+    DATE_FORMAT,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -158,21 +170,246 @@ class BigQueryService(GCPServiceBase):
         """
         return self._sql_loader.list_queries(domain)
 
-    #     query = f"""
-    #         SELECT
-    #             {date_column} as ds,
-    #             close as y,
-    #             open,
-    #             high,
-    #             low,
-    #             ema,
-    #             volume
-    #         FROM `{self.project_id}.{dataset}.{table_id}`
-    #         WHERE commodity = '{commodity}'
-    #           AND {date_column} >= '{start_date_str}'
-    #           AND {date_column} <= '{target_date}'
-    #         ORDER BY {date_column} ASC
-    #     """
+    # =========================================================================
+    # Convenience Methods - 가격 데이터
+    # =========================================================================
+
+    def get_daily_prices(
+        self,
+        commodity: str,
+        start_date: str,
+        end_date: str,
+        dataset_id: Optional[str] = None,
+    ) -> pd.DataFrame:
+        """
+        가격 데이터 조회 (prices.get_price_history.sql)
+
+        Args:
+            commodity: 상품명 (corn, wheat, soybean)
+            start_date: 시작 날짜 (YYYY-MM-DD)
+            end_date: 종료 날짜 (YYYY-MM-DD)
+            dataset_id: 데이터셋 ID (없으면 인스턴스 기본값 사용)
+
+        Returns:
+            pd.DataFrame: 가격 데이터
+                columns: commodity, date, open, high, low, close, ema, volume, ingested_at
+
+        Raises:
+            ValueError: 유효하지 않은 commodity 또는 날짜 형식
+
+        Example:
+            >>> df = bq.get_daily_prices(
+            ...     commodity="corn",
+            ...     start_date="2025-01-01",
+            ...     end_date="2025-01-31"
+            ... )
+        """
+        # 파라미터 검증
+        params = PriceQueryParams(
+            commodity=commodity,
+            start_date=start_date,
+            end_date=end_date,
+        )
+
+        logger.info(f"Getting daily prices: {params.commodity}, {params.start_date} ~ {params.end_date}")
+
+        return self.execute(
+            "prices.get_price_history",
+            dataset_id=dataset_id or self.dataset_id,
+            commodity=params.commodity,
+            start_date=params.start_date,
+            end_date=params.end_date,
+        )
+
+    def get_prophet_features(
+        self,
+        commodity: str,
+        target_date: str,
+        lookback_days: int = DEFAULT_LOOKBACK_DAYS,
+        dataset_id: Optional[str] = None,
+    ) -> pd.DataFrame:
+        """
+        Prophet 피처 조회 (prices.get_prophet_features.sql)
+
+        target_date를 기준으로 lookback_days만큼의 과거 데이터를 조회합니다.
+
+        Args:
+            commodity: 상품명 (corn, wheat, soybean)
+            target_date: 타겟 날짜 (YYYY-MM-DD)
+            lookback_days: lookback 기간 (일 단위, 기본값 60)
+            dataset_id: 데이터셋 ID (없으면 인스턴스 기본값 사용)
+
+        Returns:
+            pd.DataFrame: Prophet 형식 데이터
+                columns: ds (날짜), y (close), open, high, low, ema, volume
+
+        Example:
+            >>> df = bq.get_prophet_features(
+            ...     commodity="corn",
+            ...     target_date="2025-01-31",
+            ...     lookback_days=90
+            ... )
+        """
+        # 파라미터 검증
+        params = ProphetFeaturesParams(
+            commodity=commodity,
+            target_date=target_date,
+            lookback_days=lookback_days,
+        )
+
+        # 시작 날짜 계산
+        target_dt = datetime.strptime(params.target_date, DATE_FORMAT)
+        start_dt = target_dt - timedelta(days=params.lookback_days)
+        start_date = start_dt.strftime(DATE_FORMAT)
+
+        logger.info(f"Getting prophet features: {params.commodity}, {start_date} ~ {params.target_date}")
+
+        return self.execute(
+            "prices.get_prophet_features",
+            dataset_id=dataset_id or self.dataset_id,
+            commodity=params.commodity,
+            start_date=start_date,
+            end_date=params.target_date,
+        )
+
+    def get_price_history(
+        self,
+        commodity: str,
+        target_date: str,
+        lookback_days: int = 30,
+        dataset_id: Optional[str] = None,
+    ) -> pd.DataFrame:
+        """
+        가격 히스토리 조회 (뉴스 감성 분석 모델용)
+
+        target_date를 기준으로 lookback_days만큼의 과거 가격 데이터를 조회합니다.
+
+        Args:
+            commodity: 상품명 (corn, wheat, soybean)
+            target_date: 타겟 날짜 (YYYY-MM-DD)
+            lookback_days: lookback 기간 (일 단위, 기본값 30)
+            dataset_id: 데이터셋 ID (없으면 인스턴스 기본값 사용)
+
+        Returns:
+            pd.DataFrame: 가격 데이터
+
+        Example:
+            >>> df = bq.get_price_history(
+            ...     commodity="corn",
+            ...     target_date="2025-01-31",
+            ...     lookback_days=30
+            ... )
+        """
+        target_dt = datetime.strptime(target_date, DATE_FORMAT)
+        start_dt = target_dt - timedelta(days=lookback_days)
+        start_date = start_dt.strftime(DATE_FORMAT)
+
+        return self.get_daily_prices(
+            commodity=commodity,
+            start_date=start_date,
+            end_date=target_date,
+            dataset_id=dataset_id,
+        )
+
+    # =========================================================================
+    # Convenience Methods - 뉴스 데이터
+    # =========================================================================
+
+    def get_news_articles(
+        self,
+        start_date: str,
+        end_date: str,
+        filter_status: str = "T",
+        limit: Optional[int] = None,
+        dataset_id: Optional[str] = None,
+    ) -> pd.DataFrame:
+        """
+        뉴스 기사 조회 (news.get_articles.sql)
+
+        Args:
+            start_date: 시작 날짜 (YYYY-MM-DD)
+            end_date: 종료 날짜 (YYYY-MM-DD)
+            filter_status: 필터 상태 (T/F/E, 기본값 'T')
+            limit: 결과 제한 (선택)
+            dataset_id: 데이터셋 ID (없으면 인스턴스 기본값 사용)
+
+        Returns:
+            pd.DataFrame: 뉴스 기사 데이터
+
+        Example:
+            >>> df = bq.get_news_articles(
+            ...     start_date="2025-01-01",
+            ...     end_date="2025-01-07",
+            ...     filter_status="T"
+            ... )
+        """
+        # 파라미터 검증
+        params = NewsQueryParams(
+            start_date=start_date,
+            end_date=end_date,
+            filter_status=filter_status,
+            limit=limit,
+        )
+
+        limit_clause = f"LIMIT {params.limit}" if params.limit else ""
+
+        logger.info(f"Getting news articles: {params.start_date} ~ {params.end_date}, status={params.filter_status}")
+
+        return self.execute(
+            "news.get_articles",
+            dataset_id=dataset_id or self.dataset_id,
+            start_date=params.start_date,
+            end_date=params.end_date,
+            filter_status=params.filter_status,
+            limit_clause=limit_clause,
+        )
+
+    def get_news_for_prediction(
+        self,
+        target_date: str,
+        lookback_days: int = DEFAULT_NEWS_LOOKBACK_DAYS,
+        dataset_id: Optional[str] = None,
+    ) -> pd.DataFrame:
+        """
+        예측용 뉴스 데이터 조회 (news.get_articles_for_prediction.sql)
+
+        뉴스 기사 메타 + 본문 + 임베딩 + enrichment 정보를 함께 조회합니다.
+
+        Args:
+            target_date: 타겟 날짜 (YYYY-MM-DD)
+            lookback_days: lookback 기간 (일 단위, 기본값 7)
+            dataset_id: 데이터셋 ID (없으면 인스턴스 기본값 사용)
+
+        Returns:
+            pd.DataFrame: 예측 입력용 뉴스 데이터
+                columns: article_id, publish_date, title, description, key_word,
+                         all_text, article_embedding, named_entities_json, triples_json
+
+        Example:
+            >>> df = bq.get_news_for_prediction(
+            ...     target_date="2025-01-31",
+            ...     lookback_days=7
+            ... )
+        """
+        # 파라미터 검증
+        params = NewsForPredictionParams(
+            target_date=target_date,
+            lookback_days=lookback_days,
+        )
+
+        # 시작 날짜 계산
+        target_dt = datetime.strptime(params.target_date, DATE_FORMAT)
+        start_dt = target_dt - timedelta(days=params.lookback_days)
+        start_date = start_dt.strftime(DATE_FORMAT)
+
+        logger.info(f"Getting news for prediction: {start_date} ~ {params.target_date}")
+
+        return self.execute(
+            "news.get_articles_for_prediction",
+            dataset_id=dataset_id or self.dataset_id,
+            start_date=start_date,
+            end_date=params.target_date,
+        )
 
     def get_timeseries_data(
         self,
