@@ -171,6 +171,7 @@ class LLMSummarizer:
         self.agent = None
         self._initialize()
 
+    # TODO project id .env로 관리
     def _get_project_id(self) -> str:
         """gcloud config에서 프로젝트 ID를 가져옴"""
         try:
@@ -189,6 +190,7 @@ class LLMSummarizer:
                 f"오류: {e}"
             )
 
+    # TODO token 중앙 관리
     def _get_access_token(self) -> str:
         """Google Cloud 인증 토큰 가져오기"""
         credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
@@ -301,6 +303,7 @@ class LLMSummarizer:
         # 모든 방법 실패 시 전체 결과를 문자열로 변환
         return str(result).strip().rstrip("\\")
 
+    # TODO 재시도 로직 점검
     def summarize(
         self,
         context: str = "",

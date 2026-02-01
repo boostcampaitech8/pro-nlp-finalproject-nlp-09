@@ -90,6 +90,8 @@ def train_xgboost_walkforward(df, config):
             n_negative = (y_train == 0).sum()
             scale_pos_weight = n_negative / n_positive if n_positive > 0 else 1
 
+            # TODO gpu 사용 param 추가 권장
+            # https://xgboost.readthedocs.io/en/stable/gpu/index.html
             xgb_params = {
                 "objective": xgb_config["objective"],
                 "max_depth": xgb_config["max_depth"],
