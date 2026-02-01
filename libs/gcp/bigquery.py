@@ -1,9 +1,22 @@
 """
 BigQuery service abstraction
 
-This module provides a clean interface for BigQuery operations,
-including time-series data queries and SQL file execution.
-SQL queries are loaded from files in libs/gcp/sql/ directory.
+이 모듈은 BigQuery 작업을 위한 클린 인터페이스를 제공합니다.
+SQL 쿼리는 libs/gcp/sql/ 디렉토리의 파일에서 로드됩니다.
+
+Example:
+    >>> from libs.gcp import GCPServiceFactory
+    >>> from libs.utils.config import get_config
+    >>> config = get_config()
+    >>> factory = GCPServiceFactory()
+    >>> bq = factory.get_bigquery_client(dataset_id=config.bigquery.dataset_id)
+    >>>
+    >>> # SQL 파일 기반 쿼리 실행
+    >>> df = bq.execute("prices.get_prophet_features",
+    ...                 commodity="corn", start_date="2025-01-01", end_date="2025-01-31")
+    >>>
+    >>> # 편의 메서드 사용
+    >>> df = bq.get_prophet_features("corn", "2025-01-31", lookback_days=60)
 """
 
 import logging
@@ -23,11 +36,20 @@ logger = logging.getLogger(__name__)
 
 class BigQueryService(GCPServiceBase):
     """
-    BigQuery service with factory pattern integration
+    BigQuery 서비스 - SQL 파일 기반 쿼리 실행
 
-    This class provides a clean interface for common BigQuery operations,
-    particularly for time-series data and news article queries.
-    SQL queries are loaded from files and parameterized for execution.
+    이 클래스는 BigQuery 작업을 위한 클린 인터페이스를 제공합니다.
+    SQL 쿼리는 파일에서 로드되고 파라미터화되어 실행됩니다.
+
+    Attributes:
+        project_id: GCP 프로젝트 ID
+        dataset_id: 기본 데이터셋 ID
+        credentials: GCP 인증 정보
+
+    Example:
+        >>> bq = BigQueryService(project_id="my-project", dataset_id="market")
+        >>> df = bq.execute("prices.get_price_history",
+        ...                 commodity="corn", start_date="2025-01-01", end_date="2025-01-31")
     """
 
     def __init__(
@@ -37,29 +59,29 @@ class BigQueryService(GCPServiceBase):
         credentials: Optional[Credentials] = None,
     ):
         """
-        Initialize BigQuery service
+        BigQuery 서비스 초기화
 
         Args:
-            project_id: GCP project ID
-            dataset_id: Default dataset ID for queries
-            credentials: Pre-existing credentials (optional)
+            project_id: GCP 프로젝트 ID
+            dataset_id: 쿼리에 사용할 기본 데이터셋 ID
+            credentials: 사전 생성된 인증 정보 (선택)
         """
         super().__init__(project_id=project_id, credentials=credentials)
         self.dataset_id = dataset_id
         self._sql_loader = SQLQueryLoader()
-        logger.debug(f"BigQueryService initialized with project_id={project_id}, dataset_id={dataset_id}")
+        logger.debug(f"BigQueryService initialized: project_id={project_id}, dataset_id={dataset_id}")
 
     def _default_scopes(self) -> list:
-        """Default OAuth scopes for BigQuery"""
+        """BigQuery용 기본 OAuth 스코프"""
         return ["https://www.googleapis.com/auth/bigquery"]
 
     @staticmethod
     def _default_scopes_static() -> list:
-        """Static version for factory use"""
+        """팩토리에서 사용하는 정적 버전"""
         return ["https://www.googleapis.com/auth/bigquery"]
 
     def _initialize_client(self):
-        """Initialize BigQuery client"""
+        """BigQuery 클라이언트 초기화"""
         return bigquery.Client(project=self.project_id, credentials=self.credentials)
 
     def _load_and_execute_query(
