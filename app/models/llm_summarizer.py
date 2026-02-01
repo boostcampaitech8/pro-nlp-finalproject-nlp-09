@@ -248,10 +248,10 @@ class LLMSummarizer:
         )
 
     def _build_user_input(
-            self,
-            context:
-            str, target_date: str,
-        ) -> str:
+        self,
+        context: str,
+        target_date: str,
+    ) -> str:
         """Agent에게 전달할 사용자 입력 메시지 생성"""
         return f"""다음 정보를 바탕으로 전문적인 금융 시장 분석 보고서를 작성해주세요.
 
@@ -334,6 +334,7 @@ class LLMSummarizer:
         # 날짜 기본값 (오늘)
         if not target_date:
             from datetime import datetime
+
             target_date = datetime.now().strftime("%Y-%m-%d")
 
         user_input = self._build_user_input(context=context, target_date=target_date)
@@ -343,7 +344,9 @@ class LLMSummarizer:
         for attempt in range(max_retries + 1):
             # Agent 실행
             if attempt == 0:
-                result = self.agent.invoke({"messages": [HumanMessage(content=user_input)]})
+                result = self.agent.invoke(
+                    {"messages": [HumanMessage(content=user_input)]}
+                )
             else:
                 result = self.agent.invoke({"messages": result.get("messages", [])})
 
@@ -355,7 +358,9 @@ class LLMSummarizer:
 
                 # 디버깅 로그
                 tool_call_count = sum(
-                    1 for msg in messages if isinstance(msg, AIMessage) and msg.tool_calls
+                    1
+                    for msg in messages
+                    if isinstance(msg, AIMessage) and msg.tool_calls
                 )
                 tool_result_count = sum(
                     1 for msg in messages if hasattr(msg, "name") and msg.name
@@ -368,23 +373,36 @@ class LLMSummarizer:
 
             # 요약이 비어있거나 너무 짧은 경우 대체 텍스트 찾기
             if not summary or len(summary.strip()) < 50:
-                logger.warning(f"요약이 비어있거나 너무 짧습니다 (길이: {len(summary)}자)")
+                logger.warning(
+                    f"요약이 비어있거나 너무 짧습니다 (길이: {len(summary)}자)"
+                )
                 if isinstance(result, dict):
                     for msg in reversed(result.get("messages", [])):
                         if isinstance(msg, AIMessage) and msg.content:
                             content = str(msg.content)
-                            if "<|channel|>" not in content and len(content.strip()) > 50:
+                            if (
+                                "<|channel|>" not in content
+                                and len(content.strip()) > 50
+                            ):
                                 summary = content.strip()
-                                logger.debug(f"대체 텍스트 발견 (길이: {len(summary)}자)")
+                                logger.debug(
+                                    f"대체 텍스트 발견 (길이: {len(summary)}자)"
+                                )
                                 break
 
             # 출력 형식 검증
-            if summary and len(summary.strip()) > 50 and self._validate_output_format(summary):
+            if (
+                summary
+                and len(summary.strip()) > 50
+                and self._validate_output_format(summary)
+            ):
                 return {"summary": summary, "agent_result": agent_result}
 
             # 재시도
             if attempt < max_retries:
-                logger.warning(f"출력 형식 검증 실패. 재시도 중... ({attempt + 1}/{max_retries})")
+                logger.warning(
+                    f"출력 형식 검증 실패. 재시도 중... ({attempt + 1}/{max_retries})"
+                )
                 user_input = f"""{user_input}
 
 **중요**: 이전 응답의 형식이 올바르지 않았습니다. 반드시 다음 형식을 정확히 따라주세요:
@@ -403,6 +421,5 @@ class LLMSummarizer:
                 if summary:
                     logger.info(f"최종 요약 내용: {summary[:200]}...")
                 logger.warning("검증을 통과하지 못했지만 결과를 반환합니다.")
-
 
         return {"summary": summary or "", "agent_result": agent_result}

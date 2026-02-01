@@ -73,7 +73,9 @@ class BigQueryClient:
             if value_col:
                 # 쉼표로 구분된 문자열인 경우 리스트로 변환
                 if "," in value_col:
-                    self.value_columns = [col.strip() for col in value_col.split(",") if col.strip()]
+                    self.value_columns = [
+                        col.strip() for col in value_col.split(",") if col.strip()
+                    ]
                 else:
                     self.value_columns = [value_col]
             else:
@@ -81,13 +83,17 @@ class BigQueryClient:
         elif isinstance(value_column, str):
             # 쉼표로 구분된 문자열인 경우 리스트로 변환
             if "," in value_column:
-                self.value_columns = [col.strip() for col in value_column.split(",") if col.strip()]
+                self.value_columns = [
+                    col.strip() for col in value_column.split(",") if col.strip()
+                ]
             else:
                 self.value_columns = [value_column]
         elif isinstance(value_column, list):
             self.value_columns = value_column
         else:
-            raise TypeError(f"value_column은 문자열 또는 리스트여야 합니다. 받은 타입: {type(value_column)}")
+            raise TypeError(
+                f"value_column은 문자열 또는 리스트여야 합니다. 받은 타입: {type(value_column)}"
+            )
 
         self.base_date = base_date if base_date is not None else BIGQUERY_BASE_DATE
         self.days = days if days is not None else BIGQUERY_DAYS
@@ -148,7 +154,11 @@ class BigQueryClient:
         return self.client.query(query).to_dataframe()
 
     def get_news_for_prediction(
-        self, target_date: str, lookback_days: int = 7, dataset_id: Optional[str] = None, table_id: str = "news_article"
+        self,
+        target_date: str,
+        lookback_days: int = 7,
+        dataset_id: Optional[str] = None,
+        table_id: str = "news_article",
     ) -> pd.DataFrame:
         """
         뉴스 감성 모델 예측용 뉴스 데이터를 가져옵니다.
@@ -196,7 +206,11 @@ class BigQueryClient:
         return self.client.query(query).to_dataframe()
 
     def get_price_history(
-        self, target_date: str, lookback_days: int = 30, dataset_id: Optional[str] = None, table_id: str = "corn_price"
+        self,
+        target_date: str,
+        lookback_days: int = 30,
+        dataset_id: Optional[str] = None,
+        table_id: str = "corn_price",
     ) -> pd.DataFrame:
         """
         뉴스 감성 모델 예측용 가격 데이터를 가져옵니다.
@@ -286,19 +300,27 @@ class BigQueryClient:
         elif isinstance(value_column, str):
             # 쉼표로 구분된 문자열인 경우 리스트로 변환
             if "," in value_column:
-                value_cols = [col.strip() for col in value_column.split(",") if col.strip()]
+                value_cols = [
+                    col.strip() for col in value_column.split(",") if col.strip()
+                ]
             else:
                 value_cols = [value_column]
         elif isinstance(value_column, list):
             value_cols = value_column
         else:
-            raise TypeError(f"value_column은 문자열 또는 리스트여야 합니다. 받은 타입: {type(value_column)}")
+            raise TypeError(
+                f"value_column은 문자열 또는 리스트여야 합니다. 받은 타입: {type(value_column)}"
+            )
 
         base_date = base_date if base_date is not None else self.base_date
-        days = days if days is not None else (self.days if self.days is not None else 30)
+        days = (
+            days if days is not None else (self.days if self.days is not None else 30)
+        )
 
         if not dataset_id or not table_id:
-            raise ValueError("dataset_id와 table_id가 필요합니다. 환경변수 또는 파라미터로 설정하세요.")
+            raise ValueError(
+                "dataset_id와 table_id가 필요합니다. 환경변수 또는 파라미터로 설정하세요."
+            )
 
         if not value_cols:
             raise ValueError("value_column이 필요합니다.")
@@ -308,7 +330,9 @@ class BigQueryClient:
             try:
                 base_dt = datetime.strptime(base_date, "%Y-%m-%d")
             except ValueError:
-                raise ValueError(f"날짜 형식이 올바르지 않습니다. YYYY-MM-DD 형식을 사용하세요: {base_date}")
+                raise ValueError(
+                    f"날짜 형식이 올바르지 않습니다. YYYY-MM-DD 형식을 사용하세요: {base_date}"
+                )
         else:
             base_dt = datetime.now()
 
@@ -329,8 +353,12 @@ class BigQueryClient:
 
         where_conditions = []
         if date_column:
-            where_conditions.append(f"{date_column} >= '{start_date.strftime('%Y-%m-%d')}'")
-            where_conditions.append(f"{date_column} <= '{end_date.strftime('%Y-%m-%d')}'")
+            where_conditions.append(
+                f"{date_column} >= '{start_date.strftime('%Y-%m-%d')}'"
+            )
+            where_conditions.append(
+                f"{date_column} <= '{end_date.strftime('%Y-%m-%d')}'"
+            )
         if where_clause:
             where_conditions.append(where_clause)
 
@@ -535,11 +563,17 @@ if __name__ == "__main__":
 
         # corn_price 테이블에서 close와 EMA 가져오기
         print("\n[corn_price 테이블 조회]")
-        corn_data = client.get_timeseries_data(table_id="corn_price", value_column=["close", "EMA"])
+        corn_data = client.get_timeseries_data(
+            table_id="corn_price", value_column=["close", "EMA"]
+        )
         print(f"✅ corn_price 데이터 조회 성공: {len(corn_data)}개 레코드")
         if corn_data:
-            print(f"   첫 번째 날짜: {corn_data[0]['date']}, 마지막 날짜: {corn_data[-1]['date']}")
-            print(f"   첫 번째 close: {corn_data[0].get('close', 'N/A')}, EMA: {corn_data[0].get('EMA', 'N/A')}")
+            print(
+                f"   첫 번째 날짜: {corn_data[0]['date']}, 마지막 날짜: {corn_data[-1]['date']}"
+            )
+            print(
+                f"   첫 번째 close: {corn_data[0].get('close', 'N/A')}, EMA: {corn_data[0].get('EMA', 'N/A')}"
+            )
 
         # news_article 테이블에서 description 컬럼 가져오기 (filter_status='T'만)
         print("\n[news_article 테이블 조회]")

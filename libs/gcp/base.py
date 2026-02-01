@@ -26,7 +26,7 @@ class GCPServiceBase(ABC):
         self,
         project_id: Optional[str] = None,
         credentials: Optional[Credentials] = None,
-        scopes: Optional[list] = None
+        scopes: Optional[list] = None,
     ):
         """
         Initialize GCP service base
@@ -90,7 +90,7 @@ class GCPServiceBase(ABC):
                 ["gcloud", "config", "get-value", "project"],
                 capture_output=True,
                 text=True,
-                check=True
+                check=True,
             )
             gcloud_project = result.stdout.strip()
             if gcloud_project and gcloud_project != "(unset)":
@@ -179,9 +179,7 @@ class GCPServiceFactory:
         return credentials
 
     def get_bigquery_client(
-        self,
-        dataset_id: Optional[str] = None,
-        project_id: Optional[str] = None
+        self, dataset_id: Optional[str] = None, project_id: Optional[str] = None
     ):
         """
         Get BigQuery service instance
@@ -201,13 +199,11 @@ class GCPServiceFactory:
         return BigQueryService(
             project_id=project_id or self.project_id,
             dataset_id=dataset_id,
-            credentials=credentials
+            credentials=credentials,
         )
 
     def get_storage_client(
-        self,
-        bucket_name: Optional[str] = None,
-        project_id: Optional[str] = None
+        self, bucket_name: Optional[str] = None, project_id: Optional[str] = None
     ):
         """
         Get Cloud Storage service instance
@@ -227,12 +223,11 @@ class GCPServiceFactory:
         return StorageService(
             project_id=project_id or self.project_id,
             bucket_name=bucket_name,
-            credentials=credentials
+            credentials=credentials,
         )
 
     def get_vertex_ai_credentials(
-        self,
-        project_id: Optional[str] = None
+        self, project_id: Optional[str] = None
     ) -> Tuple[str, Credentials]:
         """
         Get Vertex AI credentials and access token
@@ -248,10 +243,11 @@ class GCPServiceFactory:
 
         # Resolve project ID
         from .base import GCPServiceBase
+
         resolved_project_id = GCPServiceBase(
             project_id=project_id or self.project_id,
             credentials=credentials,
-            scopes=list(scopes)
+            scopes=list(scopes),
         ).project_id
 
         return resolved_project_id, credentials

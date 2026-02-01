@@ -13,7 +13,9 @@ FINBERT_MODEL_NAME = os.getenv("FINBERT_MODEL_NAME", "ProsusAI/finbert")
 FINBERT_DEVICE = "cuda" if os.getenv("USE_GPU", "true").lower() == "true" else "cpu"
 
 # 생성 모델 설정
-GENERATE_MODEL_NAME = os.getenv("GENERATE_MODEL_NAME", "meta/llama-3.1-70b-instruct-maas")
+GENERATE_MODEL_NAME = os.getenv(
+    "GENERATE_MODEL_NAME", "meta/llama-3.1-70b-instruct-maas"
+)
 GENERATE_MODEL_TEMPERATURE = float(os.getenv("GENERATE_MODEL_TEMPERATURE", "0.7"))
 GENERATE_MODEL_MAX_TOKENS = int(os.getenv("GENERATE_MODEL_MAX_TOKENS", "2048"))
 

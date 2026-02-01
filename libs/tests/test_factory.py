@@ -22,7 +22,9 @@ def test_factory_initialization(mock_default, mock_credentials, mock_env_vars):
 
 @patch("libs.gcp.bigquery.bigquery.Client")
 @patch("libs.gcp.base.default")
-def test_factory_get_bigquery_client(mock_default, mock_client_class, mock_credentials, mock_env_vars):
+def test_factory_get_bigquery_client(
+    mock_default, mock_client_class, mock_credentials, mock_env_vars
+):
     """Test factory creates BigQuery client"""
     mock_default.return_value = (mock_credentials, None)
     mock_client = Mock()
@@ -37,7 +39,9 @@ def test_factory_get_bigquery_client(mock_default, mock_client_class, mock_crede
 
 @patch("libs.gcp.storage.storage.Client")
 @patch("libs.gcp.base.default")
-def test_factory_get_storage_client(mock_default, mock_client_class, mock_credentials, mock_env_vars):
+def test_factory_get_storage_client(
+    mock_default, mock_client_class, mock_credentials, mock_env_vars
+):
     """Test factory creates Storage client"""
     mock_default.return_value = (mock_credentials, None)
     mock_client = Mock()
@@ -59,6 +63,7 @@ def test_factory_credential_caching(mock_default, mock_credentials, mock_env_var
 
     # Get BigQuery scopes
     from libs.gcp.bigquery import BigQueryService
+
     bq_scopes = tuple(BigQueryService._default_scopes_static())
 
     # First call should cache credentials
@@ -71,7 +76,9 @@ def test_factory_credential_caching(mock_default, mock_credentials, mock_env_var
 
 
 @patch("libs.gcp.base.default")
-def test_factory_get_vertex_ai_credentials(mock_default, mock_credentials, mock_env_vars):
+def test_factory_get_vertex_ai_credentials(
+    mock_default, mock_credentials, mock_env_vars
+):
     """Test factory returns Vertex AI credentials"""
     mock_default.return_value = (mock_credentials, None)
 

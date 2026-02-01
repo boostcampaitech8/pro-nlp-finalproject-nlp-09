@@ -29,8 +29,7 @@ def config():
 def bq_service(config):
     """Create BigQuery service instance"""
     return BigQueryService(
-        project_id=config.gcp.project_id,
-        dataset_id=config.bigquery.dataset_id
+        project_id=config.gcp.project_id, dataset_id=config.bigquery.dataset_id
     )
 
 
@@ -61,23 +60,31 @@ def test_bigquery_initialization(bq_service, config):
 
 def test_safe_read(bq_service, config):
     """Test 3: Safe read with LIMIT"""
-    df = bq_service.test_read_daily_prices(
-        commodity=config.bigquery.commodity,
-        limit=5
-    )
+    df = bq_service.test_read_daily_prices(commodity=config.bigquery.commodity, limit=5)
 
     assert df is not None
     assert len(df) >= 0, "Query should return DataFrame (can be empty)"
 
     if len(df) > 0:
         # Verify expected columns exist
-        expected_cols = ['commodity', 'date', 'open', 'high', 'low', 'close', 'ema', 'volume', 'ingested_at']
+        expected_cols = [
+            "commodity",
+            "date",
+            "open",
+            "high",
+            "low",
+            "close",
+            "ema",
+            "volume",
+            "ingested_at",
+        ]
         for col in expected_cols:
             assert col in df.columns, f"Column '{col}' missing from daily_prices table"
 
         # Verify commodity filter worked
-        assert (df['commodity'] == config.bigquery.commodity).all(), \
+        assert (df["commodity"] == config.bigquery.commodity).all(), (
             f"Expected all rows to be '{config.bigquery.commodity}'"
+        )
 
     print("\n✓ Query executed successfully")
     print(f"  - Rows fetched: {len(df)}")
@@ -95,7 +102,7 @@ def test_date_range_query(bq_service, config):
     df = bq_service.get_daily_prices(
         commodity=config.bigquery.commodity,
         start_date="2024-01-01",
-        end_date="2024-01-31"
+        end_date="2024-01-31",
     )
 
     assert df is not None
@@ -114,9 +121,7 @@ def test_date_range_query(bq_service, config):
 def test_prophet_features(bq_service, config):
     """Test 5: Prophet features query"""
     df = bq_service.get_prophet_features(
-        target_date="2024-12-31",
-        lookback_days=30,
-        commodity=config.bigquery.commodity
+        target_date="2024-12-31", lookback_days=30, commodity=config.bigquery.commodity
     )
 
     assert df is not None
@@ -124,11 +129,11 @@ def test_prophet_features(bq_service, config):
 
     if len(df) > 0:
         # Verify Prophet format columns
-        assert 'ds' in df.columns, "Prophet requires 'ds' column"
-        assert 'y' in df.columns, "Prophet requires 'y' column"
+        assert "ds" in df.columns, "Prophet requires 'ds' column"
+        assert "y" in df.columns, "Prophet requires 'y' column"
 
         # Verify data types
-        assert df['y'].dtype in ['float64', 'int64'], "'y' column should be numeric"
+        assert df["y"].dtype in ["float64", "int64"], "'y' column should be numeric"
 
     print("\n✓ Prophet features query executed successfully")
     print(f"  - Rows fetched: {len(df)}")

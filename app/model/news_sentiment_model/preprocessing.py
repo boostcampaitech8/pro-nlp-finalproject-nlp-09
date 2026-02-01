@@ -93,12 +93,15 @@ def aggregate_daily_news(news_df, embedding_dim=512):
         embeddings = np.stack(group["embedding_array"].values)
         return embeddings.mean(axis=0)
 
-    embedding_mean = news_df.groupby("date").apply(calculate_mean_embedding).reset_index()
+    embedding_mean = (
+        news_df.groupby("date").apply(calculate_mean_embedding).reset_index()
+    )
     embedding_mean.columns = ["date", "mean_embedding"]
 
     # 임베딩을 512개의 개별 컬럼으로 즉시 분리
     embedding_df = pd.DataFrame(
-        embedding_mean["mean_embedding"].tolist(), columns=[f"emb_raw_{i}" for i in range(embedding_dim)]
+        embedding_mean["mean_embedding"].tolist(),
+        columns=[f"emb_raw_{i}" for i in range(embedding_dim)],
     )
     embedding_df["date"] = embedding_mean["date"].values
 
@@ -209,7 +212,9 @@ def create_target_labels(price_df, threshold=0.005, method="fixed"):
         # 동적 임계값 (최근 20일 표준편차의 0.5배)
         rolling_std = price_df["ret_1d"].rolling(window=20, min_periods=10).std()
         price_df["threshold_dynamic"] = rolling_std * 0.5
-        price_df["target"] = (price_df["next_day_ret"] > price_df["threshold_dynamic"]).astype(int)
+        price_df["target"] = (
+            price_df["next_day_ret"] > price_df["threshold_dynamic"]
+        ).astype(int)
 
     # 마지막 행은 target이 NaN이므로 제거
     price_df = price_df[price_df["target"].notna()].copy()
@@ -233,11 +238,21 @@ def merge_news_and_price(price_df, daily_news_aligned):
     daily_news_aligned["date"] = pd.to_datetime(daily_news_aligned["date"])
 
     # 병합
-    merged_df = price_df[["date", "close", "ret_1d", "target"]].merge(daily_news_aligned, on="date", how="inner")
+    merged_df = price_df[["date", "close", "ret_1d", "target"]].merge(
+        daily_news_aligned, on="date", how="inner"
+    )
 
     # 결측치 처리 (forward fill로 누락된 뉴스 데이터 채우기)
-    sentiment_cols = ["price_impact_score", "sentiment_confidence", "positive_score", "negative_score", "news_count"]
-    merged_df[sentiment_cols] = merged_df[sentiment_cols].fillna(method="ffill").fillna(0)
+    sentiment_cols = [
+        "price_impact_score",
+        "sentiment_confidence",
+        "positive_score",
+        "negative_score",
+        "news_count",
+    ]
+    merged_df[sentiment_cols] = (
+        merged_df[sentiment_cols].fillna(method="ffill").fillna(0)
+    )
 
     merged_df = merged_df.sort_values("date").reset_index(drop=True)
 
@@ -290,7 +305,13 @@ def get_feature_columns(embedding_dim=50):
         피처 컬럼 리스트
     """
     # 기본 컬럼
-    base_cols = ["price_impact_score", "positive_score", "negative_score", "news_count", "sentiment_confidence"]
+    base_cols = [
+        "price_impact_score",
+        "positive_score",
+        "negative_score",
+        "news_count",
+        "sentiment_confidence",
+    ]
 
     # Lag 및 MA 컬럼
     lag_feature_cols = []
@@ -304,7 +325,9 @@ def get_feature_columns(embedding_dim=50):
         lag_feature_cols.append(f"{col}_ma5")
 
     # PCA 컬럼
-    pca_cols = [f"emb_pca_{i}" for i in range(embedding_dim)] + [f"emb_pca_{i}_lag1" for i in range(embedding_dim)]
+    pca_cols = [f"emb_pca_{i}" for i in range(embedding_dim)] + [
+        f"emb_pca_{i}_lag1" for i in range(embedding_dim)
+    ]
 
     # 전체 피처 컬럼
     feature_cols = base_cols + lag_feature_cols + pca_cols
@@ -312,7 +335,9 @@ def get_feature_columns(embedding_dim=50):
     return feature_cols
 
 
-def prepare_inference_features(news_data, price_history, pca_transformer, feature_columns):
+def prepare_inference_features(
+    news_data, price_history, pca_transformer, feature_columns
+):
     """
     추론용 데이터 준비 (단일 시점 예측용)
 
@@ -336,11 +361,21 @@ def prepare_inference_features(news_data, price_history, pca_transformer, featur
 
     # 뉴스와 가격 데이터 병합 (타겟 없이)
     daily_news["date"] = pd.to_datetime(daily_news["date"])
-    merged_df = price_history[["date", "close", "ret_1d"]].merge(daily_news, on="date", how="left")
+    merged_df = price_history[["date", "close", "ret_1d"]].merge(
+        daily_news, on="date", how="left"
+    )
 
     # 결측치 처리
-    sentiment_cols = ["price_impact_score", "sentiment_confidence", "positive_score", "negative_score", "news_count"]
-    merged_df[sentiment_cols] = merged_df[sentiment_cols].fillna(method="ffill").fillna(0)
+    sentiment_cols = [
+        "price_impact_score",
+        "sentiment_confidence",
+        "positive_score",
+        "negative_score",
+        "news_count",
+    ]
+    merged_df[sentiment_cols] = (
+        merged_df[sentiment_cols].fillna(method="ffill").fillna(0)
+    )
     merged_df = merged_df.sort_values("date").reset_index(drop=True)
 
     # PCA 적용 (transform만 수행)

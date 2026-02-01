@@ -54,7 +54,9 @@ def train_xgboost_walkforward(df, config):
     print("\n🚀 Walk-Forward 방식으로 XGBoost 학습 시작...")
 
     feature_columns = [
-        col for col in df.columns if col not in ["ds", "y", "direction", "y_change", "yhat_lower", "yhat_upper"]
+        col
+        for col in df.columns
+        if col not in ["ds", "y", "direction", "y_change", "yhat_lower", "yhat_upper"]
     ]
 
     print(f"사용할 Features ({len(feature_columns)}개):")
@@ -113,7 +115,12 @@ def train_xgboost_walkforward(df, config):
             if len(X_val) > 0 and early_stopping_rounds is not None:
                 xgb_params["early_stopping_rounds"] = early_stopping_rounds
                 xgb_model = XGBClassifier(**xgb_params)
-                xgb_model.fit(X_train, y_train, eval_set=[(X_train, y_train), (X_val, y_val)], verbose=False)
+                xgb_model.fit(
+                    X_train,
+                    y_train,
+                    eval_set=[(X_train, y_train), (X_val, y_val)],
+                    verbose=False,
+                )
             else:
                 xgb_model = XGBClassifier(**xgb_params)
                 xgb_model.fit(X_train, y_train)
@@ -124,7 +131,11 @@ def train_xgboost_walkforward(df, config):
             y_pred_proba = xgb_model.predict_proba(X_test)[0]
 
             train_acc = accuracy_score(y_train, xgb_model.predict(X_train))
-            val_acc = accuracy_score(y_val, xgb_model.predict(X_val)) if len(X_val) > 0 else 0.0
+            val_acc = (
+                accuracy_score(y_val, xgb_model.predict(X_val))
+                if len(X_val) > 0
+                else 0.0
+            )
 
             result = {
                 "ds": df.iloc[i]["ds"],
@@ -173,7 +184,9 @@ def calculate_metrics(results_df):
 
     # 과적합 갭
     if "train_accuracy" in results_df.columns:
-        metrics["overfit_gap"] = metrics["train_accuracy_mean"] - metrics["test_accuracy"]
+        metrics["overfit_gap"] = (
+            metrics["train_accuracy_mean"] - metrics["test_accuracy"]
+        )
 
     # 평균 사용 트리
     if "n_estimators_used" in results_df.columns:
@@ -187,12 +200,14 @@ def analyze_feature_importance(model, feature_columns, top_n=20):
 
     importances = model.feature_importances_
 
-    importance_df = pd.DataFrame({"feature": feature_columns, "importance": importances}).sort_values(
-        "importance", ascending=False
-    )
+    importance_df = pd.DataFrame(
+        {"feature": feature_columns, "importance": importances}
+    ).sort_values("importance", ascending=False)
 
     total_importance = importance_df["importance"].sum()
-    importance_df["importance_pct"] = (importance_df["importance"] / total_importance) * 100
+    importance_df["importance_pct"] = (
+        importance_df["importance"] / total_importance
+    ) * 100
     importance_df["cumulative_pct"] = importance_df["importance_pct"].cumsum()
 
     # 상위 N개 출력
@@ -264,7 +279,14 @@ def analyze_yearly_performance(results_df):
         accuracy = accuracy_score(y_true, y_pred) * 100
         count = len(year_data)
 
-        yearly_stats.append({"year": year, "accuracy": accuracy, "count": count, "correct": (y_true == y_pred).sum()})
+        yearly_stats.append(
+            {
+                "year": year,
+                "accuracy": accuracy,
+                "count": count,
+                "correct": (y_true == y_pred).sum(),
+            }
+        )
 
     return pd.DataFrame(yearly_stats)
 
@@ -301,7 +323,9 @@ def print_results(results_df, metrics, config):
     # 모델 정보
     if "avg_n_estimators_used" in metrics:
         print("\n[모델 정보]")
-        print(f"  평균 사용 트리 개수: {metrics['avg_n_estimators_used']:.1f}/{config['xgboost']['n_estimators']}")
+        print(
+            f"  평균 사용 트리 개수: {metrics['avg_n_estimators_used']:.1f}/{config['xgboost']['n_estimators']}"
+        )
 
     # 혼동 행렬
     y_true = results_df["y_actual_direction"].values
@@ -320,7 +344,12 @@ def print_results(results_df, metrics, config):
     print("\n" + "=" * 70)
     print("📈 상세 분류 리포트")
     print("=" * 70)
-    print("\n" + classification_report(y_true, y_pred, target_names=["하락(0)", "상승(1)"], digits=4))
+    print(
+        "\n"
+        + classification_report(
+            y_true, y_pred, target_names=["하락(0)", "상승(1)"], digits=4
+        )
+    )
 
     # 연도별 성능 분석
     print("\n" + "=" * 70)
@@ -329,7 +358,9 @@ def print_results(results_df, metrics, config):
 
     yearly_df = analyze_yearly_performance(results_df)
 
-    print(f"\n{'연도':<8} {'정확도':<12} {'예측 횟수':<12} {'정답 횟수':<12} {'트렌드':<10}")
+    print(
+        f"\n{'연도':<8} {'정확도':<12} {'예측 횟수':<12} {'정답 횟수':<12} {'트렌드':<10}"
+    )
     print("-" * 70)
 
     for idx, row in yearly_df.iterrows():
@@ -351,7 +382,9 @@ def print_results(results_df, metrics, config):
         else:
             trend = "-"
 
-        print(f"{year:<8} {acc:>7.2f}%    {count:>8}개    {correct:>8}개    {trend:<10}")
+        print(
+            f"{year:<8} {acc:>7.2f}%    {count:>8}개    {correct:>8}개    {trend:<10}"
+        )
 
     # 초반/후반 비교
     if len(yearly_df) >= 2:
@@ -365,8 +398,12 @@ def print_results(results_df, metrics, config):
         early_acc = early_years["correct"].sum() / early_years["count"].sum() * 100
         late_acc = late_years["correct"].sum() / late_years["count"].sum() * 100
 
-        early_period = f"{int(early_years.iloc[0]['year'])}~{int(early_years.iloc[-1]['year'])}"
-        late_period = f"{int(late_years.iloc[0]['year'])}~{int(late_years.iloc[-1]['year'])}"
+        early_period = (
+            f"{int(early_years.iloc[0]['year'])}~{int(early_years.iloc[-1]['year'])}"
+        )
+        late_period = (
+            f"{int(late_years.iloc[0]['year'])}~{int(late_years.iloc[-1]['year'])}"
+        )
 
         print(f"\n초반 ({early_period}): {early_acc:.2f}%")
         print(f"후반 ({late_period}): {late_acc:.2f}%")
@@ -384,8 +421,12 @@ def print_results(results_df, metrics, config):
         best_year = yearly_df.loc[yearly_df["accuracy"].idxmax()]
         worst_year = yearly_df.loc[yearly_df["accuracy"].idxmin()]
 
-        print(f"\n✅ 최고 성능: {int(best_year['year'])}년 ({best_year['accuracy']:.2f}%)")
-        print(f"❌ 최저 성능: {int(worst_year['year'])}년 ({worst_year['accuracy']:.2f}%)")
+        print(
+            f"\n✅ 최고 성능: {int(best_year['year'])}년 ({best_year['accuracy']:.2f}%)"
+        )
+        print(
+            f"❌ 최저 성능: {int(worst_year['year'])}년 ({worst_year['accuracy']:.2f}%)"
+        )
         print(f"   성능 편차: {best_year['accuracy'] - worst_year['accuracy']:.2f}%p")
 
 
@@ -404,7 +445,9 @@ def main():
 
     # Feature 컬럼 정의 (나중에 importance 분석에 사용)
     feature_columns = [
-        col for col in df.columns if col not in ["ds", "y", "direction", "y_change", "yhat_lower", "yhat_upper"]
+        col
+        for col in df.columns
+        if col not in ["ds", "y", "direction", "y_change", "yhat_lower", "yhat_upper"]
     ]
 
     # 3. XGBoost 학습 및 예측 (검증 방식에 따라)

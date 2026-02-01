@@ -55,9 +55,7 @@ def temp_env_file() -> Generator[Path, None, None]:
     with TemporaryDirectory() as tmpdir:
         env_file = Path(tmpdir) / ".env"
         env_file.write_text(
-            "VERTEX_AI_PROJECT_ID=test-project\n"
-            "BIGQUERY_DATASET_ID=test_dataset\n"
-            "GCS_BUCKET_NAME=test-bucket\n"
+            "VERTEX_AI_PROJECT_ID=test-project\nBIGQUERY_DATASET_ID=test_dataset\nGCS_BUCKET_NAME=test-bucket\n"
         )
         yield env_file
 
@@ -106,11 +104,13 @@ def sample_prophet_data():
     base_date = datetime(2025, 1, 1)
     dates = [base_date + timedelta(days=i) for i in range(10)]
 
-    return pd.DataFrame({
-        "ds": dates,
-        "y": [100.0 + i for i in range(10)],
-        "trend": [100.0 + i * 0.5 for i in range(10)],
-    })
+    return pd.DataFrame(
+        {
+            "ds": dates,
+            "y": [100.0 + i for i in range(10)],
+            "trend": [100.0 + i * 0.5 for i in range(10)],
+        }
+    )
 
 
 @pytest.fixture
@@ -122,19 +122,22 @@ def sample_news_data():
     base_date = datetime(2025, 1, 1)
     dates = [base_date + timedelta(days=i) for i in range(5)]
 
-    return pd.DataFrame({
-        "publish_date": dates,
-        "title": [f"News {i}" for i in range(5)],
-        "all_text": [f"Article content {i}" for i in range(5)],
-        "positive_score": [0.5 + i * 0.1 for i in range(5)],
-        "negative_score": [0.5 - i * 0.1 for i in range(5)],
-        "filter_status": ["T"] * 5,
-    })
+    return pd.DataFrame(
+        {
+            "publish_date": dates,
+            "title": [f"News {i}" for i in range(5)],
+            "all_text": [f"Article content {i}" for i in range(5)],
+            "positive_score": [0.5 + i * 0.1 for i in range(5)],
+            "negative_score": [0.5 - i * 0.1 for i in range(5)],
+            "filter_status": ["T"] * 5,
+        }
+    )
 
 
 @pytest.fixture(autouse=True)
 def reset_config():
     """Reset ConfigManager singleton between tests"""
     from libs.utils.config import ConfigManager
+
     yield
     ConfigManager.reset()

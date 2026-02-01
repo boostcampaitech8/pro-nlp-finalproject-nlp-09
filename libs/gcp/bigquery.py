@@ -81,7 +81,9 @@ class BigQueryService(GCPServiceBase):
         super().__init__(project_id=project_id, credentials=credentials)
         self.dataset_id = dataset_id
         self._sql_loader = SQLQueryLoader()
-        logger.debug(f"BigQueryService initialized: project_id={project_id}, dataset_id={dataset_id}")
+        logger.debug(
+            f"BigQueryService initialized: project_id={project_id}, dataset_id={dataset_id}"
+        )
 
     def _default_scopes(self) -> list:
         """BigQuery용 기본 OAuth 스코프"""
@@ -127,7 +129,9 @@ class BigQueryService(GCPServiceBase):
 
         if params:
             query = self._sql_loader.load_with_params(query_name, **params)
-            logger.debug(f"Loaded query '{query_name}' with params: {list(params.keys())}")
+            logger.debug(
+                f"Loaded query '{query_name}' with params: {list(params.keys())}"
+            )
         else:
             query = self._sql_loader.load(query_name)
             logger.debug(f"Loaded query '{query_name}' without params")
@@ -211,7 +215,9 @@ class BigQueryService(GCPServiceBase):
             end_date=end_date,
         )
 
-        logger.info(f"Getting daily prices: {params.commodity}, {params.start_date} ~ {params.end_date}")
+        logger.info(
+            f"Getting daily prices: {params.commodity}, {params.start_date} ~ {params.end_date}"
+        )
 
         return self.execute(
             "prices.get_price_history",
@@ -262,7 +268,9 @@ class BigQueryService(GCPServiceBase):
         start_dt = target_dt - timedelta(days=params.lookback_days)
         start_date = start_dt.strftime(DATE_FORMAT)
 
-        logger.info(f"Getting prophet features: {params.commodity}, {start_date} ~ {params.target_date}")
+        logger.info(
+            f"Getting prophet features: {params.commodity}, {start_date} ~ {params.target_date}"
+        )
 
         return self.execute(
             "prices.get_prophet_features",
@@ -353,7 +361,9 @@ class BigQueryService(GCPServiceBase):
 
         limit_clause = f"LIMIT {params.limit}" if params.limit else ""
 
-        logger.info(f"Getting news articles: {params.start_date} ~ {params.end_date}, status={params.filter_status}")
+        logger.info(
+            f"Getting news articles: {params.start_date} ~ {params.end_date}, status={params.filter_status}"
+        )
 
         return self.execute(
             "news.get_articles",
@@ -453,9 +463,13 @@ class BigQueryService(GCPServiceBase):
         """
         # 기본 commodity 검증
         if commodity.lower() not in VALID_COMMODITIES:
-            raise ValueError(f"Invalid commodity: {commodity}. Must be one of: {sorted(VALID_COMMODITIES)}")
+            raise ValueError(
+                f"Invalid commodity: {commodity}. Must be one of: {sorted(VALID_COMMODITIES)}"
+            )
 
-        logger.info(f"Testing read from daily_prices: commodity={commodity}, limit={limit}")
+        logger.info(
+            f"Testing read from daily_prices: commodity={commodity}, limit={limit}"
+        )
 
         return self.execute(
             "prices.test_read_daily_prices",
@@ -515,7 +529,9 @@ class BigQueryService(GCPServiceBase):
         where_sql = " AND ".join(where_conditions) if where_conditions else "1=1"
 
         # Build ORDER BY clause
-        order_sql = order_by if order_by else (f"{date_column} ASC" if date_column else "")
+        order_sql = (
+            order_by if order_by else (f"{date_column} ASC" if date_column else "")
+        )
         order_clause = f"ORDER BY {order_sql}" if order_sql else ""
 
         # Build LIMIT clause

@@ -22,7 +22,9 @@ def parse_agent_result(agent_result: dict) -> Tuple[TimeSeriesPrediction, list]:
     """
     from langchain_core.messages import ToolMessage
 
-    messages = agent_result.get("messages", []) if isinstance(agent_result, dict) else []
+    messages = (
+        agent_result.get("messages", []) if isinstance(agent_result, dict) else []
+    )
 
     timeseries_prediction = None
     sentiment_analysis = []
@@ -37,10 +39,14 @@ def parse_agent_result(agent_result: dict) -> Tuple[TimeSeriesPrediction, list]:
                         timeseries_prediction = TimeSeriesPrediction(
                             prediction=ts_data.get("forecast_value", 0.0),
                             confidence=ts_data.get("confidence_score", 0.0) / 100,
-                            timestamp=ts_data.get("target_date", datetime.now().isoformat()),
+                            timestamp=ts_data.get(
+                                "target_date", datetime.now().isoformat()
+                            ),
                         )
                 except json.JSONDecodeError:
-                    print(f"Warning: Failed to parse timeseries JSON: {msg.content[:50]}...")
+                    print(
+                        f"Warning: Failed to parse timeseries JSON: {msg.content[:50]}..."
+                    )
 
             # 뉴스 분석 결과 파싱 (JSON)
             elif msg.name == "news_sentiment_analyzer":
@@ -59,12 +65,16 @@ def parse_agent_result(agent_result: dict) -> Tuple[TimeSeriesPrediction, list]:
                             sentiment_analysis.append(
                                 SentimentAnalysis(
                                     text=f"[{news.get('title', '제목없음')}] {news.get('all_text', '')[:200]}...",
-                                    sentiment="positive" if impact > 0 else ("negative" if impact < 0 else "neutral"),
+                                    sentiment="positive"
+                                    if impact > 0
+                                    else ("negative" if impact < 0 else "neutral"),
                                     scores=scores,
                                 )
                             )
                 except json.JSONDecodeError:
-                    print(f"Warning: Failed to parse news analysis JSON: {msg.content[:50]}...")
+                    print(
+                        f"Warning: Failed to parse news analysis JSON: {msg.content[:50]}..."
+                    )
 
     # 기본값 설정
     if not timeseries_prediction:
@@ -76,7 +86,10 @@ def parse_agent_result(agent_result: dict) -> Tuple[TimeSeriesPrediction, list]:
 
 
 def orchestrate_analysis(
-    target_date: Optional[str] = None, context: str = "금융 시장 분석", return_agent_result: bool = False, **kwargs
+    target_date: Optional[str] = None,
+    context: str = "금융 시장 분석",
+    return_agent_result: bool = False,
+    **kwargs,
 ) -> Union[OrchestratorOutput, Tuple[OrchestratorOutput, dict]]:
     """
     Orchestrator 분석 로직

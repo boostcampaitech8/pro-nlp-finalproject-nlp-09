@@ -25,7 +25,9 @@ except ImportError:
         from preprocessing import prepare_inference_features
     except ImportError:
         # 패키지 구조에 따른 절대 경로 시도
-        from app.model.news_sentiment_model.preprocessing import prepare_inference_features
+        from app.model.news_sentiment_model.preprocessing import (
+            prepare_inference_features,
+        )
 
 
 # ============================================
@@ -121,10 +123,14 @@ def extract_evidence_news(news_df, news_data_used, prediction, top_k=2):
     print(f"  근거 뉴스 검색 범위: {start_date.date()} ~ {end_date.date()}")
 
     # 해당 날짜 범위의 뉴스만 필터링
-    target_news = news_df[(news_df["publish_date"] >= start_date) & (news_df["publish_date"] <= end_date)].copy()
+    target_news = news_df[
+        (news_df["publish_date"] >= start_date) & (news_df["publish_date"] <= end_date)
+    ].copy()
 
     if len(target_news) == 0:
-        print(f"경고: {start_date.date()} ~ {end_date.date()}에 해당하는 뉴스가 없습니다.")
+        print(
+            f"경고: {start_date.date()} ~ {end_date.date()}에 해당하는 뉴스가 없습니다."
+        )
         return []
 
     print(f"  검색된 뉴스: {len(target_news)} 건")
@@ -148,8 +154,12 @@ def extract_evidence_news(news_df, news_data_used, prediction, top_k=2):
         evidence = {
             "title": row["title"] if pd.notna(row["title"]) else "",
             "publish_date": row["publish_date"].strftime("%Y-%m-%d"),
-            "price_impact_score": float(row["price_impact_score"]) if pd.notna(row["price_impact_score"]) else 0.0,
-            "all_text": row["all_text"][:500] if pd.notna(row["all_text"]) else "",  # 첫 500자만
+            "price_impact_score": float(row["price_impact_score"])
+            if pd.notna(row["price_impact_score"])
+            else 0.0,
+            "all_text": row["all_text"][:500]
+            if pd.notna(row["all_text"])
+            else "",  # 첫 500자만
             "triples_text": triples_text,
         }
         evidence_list.append(evidence)
@@ -157,7 +167,12 @@ def extract_evidence_news(news_df, news_data_used, prediction, top_k=2):
     return evidence_list
 
 
-def load_news_dataframe(news_path="corn_all_news_with_sentiment.csv", start_date=None, end_date=None, window_days=7):
+def load_news_dataframe(
+    news_path="corn_all_news_with_sentiment.csv",
+    start_date=None,
+    end_date=None,
+    window_days=7,
+):
     """
     뉴스 데이터 로드 (메모리 효율적으로 필요한 날짜 범위만)
 
@@ -246,7 +261,9 @@ class CornPricePredictor:
         # 3. 피처 컬럼 로드
         feature_path = os.path.join(self.model_dir, "feature_columns.json")
         if not os.path.exists(feature_path):
-            raise FileNotFoundError(f"피처 컬럼 파일을 찾을 수 없습니다: {feature_path}")
+            raise FileNotFoundError(
+                f"피처 컬럼 파일을 찾을 수 없습니다: {feature_path}"
+            )
 
         with open(feature_path, "r") as f:
             self.feature_columns = json.load(f)
@@ -285,7 +302,9 @@ class CornPricePredictor:
         """
         # 모델 로드 확인
         if self.model is None or self.pca is None or self.feature_columns is None:
-            raise RuntimeError("모델이 로드되지 않았습니다. load_model()을 먼저 호출하세요.")
+            raise RuntimeError(
+                "모델이 로드되지 않았습니다. load_model()을 먼저 호출하세요."
+            )
 
         print("\n" + "=" * 80)
         print("예측 데이터 전처리 중...")
@@ -377,13 +396,20 @@ class CornPricePredictor:
         if news_df_full is None:
             # 예측에 사용된 뉴스의 날짜 범위 확인
             news_data_copy = news_data.copy()
-            news_data_copy["publish_date"] = pd.to_datetime(news_data_copy["publish_date"])
+            news_data_copy["publish_date"] = pd.to_datetime(
+                news_data_copy["publish_date"]
+            )
             start_date = news_data_copy["publish_date"].min()
             end_date = news_data_copy["publish_date"].max()
 
-            print(f"\n뉴스 데이터 로드 중... (범위: {start_date.date()} ~ {end_date.date()})")
+            print(
+                f"\n뉴스 데이터 로드 중... (범위: {start_date.date()} ~ {end_date.date()})"
+            )
             news_df_full = load_news_dataframe(
-                news_path=news_path, start_date=start_date, end_date=end_date, window_days=1
+                news_path=news_path,
+                start_date=start_date,
+                end_date=end_date,
+                window_days=1,
             )
 
         # 3. 근거 뉴스 추출 (예측에 사용된 뉴스 날짜 범위에서)
@@ -433,9 +459,13 @@ class CornPricePredictor:
             "positive_score",
             "negative_score",
         ]
-        missing_news_cols = [col for col in required_news_cols if col not in news_data.columns]
+        missing_news_cols = [
+            col for col in required_news_cols if col not in news_data.columns
+        ]
         if missing_news_cols:
-            raise ValueError(f"뉴스 데이터에 필수 컬럼이 누락되었습니다: {missing_news_cols}")
+            raise ValueError(
+                f"뉴스 데이터에 필수 컬럼이 누락되었습니다: {missing_news_cols}"
+            )
 
         # 가격 데이터 검증
         if "time" not in price_history.columns and "date" not in price_history.columns:
@@ -443,16 +473,24 @@ class CornPricePredictor:
 
         # ret_1d는 preprocessing 단계에서 자동 계산되므로 필수 아님
         required_price_cols = ["close"]
-        missing_price_cols = [col for col in required_price_cols if col not in price_history.columns]
+        missing_price_cols = [
+            col for col in required_price_cols if col not in price_history.columns
+        ]
         if missing_price_cols:
-            raise ValueError(f"가격 데이터에 필수 컬럼이 누락되었습니다: {missing_price_cols}")
+            raise ValueError(
+                f"가격 데이터에 필수 컬럼이 누락되었습니다: {missing_price_cols}"
+            )
 
         # 데이터 개수 확인
         if len(news_data) < 3:
-            print(f"경고: 뉴스 데이터가 {len(news_data)}개로 부족합니다. 최소 3일치 권장")
+            print(
+                f"경고: 뉴스 데이터가 {len(news_data)}개로 부족합니다. 최소 3일치 권장"
+            )
 
         if len(price_history) < 5:
-            print(f"경고: 가격 데이터가 {len(price_history)}개로 부족합니다. 최소 5일치 권장")
+            print(
+                f"경고: 가격 데이터가 {len(price_history)}개로 부족합니다. 최소 5일치 권장"
+            )
 
     def _create_features_summary(self, news_data, price_history):
         """피처 요약 정보 생성"""

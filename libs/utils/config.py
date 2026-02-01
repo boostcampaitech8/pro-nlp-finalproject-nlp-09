@@ -40,7 +40,7 @@ class GCPConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
 
@@ -49,14 +49,17 @@ class VertexAIConfig(BaseSettings):
 
     project_id: Optional[str] = Field(default=None, alias="VERTEX_AI_PROJECT_ID")
     location: str = Field(default="us-central1", alias="VERTEX_AI_LOCATION")
-    model_name: str = Field(default="meta/llama-3.1-70b-instruct-maas", alias="GENERATE_MODEL_NAME")
+    model_name: str = Field(
+        default="meta/llama-3.1-70b-instruct-maas",
+        alias="GENERATE_MODEL_NAME",
+    )
     temperature: float = Field(default=0.7, alias="GENERATE_MODEL_TEMPERATURE")
     max_tokens: int = Field(default=2048, alias="GENERATE_MODEL_MAX_TOKENS")
 
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
     @field_validator("temperature")
@@ -92,7 +95,7 @@ class BigQueryConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
     @field_validator("days")
@@ -123,7 +126,7 @@ class StorageConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
 
@@ -137,7 +140,7 @@ class APIConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
     @field_validator("port")

@@ -39,7 +39,10 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        "--filter-status", type=str, default="T", help='filter_status 값 (기본: T, 전체 분석하려면 "all" 입력)'
+        "--filter-status",
+        type=str,
+        default="T",
+        help='filter_status 값 (기본: T, 전체 분석하려면 "all" 입력)',
     )
 
     parser.add_argument(
@@ -49,12 +52,22 @@ def parse_arguments():
         help="필터링할 키워드 (기본: corn and (price or demand or supply or inventory))",
     )
 
-    parser.add_argument("--no-filter", action="store_true", help="모든 필터링 무시하고 전체 데이터 분석")
-
-    parser.add_argument("--model", type=str, default="ProsusAI/finbert", help="사용할 모델명 (기본: ProsusAI/finbert)")
+    parser.add_argument(
+        "--no-filter", action="store_true", help="모든 필터링 무시하고 전체 데이터 분석"
+    )
 
     parser.add_argument(
-        "--text-column", type=str, default="combined_text", help="분석할 텍스트 컬럼명 (기본: combined_text)"
+        "--model",
+        type=str,
+        default="ProsusAI/finbert",
+        help="사용할 모델명 (기본: ProsusAI/finbert)",
+    )
+
+    parser.add_argument(
+        "--text-column",
+        type=str,
+        default="combined_text",
+        help="분석할 텍스트 컬럼명 (기본: combined_text)",
     )
 
     parser.add_argument("--no-progress", action="store_true", help="진행상황 표시 안함")
@@ -101,13 +114,19 @@ def main():
         # filter_status 필터링
         if "filter_status" in df.columns and args.filter_status.lower() != "all":
             before_count = len(df_to_analyze)
-            df_to_analyze = df_to_analyze[df_to_analyze["filter_status"] == args.filter_status].copy()
-            print(f"✓ filter_status='{args.filter_status}' 필터링: {before_count} → {len(df_to_analyze)}")
+            df_to_analyze = df_to_analyze[
+                df_to_analyze["filter_status"] == args.filter_status
+            ].copy()
+            print(
+                f"✓ filter_status='{args.filter_status}' 필터링: {before_count} → {len(df_to_analyze)}"
+            )
 
         # keyword 필터링
         if "key_word" in df.columns and args.keyword:
             before_count = len(df_to_analyze)
-            df_to_analyze = df_to_analyze[df_to_analyze["key_word"] == args.keyword].copy()
+            df_to_analyze = df_to_analyze[
+                df_to_analyze["key_word"] == args.keyword
+            ].copy()
             print(f"✓ keyword 필터링: {before_count} → {len(df_to_analyze)}")
         elif "key_word" not in df.columns and args.keyword:
             print("⚠️ 'key_word' 컬럼이 없어 키워드 필터링을 건너뜁니다.")
@@ -144,7 +163,9 @@ def main():
 
     print("\n감성 분포:")
     for sentiment, stats in summary["sentiment_distribution"].items():
-        print(f"  {sentiment.capitalize():8s}: {stats['count']:4d} ({stats['percentage']:5.1f}%)")
+        print(
+            f"  {sentiment.capitalize():8s}: {stats['count']:4d} ({stats['percentage']:5.1f}%)"
+        )
 
     print(f"\n평균 신뢰도: {summary['avg_confidence']:.3f}")
     print(f"평균 가격 영향 점수: {summary['avg_price_impact']:.3f}")

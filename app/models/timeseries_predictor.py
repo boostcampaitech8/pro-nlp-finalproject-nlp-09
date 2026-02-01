@@ -77,15 +77,19 @@ def predict_market_trend(target_date: str) -> str:
         dt = datetime.strptime(target_date, "%Y-%m-%d")
     except ValueError:
         return json.dumps(
-            {"error": f"잘못된 날짜 형식입니다: '{target_date}'. YYYY-MM-DD 형식을 사용해주세요."},
-            ensure_ascii=False
+            {
+                "error": f"잘못된 날짜 형식입니다: '{target_date}'. YYYY-MM-DD 형식을 사용해주세요."
+            },
+            ensure_ascii=False,
         )
 
     # 추론 엔진 가져오기
     try:
         engine = get_inference_engine()
     except ImportError as e:
-        return json.dumps({"error": f"추론 엔진 초기화 실패: {str(e)}"}, ensure_ascii=False)
+        return json.dumps(
+            {"error": f"추론 엔진 초기화 실패: {str(e)}"}, ensure_ascii=False
+        )
 
     # BigQuery에서 데이터 가져오기
     # TODO 90일치로 고정된 부분 반드시 config로 수정
@@ -102,15 +106,19 @@ def predict_market_trend(target_date: str) -> str:
 
         if history_df.empty:
             return json.dumps(
-                {"error": f"BigQuery에서 {target_date} (및 이전)에 대한 데이터를 찾을 수 없습니다."},
-                ensure_ascii=False
+                {
+                    "error": f"BigQuery에서 {target_date} (및 이전)에 대한 데이터를 찾을 수 없습니다."
+                },
+                ensure_ascii=False,
             )
 
         logger.info(f"Retrieved {len(history_df)} rows for {target_date}")
 
     except Exception as e:
         logger.exception("BigQuery 데이터 조회 실패")
-        return json.dumps({"error": f"BigQuery 데이터 조회 실패: {str(e)}"}, ensure_ascii=False)
+        return json.dumps(
+            {"error": f"BigQuery 데이터 조회 실패: {str(e)}"}, ensure_ascii=False
+        )
 
     # 예측 수행
     try:
@@ -125,7 +133,7 @@ def predict_market_trend(target_date: str) -> str:
         logger.exception("예측 중 오류 발생")
         return json.dumps(
             {"error": f"예측 중 예기치 않은 오류가 발생했습니다: {str(e)}"},
-            ensure_ascii=False
+            ensure_ascii=False,
         )
 
 

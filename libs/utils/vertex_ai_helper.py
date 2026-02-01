@@ -42,8 +42,7 @@ def get_vertex_ai_token(project_id: Optional[str] = None) -> str:
 
 
 def build_vertex_ai_url(
-    project_id: Optional[str] = None,
-    location: Optional[str] = None
+    project_id: Optional[str] = None, location: Optional[str] = None
 ) -> str:
     """
     Build Vertex AI OpenAI-compatible API base URL
@@ -67,14 +66,10 @@ def build_vertex_ai_url(
 
     if not pid:
         raise ValueError(
-            "project_id is required. Set VERTEX_AI_PROJECT_ID environment variable "
-            "or pass project_id parameter."
+            "project_id is required. Set VERTEX_AI_PROJECT_ID environment variable or pass project_id parameter."
         )
 
-    return (
-        f"https://{loc}-aiplatform.googleapis.com/v1/"
-        f"projects/{pid}/locations/{loc}/endpoints/openapi"
-    )
+    return f"https://{loc}-aiplatform.googleapis.com/v1/projects/{pid}/locations/{loc}/endpoints/openapi"
 
 
 def get_vertex_ai_config(
@@ -82,7 +77,7 @@ def get_vertex_ai_config(
     location: Optional[str] = None,
     model_name: Optional[str] = None,
     temperature: Optional[float] = None,
-    max_tokens: Optional[int] = None
+    max_tokens: Optional[int] = None,
 ) -> Dict[str, Any]:
     """
     Get Vertex AI configuration for LangChain ChatOpenAI

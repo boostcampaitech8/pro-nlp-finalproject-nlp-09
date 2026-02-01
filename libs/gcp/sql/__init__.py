@@ -48,8 +48,7 @@ class SQLQueryLoader:
         parts = query_name.split(".")
         if len(parts) != 2:
             raise ValueError(
-                f"Invalid query name: {query_name}. "
-                "Expected format: 'domain.query_file'"
+                f"Invalid query name: {query_name}. Expected format: 'domain.query_file'"
             )
 
         domain, query_file = parts
@@ -57,8 +56,7 @@ class SQLQueryLoader:
 
         if not file_path.exists():
             raise FileNotFoundError(
-                f"SQL file not found: {file_path}\n"
-                f"Query name: {query_name}"
+                f"SQL file not found: {file_path}\nQuery name: {query_name}"
             )
 
         return file_path.read_text()
@@ -117,9 +115,7 @@ class SQLQueryLoader:
         for dom in domains:
             domain_path = self.base_path / dom
             if domain_path.exists():
-                sql_files = [
-                    f.stem for f in domain_path.glob("*.sql")
-                ]
+                sql_files = [f.stem for f in domain_path.glob("*.sql")]
                 result[dom] = sorted(sql_files)
 
         return result

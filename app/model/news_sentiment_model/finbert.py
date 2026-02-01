@@ -63,9 +63,13 @@ class CommoditySentimentAnalyzer:
             }
 
         # 토큰화 및 인코딩
-        inputs = self.tokenizer(text, return_tensors="pt", truncation=True, max_length=max_length, padding=True).to(
-            self.device
-        )
+        inputs = self.tokenizer(
+            text,
+            return_tensors="pt",
+            truncation=True,
+            max_length=max_length,
+            padding=True,
+        ).to(self.device)
 
         # 예측
         with torch.no_grad():
@@ -86,7 +90,9 @@ class CommoditySentimentAnalyzer:
 
         return result
 
-    def analyze_dataframe(self, df, text_column="combined_text", batch_size=16, show_progress=True):
+    def analyze_dataframe(
+        self, df, text_column="combined_text", batch_size=16, show_progress=True
+    ):
         """
         데이터프레임 전체에 대한 감성 분석
 
@@ -130,13 +136,19 @@ class CommoditySentimentAnalyzer:
         df_result["neutral_score"] = [r["neutral_score"] for r in results]
 
         # 가격 영향 점수 계산 (positive - negative)
-        df_result["price_impact_score"] = df_result["positive_score"] - df_result["negative_score"]
+        df_result["price_impact_score"] = (
+            df_result["positive_score"] - df_result["negative_score"]
+        )
 
         return df_result
 
 
 def prepare_text_for_analysis(
-    df, title_col="title", description_col="description", all_text_col="all_text", output_col="combined_text"
+    df,
+    title_col="title",
+    description_col="description",
+    all_text_col="all_text",
+    output_col="combined_text",
 ):
     """
     분석을 위한 텍스트 결합 함수
@@ -157,7 +169,9 @@ def prepare_text_for_analysis(
     # title + description 결합 (all_text는 너무 길 수 있으므로 선택적 사용)
     if title_col in df.columns and description_col in df.columns:
         df_prepared[output_col] = (
-            df_prepared[title_col].fillna("") + " " + df_prepared[description_col].fillna("")
+            df_prepared[title_col].fillna("")
+            + " "
+            + df_prepared[description_col].fillna("")
         ).str.strip()
     elif title_col in df.columns:
         df_prepared[output_col] = df_prepared[title_col].fillna("").str.strip()
@@ -170,7 +184,9 @@ def prepare_text_for_analysis(
     if all_text_col in df.columns:
         for idx, row in df_prepared.iterrows():
             if len(row[output_col]) < 50 and pd.notna(row.get(all_text_col)):
-                df_prepared.at[idx, output_col] = (row[output_col] + " " + str(row[all_text_col])[:500]).strip()
+                df_prepared.at[idx, output_col] = (
+                    row[output_col] + " " + str(row[all_text_col])[:500]
+                ).strip()
 
     return df_prepared
 
@@ -232,7 +248,13 @@ def get_daily_sentiment_trend(df, date_column="publish_date"):
 
     daily_sentiment = (
         df_trend.groupby("date")
-        .agg({"price_impact_score": "mean", "sentiment_confidence": "mean", "title": "count"})
+        .agg(
+            {
+                "price_impact_score": "mean",
+                "sentiment_confidence": "mean",
+                "title": "count",
+            }
+        )
         .rename(columns={"title": "article_count"})
         .reset_index()
     )
@@ -245,7 +267,9 @@ def get_daily_sentiment_trend(df, date_column="publish_date"):
 # ============================================
 
 
-def analyze_news_sentiment(df, text_column="combined_text", model_name="ProsusAI/finbert", show_progress=True):
+def analyze_news_sentiment(
+    df, text_column="combined_text", model_name="ProsusAI/finbert", show_progress=True
+):
     """
     뉴스 데이터프레임에 대한 감성 분석 수행 (원스텝 함수)
 
@@ -259,5 +283,7 @@ def analyze_news_sentiment(df, text_column="combined_text", model_name="ProsusAI
         DataFrame: 감성 분석 결과가 추가된 데이터프레임
     """
     analyzer = CommoditySentimentAnalyzer(model_name=model_name)
-    df_result = analyzer.analyze_dataframe(df, text_column=text_column, show_progress=show_progress)
+    df_result = analyzer.analyze_dataframe(
+        df, text_column=text_column, show_progress=show_progress
+    )
     return df_result
