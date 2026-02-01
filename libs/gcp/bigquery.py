@@ -228,6 +228,7 @@ class BigQueryService(GCPServiceBase):
         )
 
     # TODO prophet 피처 자체를 빅쿼리에 올려두고 활용
+    # TODO 쿼리, 메서드 수정 (prophet 피쳐를 bq에서 가져올 것)
     def get_prophet_forecast_features(
         self,
         commodity: str,

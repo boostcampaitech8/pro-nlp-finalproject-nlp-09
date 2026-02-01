@@ -11,10 +11,10 @@ import logging
 from datetime import datetime
 
 # 프로젝트 루트 경로 설정
-current_dir = os.path.dirname(os.path.abspath(__file__))
-root_dir = os.path.dirname(os.path.dirname(current_dir))
-if root_dir not in sys.path:
-    sys.path.append(root_dir)
+# current_dir = os.path.dirname(os.path.abspath(__file__))
+# root_dir = os.path.dirname(os.path.dirname(current_dir))
+# if root_dir not in sys.path:
+#     sys.path.append(root_dir)
 
 from libs.gcp import GCPServiceFactory
 from libs.utils.config import get_config
@@ -57,7 +57,7 @@ def get_inference_engine():
     return _inference_engine
 
 
-def predict_market_trend(target_date: str) -> str:
+def predict_market_trend(target_date: str, commodity: str) -> str:
     """
     시계열 모델을 사용하여 특정 날짜의 금융 시장 추세를 예측합니다.
     BigQuery에서 필요한 피처 데이터를 가져옵니다.
@@ -72,9 +72,10 @@ def predict_market_trend(target_date: str) -> str:
         >>> result = predict_market_trend("2025-01-31")
         >>> data = json.loads(result)
     """
+    # TODO try except 형태에서 return 하지 말고 throw 형태로 변경
     # 날짜 형식 검증
     try:
-        dt = datetime.strptime(target_date, "%Y-%m-%d")
+        _ = datetime.strptime(target_date, "%Y-%m-%d")
     except ValueError:
         return json.dumps(
             {
@@ -93,12 +94,19 @@ def predict_market_trend(target_date: str) -> str:
 
     # BigQuery에서 데이터 가져오기
     # TODO 90일치로 고정된 부분 반드시 config로 수정
+    # TODO bigquery 조회 전혀 못하고 있는 중
     try:
         bq = _get_bq_service()
 
         # Prophet 피처 조회 (타겟 날짜 기준 90일치)
         # 7일 평균 통계와 추세 문맥을 충분히 확보하기 위해 90일치를 조회합니다.
-        history_df = bq.get_prophet_features(
+        # history_df = bq.get_prophet_forecast_features(
+        #     commodity=commodity,
+        #     target_date=target_date,
+        #     lookback_days=90,
+        # )
+
+        history_df = bq.get_daily_prices(
             commodity="corn",
             target_date=target_date,
             lookback_days=90,
