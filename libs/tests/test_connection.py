@@ -40,7 +40,7 @@ def test_config_loading(config):
     assert config.gcp.project_id is not None, "GCP_PROJECT_ID not set in .env"
     assert config.bigquery.dataset_id is not None, "BIGQUERY_DATASET_ID not set in .env"
 
-    print(f"\n✓ Config loaded successfully")
+    print("\n✓ Config loaded successfully")
     print(f"  - GCP Project ID: {config.gcp.project_id}")
     print(f"  - GCP Location: {config.gcp.location}")
     print(f"  - BigQuery Dataset: {config.bigquery.dataset_id}")
@@ -54,7 +54,7 @@ def test_bigquery_initialization(bq_service, config):
     assert bq_service.project_id == config.gcp.project_id
     assert bq_service.dataset_id == config.bigquery.dataset_id
 
-    print(f"\n✓ BigQueryService initialized")
+    print("\n✓ BigQueryService initialized")
     print(f"  - Project ID: {bq_service.project_id}")
     print(f"  - Dataset ID: {bq_service.dataset_id}")
 
@@ -79,12 +79,12 @@ def test_safe_read(bq_service, config):
         assert (df['commodity'] == config.bigquery.commodity).all(), \
             f"Expected all rows to be '{config.bigquery.commodity}'"
 
-    print(f"\n✓ Query executed successfully")
+    print("\n✓ Query executed successfully")
     print(f"  - Rows fetched: {len(df)}")
     print(f"  - Columns: {', '.join(df.columns.tolist())}")
 
     if len(df) > 0:
-        print(f"\nSample data (first row):")
+        print("\nSample data (first row):")
         print("-" * 60)
         for col in df.columns:
             print(f"  {col}: {df[col].iloc[0]}")
@@ -101,14 +101,14 @@ def test_date_range_query(bq_service, config):
     assert df is not None
     assert len(df) >= 0, "Query should return DataFrame (can be empty)"
 
-    print(f"\n✓ Date range query executed successfully")
+    print("\n✓ Date range query executed successfully")
     print(f"  - Rows fetched: {len(df)}")
 
     if len(df) > 0:
         print(f"  - Date range: {df['date'].min()} to {df['date'].max()}")
         print(f"  - Price range: ${df['close'].min():.2f} - ${df['close'].max():.2f}")
     else:
-        print(f"  ⚠ No data found for date range (this is OK for testing)")
+        print("  ⚠ No data found for date range (this is OK for testing)")
 
 
 def test_prophet_features(bq_service, config):
@@ -130,7 +130,7 @@ def test_prophet_features(bq_service, config):
         # Verify data types
         assert df['y'].dtype in ['float64', 'int64'], "'y' column should be numeric"
 
-    print(f"\n✓ Prophet features query executed successfully")
+    print("\n✓ Prophet features query executed successfully")
     print(f"  - Rows fetched: {len(df)}")
 
     if len(df) > 0:

@@ -5,7 +5,6 @@ This module provides common fixtures for testing GCP services,
 configuration, and other utilities.
 """
 
-import os
 import pytest
 from unittest.mock import Mock, MagicMock
 from pathlib import Path

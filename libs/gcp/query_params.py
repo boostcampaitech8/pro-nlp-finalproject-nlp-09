@@ -5,7 +5,7 @@ BigQuery 쿼리에 사용되는 파라미터를 Pydantic으로 검증합니다.
 SQL injection 방지 및 타입 안전성을 보장합니다.
 """
 
-from datetime import date, datetime
+from datetime import datetime
 from typing import Literal, Optional
 
 from pydantic import BaseModel, field_validator

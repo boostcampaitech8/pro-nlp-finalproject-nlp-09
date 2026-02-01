@@ -9,7 +9,6 @@ import os
 import json
 import logging
 from datetime import datetime
-import traceback
 
 # 프로젝트 루트 경로 설정
 current_dir = os.path.dirname(os.path.abspath(__file__))

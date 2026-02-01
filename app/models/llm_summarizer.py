@@ -402,7 +402,7 @@ class LLMSummarizer:
                 logger.info(f"최종 요약 길이: {len(summary)}자")
                 if summary:
                     logger.info(f"최종 요약 내용: {summary[:200]}...")
-                logger.warning(f"검증을 통과하지 못했지만 결과를 반환합니다.")
+                logger.warning("검증을 통과하지 못했지만 결과를 반환합니다.")
 
 
         return {"summary": summary or "", "agent_result": agent_result}

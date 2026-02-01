@@ -8,7 +8,7 @@ including credential management and service instantiation.
 import os
 import subprocess
 from abc import ABC, abstractmethod
-from typing import Optional, Dict, Any, Tuple
+from typing import Optional, Dict, Tuple
 from google.auth import default
 from google.auth.credentials import Credentials
 from google.auth.transport.requests import Request
