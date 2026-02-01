@@ -21,7 +21,17 @@ from typing import Optional
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from .constants import DATE_FORMAT
+from .constants import (
+    DATE_FORMAT,
+    GENERATE_MODEL_NAME,
+    GENERATE_MODEL_TEMPERATURE,
+    GENERATE_MODEL_MAX_TOKENS,
+    VERTEX_AI_LOCATION,
+    DEFAULT_API_HOST,
+    DEFAULT_API_PORT,
+    DEFAULT_DEBUG,
+    Tables,
+)
 
 # .env 파일 위치: libs/gcp/.env
 _ENV_FILE = Path(__file__).parent.parent / "gcp" / ".env"
@@ -29,13 +39,14 @@ _ENV_FILE = Path(__file__).parent.parent / "gcp" / ".env"
 
 class GCPConfig(BaseSettings):
     """
-    Common GCP configuration
+    공통 GCP 설정
 
-    This configuration is shared across all GCP services.
+    이 설정은 모든 GCP 서비스에서 공유됩니다.
+    속성값을 환경 변수에서 로드합니다.
     """
 
-    project_id: Optional[str] = Field(default=None, alias="GCP_PROJECT_ID")
-    location: str = Field(default="us-east1", alias="GCP_LOCATION")
+    project_id: str = Field(alias="GCP_PROJECT_ID")
+    location: str = Field(alias="GCP_LOCATION")
 
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
@@ -45,17 +56,20 @@ class GCPConfig(BaseSettings):
 
 
 class VertexAIConfig(BaseSettings):
-    """Vertex AI configuration"""
+    """
+    Vertex AI configuration
+    libs/gcp/.env에 값이 존재하면 이를 사용하고 없으면 constants의 기본값을 사용합니다.
+    """
 
-    project_id: Optional[str] = Field(default=None, alias="VERTEX_AI_PROJECT_ID")
-    location: str = Field(default="us-central1", alias="VERTEX_AI_LOCATION")
-    model_name: str = Field(
-        default="meta/llama-3.1-70b-instruct-maas",
-        alias="GENERATE_MODEL_NAME",
+    project_id: str = Field(alias="VERTEX_AI_PROJECT_ID")
+    location: str = Field(alias="VERTEX_AI_LOCATION")
+    model_name: str = Field(alias="GENERATE_MODEL_NAME")
+    temperature: float = Field(
+        default=GENERATE_MODEL_TEMPERATURE, alias="GENERATE_MODEL_TEMPERATURE"
     )
-    temperature: float = Field(default=0.7, alias="GENERATE_MODEL_TEMPERATURE")
-    max_tokens: int = Field(default=2048, alias="GENERATE_MODEL_MAX_TOKENS")
-
+    max_tokens: int = Field(
+        default=GENERATE_MODEL_MAX_TOKENS, alias="GENERATE_MODEL_MAX_TOKENS"
+    )
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
@@ -65,8 +79,8 @@ class VertexAIConfig(BaseSettings):
     @field_validator("temperature")
     @classmethod
     def validate_temperature(cls, v: float) -> float:
-        if not 0.0 <= v <= 1.0:
-            raise ValueError("temperature must be between 0.0 and 1.0")
+        if not 0.0 <= v <= 2.0:
+            raise ValueError("temperature must be between 0.0 and 2.0")
         return v
 
     @field_validator("max_tokens")
@@ -77,51 +91,52 @@ class VertexAIConfig(BaseSettings):
         return v
 
 
-class BigQueryConfig(BaseSettings):
-    """
-    BigQuery configuration for daily_prices table
+# # TODO 테이블별로 속성 나누는 게 나음 이거 지금 안됨
+# class BigQueryConfig(BaseSettings):
+#     """
+#     BigQuery configuration for daily_prices table
 
-    Table schema: commodity, date, open, high, low, close, ema, volume, ingested_at
-    """
+#     Table schema: commodity, date, open, high, low, close, ema, volume, ingested_at
+#     """
 
-    dataset_id: Optional[str] = Field(default=None, alias="BIGQUERY_DATASET_ID")
-    table_id: str = Field(default="daily_prices", alias="BIGQUERY_TABLE_ID")
-    date_column: str = Field(default="date", alias="BIGQUERY_DATE_COLUMN")
-    value_column: str = Field(default="close", alias="BIGQUERY_VALUE_COLUMN")
-    commodity: str = Field(default="corn", alias="BIGQUERY_COMMODITY")
-    base_date: Optional[str] = Field(default=None, alias="BIGQUERY_BASE_DATE")
-    days: int = Field(default=30, alias="BIGQUERY_DAYS")
+#     dataset_id: str = Field(alias="BIGQUERY_DATASET_ID")
+#     table_id: str = Field(alias="BIGQUERY_TABLE_ID")
+#     date_column: str = Field(default="date", alias="BIGQUERY_DATE_COLUMN")
+#     value_column: str = Field(default="close", alias="BIGQUERY_VALUE_COLUMN")
+#     commodity: str = Field(default="corn", alias="BIGQUERY_COMMODITY")
+#     base_date: Optional[str] = Field(default=None, alias="BIGQUERY_BASE_DATE")
+#     days: int = Field(default=30, alias="BIGQUERY_DAYS")
 
-    model_config = SettingsConfigDict(
-        env_file=str(_ENV_FILE),
-        env_file_encoding="utf-8",
-        extra="ignore",
-    )
+#     model_config = SettingsConfigDict(
+#         env_file=str(_ENV_FILE),
+#         env_file_encoding="utf-8",
+#         extra="ignore",
+#     )
 
-    @field_validator("days")
-    @classmethod
-    def validate_days(cls, v: int) -> int:
-        if v <= 0:
-            raise ValueError("days must be positive")
-        return v
+#     @field_validator("days")
+#     @classmethod
+#     def validate_days(cls, v: int) -> int:
+#         if v <= 0:
+#             raise ValueError("days must be positive")
+#         return v
 
-    @field_validator("base_date")
-    @classmethod
-    def validate_base_date(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v:
-            from datetime import datetime
+#     @field_validator("base_date")
+#     @classmethod
+#     def validate_base_date(cls, v: Optional[str]) -> Optional[str]:
+#         if v is not None and v:
+#             from datetime import datetime
 
-            try:
-                datetime.strptime(v, DATE_FORMAT)
-            except ValueError:
-                raise ValueError(f"base_date must be in {DATE_FORMAT} format")
-        return v
+#             try:
+#                 datetime.strptime(v, DATE_FORMAT)
+#             except ValueError:
+#                 raise ValueError(f"base_date must be in {DATE_FORMAT} format")
+#         return v
 
 
 class StorageConfig(BaseSettings):
     """Google Cloud Storage configuration"""
 
-    bucket_name: Optional[str] = Field(default=None, alias="GCS_BUCKET_NAME")
+    bucket_name: str = Field(alias="GCS_BUCKET_NAME")
 
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
@@ -172,7 +187,7 @@ class AppConfig:
     def __init__(self):
         self.gcp = GCPConfig()
         self.vertex_ai = VertexAIConfig()
-        self.bigquery = BigQueryConfig()
+        # self.bigquery = BigQueryConfig()
         self.storage = StorageConfig()
         self.api = APIConfig()
 
@@ -181,7 +196,7 @@ class AppConfig:
             f"AppConfig(\n"
             f"  gcp={self.gcp},\n"
             f"  vertex_ai={self.vertex_ai},\n"
-            f"  bigquery={self.bigquery},\n"
+            # f"  bigquery={self.bigquery},\n"
             f"  storage={self.storage},\n"
             f"  api={self.api}\n"
             f")"
