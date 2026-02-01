@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 
 import os
 import sys
-import pendulum
 
 # 프로젝트 루트 경로를 path에 추가
 sys.path.append('/data/ephemeral/home/pro-nlp-finalproject-nlp-09/WORKER_SERVER')
@@ -24,7 +23,6 @@ with DAG(
     default_args=default_args,
     description='TradingView 옥수수 가격 일봉 수집 후 BigQuery 적재',
     schedule='10 16 * * *',
-    timezone=pendulum.timezone("America/Chicago"),
     catchup=True,
     max_active_runs=1,
 ) as dag:

@@ -5,7 +5,7 @@ from openai import OpenAI
 
 class NewsProcessor:
     def __init__(self, api_key):
-        # 1. 키워드 점수제 설정 (세훈님 분석 키워드)
+        # 1. 키워드 점수제 설정
         self.commodities = ['corn', 'maize', 'wheat', 'soybean', 'soybeans', 'grain', 'grains', 'crop', 'crops']
         self.market = ['price', 'prices', 'demand', 'supply', 'inventory', 'stock', 'stocks', 'export', 'import', 'shipment', 'cargo', 'basis', 'futures', 'harvest', 'yield', 'acreage', 'planting']
         self.policy_climate = ['usda', 'united states department of agriculture', 'policy', 'tariff', 'subsidy', 'sanction', 'quota', 'regulation', 'climate', 'climate change', 'drought', 'flood', 'heatwave', 'el niño', 'la niña']
@@ -34,8 +34,9 @@ class NewsProcessor:
         [분석 지침]
         1. Relevance (filter_status): 옥수수, 대두, 밀의 가격/수급/정책/기상과 관련 있으면 "T", 아니면 "F".
         2. Named Entities: 국가, 기관(USDA 등), 작물명, 사건명 리스트.
-        3. Triples: [주체, 동작, 결과] 형태의 인과관계 사건 추출.
-
+        3. Triples: [주체, 동작, 결과] 뿐만 아니라, 사건의 원인이나 영향을 수치화할 수 있는 정보가 있다면 포함하세요.
+        (예: ["러시아", "수출 중단", "밀 가격 상승 예상"])
+        
         기사 제목: {article['title']}
         기사 내용: {article['all_text']}
 

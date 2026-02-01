@@ -14,6 +14,8 @@ sys.path.append('/data/ephemeral/home/pro-nlp-finalproject-nlp-09/WORKER_SERVER'
 from crawler.main_crawler import fetch_and_standardize
 from processor.news_processor import NewsProcessor
 from processor.embedder import TitanEmbedder
+from processor.bigquery.uploader import upload_processed_news
+from processor.bigquery.entity_triple_uploader import upload_entities_and_triples
 # 환경 설정 (Airflow Variables 우선, 없으면 환경변수)
 OPENAI_API_KEY = Variable.get("OPENAI_API_KEY", default_var=None) or os.getenv("OPENAI_API_KEY")
 DATA_DIR = "/data/ephemeral/home/pro-nlp-finalproject-nlp-09/WORKER_SERVER/data" # 로컬 볼륨과 연결된 경로
@@ -191,5 +193,15 @@ with DAG(
         python_callable=embed_news_task_func,
     )
 
+    def upload_to_bigquery_task_func(**context):
+        # 업로드 대상: final_processed_news.json, entity.json, triple.json
+        upload_processed_news()
+        upload_entities_and_triples()
+
+    upload_bigquery = PythonOperator(
+        task_id='upload_bigquery',
+        python_callable=upload_to_bigquery_task_func,
+    )
+
     # 태스크 순서 설정
-    crawl_news >> process_news >> embed_news
+    crawl_news >> process_news >> embed_news >> upload_bigquery
