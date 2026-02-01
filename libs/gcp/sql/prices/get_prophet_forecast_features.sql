@@ -17,6 +17,7 @@ SELECT
     ema,
     volume
 FROM `{project_id}.{dataset_id}.daily_prices`
+-- FROM `{project_id}.{dataset_id}.corn_price`
 WHERE commodity = '{commodity}'
   AND date >= '{start_date}'
   AND date <= '{end_date}'

@@ -69,7 +69,7 @@ def test_get_prophet_features(
     mock_client_class.return_value = mock_client
 
     service = BigQueryService(dataset_id="test_dataset")
-    result = service.get_prophet_features(
+    result = service.get_prophet_forecast_features(
         target_date="2025-01-20", lookback_days=60, table_id="corn_price"
     )
 
@@ -121,7 +121,7 @@ def test_invalid_date_format(
     service = BigQueryService(dataset_id="test_dataset")
 
     with pytest.raises(ValueError, match="Invalid date format"):
-        service.get_prophet_features(
+        service.get_prophet_forecast_features(
             target_date="2025/01/20",  # Wrong format
             table_id="corn_price",
         )
@@ -138,7 +138,7 @@ def test_missing_dataset_id(mock_default, mock_client_class, mock_credentials):
     service = BigQueryService()
 
     with pytest.raises(ValueError, match="dataset_id"):
-        service.get_prophet_features(target_date="2025-01-20")
+        service.get_prophet_forecast_features(target_date="2025-01-20")
 
 
 @patch("libs.gcp.bigquery.bigquery.Client")
@@ -242,7 +242,7 @@ def test_get_prophet_features_with_commodity(
     mock_client_class.return_value = mock_client
 
     service = BigQueryService(dataset_id="market")
-    result = service.get_prophet_features(
+    result = service.get_prophet_forecast_features(
         target_date="2025-01-20", lookback_days=60, commodity="wheat"
     )
 
