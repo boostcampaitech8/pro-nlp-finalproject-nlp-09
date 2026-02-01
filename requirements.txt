@@ -1,0 +1,48 @@
+# FastAPI 및 웹 서버
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+webdriver-manager==4.0.2
+
+# Streamlit (Summary 뷰어)
+streamlit>=1.28.0
+
+# LangChain 및 LLM
+langchain>=0.1.0
+langchain-openai>=0.0.5
+langchain-core>=0.1.0
+
+# 머신러닝
+numpy>=1.24.0
+pandas>=1.5.0
+torch>=2.0.0
+torchvision==0.24.1
+torchaudio==2.9.1
+transformers>=4.35.0
+sentencepiece>=0.1.99
+xgboost>=2.0.0
+prophet>=1.1.0
+tqdm>=4.65.0
+matplotlib>=3.5.0
+scikit-learn>=1.2.0
+openpyxl>=3.0.0
+pyyaml>=6.0.0
+
+# 유틸리티
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+requests>=2.31.0
+apache-airflow==3.1.6
+selenium==4.40.0
+psycopg2-binary==2.9.11
+
+# FinBERT (선택사항)
+# transformers에서 ProsusAI/finbert 사용
+
+# Vertex AI (Google Cloud)
+google-auth>=2.23.0
+google-auth-oauthlib>=1.1.0
+google-auth-httplib2>=0.1.1
+google-cloud-aiplatform>=1.38.0
+google-cloud-bigquery>=3.13.0
+db-dtypes>=1.0.0

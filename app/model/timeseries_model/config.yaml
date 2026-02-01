@@ -1,0 +1,69 @@
+# 데이터 경로
+data:
+  input_csv: 'data_price/corn_future_price.csv'
+  prophet_output_csv: 'prophet_features_5years_scale0.3.csv'
+  xgboost_output_csv: 'xgboost_results_5years_scale0.3.csv'
+  model_output_pkl: 'xgboost_model.pkl'
+
+# Prophet 설정
+prophet:
+  train_window_years: 5
+  seasonality_mode: 'multiplicative'
+  changepoint_prior_scale: 0.3
+  yearly_seasonality: true
+  weekly_seasonality: true
+  daily_seasonality: false
+  
+  # Lag features 설정
+  lag_periods: [1]  # 사용할 lag 기간
+  
+  # Regressor 설정
+  regressors:
+    - 'Volume_lag1'
+    - 'EMA_lag1'
+  regressor_mode: 'multiplicative'
+
+# XGBoost 설정
+xgboost:
+  # 기본 파라미터
+  objective: 'binary:logistic'
+  eval_metric: ['logloss', 'auc', 'error']
+  
+  # 트리 구조
+  max_depth: 6
+  min_child_weight: 1
+  gamma: 0
+  
+  # 학습률
+  learning_rate: 0.1
+  n_estimators: 500
+  
+  # 샘플링
+  subsample: 0.8
+  colsample_bytree: 0.8
+  
+  # 정규화
+  reg_alpha: 0
+  reg_lambda: 1
+  
+  # 기타
+  random_state: 42
+  verbosity: 1
+  
+  # Early stopping (null이면 사용 안 함)
+  early_stopping_rounds: 50
+  
+  # Train/Val 분리 비율
+  train_val_split: 0.8
+
+# 검증 설정
+validation:
+  mode: 'walk_forward'
+  min_train_samples: 400
+  window_size: 1500 
+
+# 출력 설정
+output:
+  save_results: true
+  save_model: true
+  verbose: true
