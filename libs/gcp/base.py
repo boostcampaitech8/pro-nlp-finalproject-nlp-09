@@ -125,9 +125,7 @@ class GCPServiceFactory:
 
         return credentials
 
-    def get_bigquery_client(
-        self, dataset_id: Optional[str] = None, project_id: Optional[str] = None
-    ):
+    def get_bigquery_client(self, dataset_id: Optional[str] = None):
         """
         Get BigQuery service instance
 
@@ -144,7 +142,7 @@ class GCPServiceFactory:
         credentials = self._get_cached_credentials(scopes)
 
         return BigQueryService(
-            project_id=project_id or self.project_id,
+            project_id=self.project_id,
             dataset_id=dataset_id,
             credentials=credentials,
         )

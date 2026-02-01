@@ -78,7 +78,7 @@ class BigQueryService(GCPServiceBase):
             dataset_id: 쿼리에 사용할 기본 데이터셋 ID
             credentials: 사전 생성된 인증 정보 (선택)
         """
-        super().__init__(project_id=project_id, credentials=credentials)
+        super().__init__(credentials=credentials)
         self.dataset_id = dataset_id
         self._sql_loader = SQLQueryLoader()
         logger.debug(
@@ -227,7 +227,8 @@ class BigQueryService(GCPServiceBase):
             end_date=params.end_date,
         )
 
-    def get_prophet_features(
+    # TODO prophet 피처 자체를 빅쿼리에 올려두고 활용
+    def get_prophet_forecast_features(
         self,
         commodity: str,
         target_date: str,

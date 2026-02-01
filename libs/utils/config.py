@@ -23,10 +23,16 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from .constants import (
     DATE_FORMAT,
+    DATETIME_FORMAT,
+    DEFAULT_PROPHET_LOOKBACK_DAYS,
+    DEFAULT_NEWS_LOOKBACK_DAYS,
+    ARTICLE_EMBEDDING_DIM,
+    ENTITY_EMBEDDING_DIM,
+    TRIPLE_EMBEDDING_DIM,
+    VERTEX_AI_LOCATION,
     GENERATE_MODEL_NAME,
     GENERATE_MODEL_TEMPERATURE,
     GENERATE_MODEL_MAX_TOKENS,
-    VERTEX_AI_LOCATION,
     DEFAULT_API_HOST,
     DEFAULT_API_PORT,
     DEFAULT_DEBUG,
@@ -63,7 +69,7 @@ class VertexAIConfig(BaseSettings):
 
     project_id: str = Field(alias="VERTEX_AI_PROJECT_ID")
     location: str = Field(alias="VERTEX_AI_LOCATION")
-    model_name: str = Field(alias="GENERATE_MODEL_NAME")
+    model_name: str = Field(default=GENERATE_MODEL_NAME, alias="GENERATE_MODEL_NAME")
     temperature: float = Field(
         default=GENERATE_MODEL_TEMPERATURE, alias="GENERATE_MODEL_TEMPERATURE"
     )
@@ -92,45 +98,46 @@ class VertexAIConfig(BaseSettings):
 
 
 # # TODO 테이블별로 속성 나누는 게 나음 이거 지금 안됨
-# class BigQueryConfig(BaseSettings):
-#     """
-#     BigQuery configuration for daily_prices table
+class BigQueryConfig(BaseSettings):
+    """
+    BigQuery configuration for daily_prices table
 
-#     Table schema: commodity, date, open, high, low, close, ema, volume, ingested_at
-#     """
+    Table schema: commodity, date, open, high, low, close, ema, volume, ingested_at
+    """
 
-#     dataset_id: str = Field(alias="BIGQUERY_DATASET_ID")
-#     table_id: str = Field(alias="BIGQUERY_TABLE_ID")
-#     date_column: str = Field(default="date", alias="BIGQUERY_DATE_COLUMN")
-#     value_column: str = Field(default="close", alias="BIGQUERY_VALUE_COLUMN")
-#     commodity: str = Field(default="corn", alias="BIGQUERY_COMMODITY")
-#     base_date: Optional[str] = Field(default=None, alias="BIGQUERY_BASE_DATE")
-#     days: int = Field(default=30, alias="BIGQUERY_DAYS")
+    dataset_id: str = Field(alias="BIGQUERY_DATASET_ID")
+    dataset_location: str = Field(alias="BIGQUERY_DATASET_LOCATION")
+    # table_id: str = Field(alias="BIGQUERY_TABLE_ID")
+    # date_column: str = Field(default="date", alias="BIGQUERY_DATE_COLUMN")
+    # value_column: str = Field(default="close", alias="BIGQUERY_VALUE_COLUMN")
+    # commodity: str = Field(default="corn", alias="BIGQUERY_COMMODITY")
+    # base_date: Optional[str] = Field(default=None, alias="BIGQUERY_BASE_DATE")
+    # days: int = Field(default=30, alias="BIGQUERY_DAYS")
 
-#     model_config = SettingsConfigDict(
-#         env_file=str(_ENV_FILE),
-#         env_file_encoding="utf-8",
-#         extra="ignore",
-#     )
+    model_config = SettingsConfigDict(
+        env_file=str(_ENV_FILE),
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
-#     @field_validator("days")
-#     @classmethod
-#     def validate_days(cls, v: int) -> int:
-#         if v <= 0:
-#             raise ValueError("days must be positive")
-#         return v
+    # @field_validator("days")
+    # @classmethod
+    # def validate_days(cls, v: int) -> int:
+    #     if v <= 0:
+    #         raise ValueError("days must be positive")
+    #     return v
 
-#     @field_validator("base_date")
-#     @classmethod
-#     def validate_base_date(cls, v: Optional[str]) -> Optional[str]:
-#         if v is not None and v:
-#             from datetime import datetime
+    # @field_validator("base_date")
+    # @classmethod
+    # def validate_base_date(cls, v: Optional[str]) -> Optional[str]:
+    #     if v is not None and v:
+    #         from datetime import datetime
 
-#             try:
-#                 datetime.strptime(v, DATE_FORMAT)
-#             except ValueError:
-#                 raise ValueError(f"base_date must be in {DATE_FORMAT} format")
-#         return v
+    #         try:
+    #             datetime.strptime(v, DATE_FORMAT)
+    #         except ValueError:
+    #             raise ValueError(f"base_date must be in {DATE_FORMAT} format")
+    #     return v
 
 
 class StorageConfig(BaseSettings):
@@ -187,7 +194,7 @@ class AppConfig:
     def __init__(self):
         self.gcp = GCPConfig()
         self.vertex_ai = VertexAIConfig()
-        # self.bigquery = BigQueryConfig()
+        self.bigquery = BigQueryConfig()
         self.storage = StorageConfig()
         self.api = APIConfig()
 

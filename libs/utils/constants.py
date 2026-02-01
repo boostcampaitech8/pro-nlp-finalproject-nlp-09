@@ -35,13 +35,22 @@ DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 # =============================================================================
-# 모델 관련 상수
+# 시계열 모델 관련 상수
+# =============================================================================
+DEFAULT_PROPHET_LOOKBACK_DAYS = 2555  # 7년치
+
+
+# =============================================================================
+# 뉴스 모델 관련 상수
 # =============================================================================
 
 FINBERT_MODEL_NAME = "ProsusAI/finbert"
 """FinBERT 모델명"""
 
-DEFAULT_EMBEDDING_DIM = 512
+DEFAULT_NEWS_LOOKBACK_DAYS = 7
+"""뉴스 분석 기본 lookback 기간 (일)"""
+
+ARTICLE_EMBEDDING_DIM = 512
 """기사 임베딩 차원"""
 
 ENTITY_EMBEDDING_DIM = 1024
@@ -87,17 +96,9 @@ DEFAULT_DEBUG = False
 
 # TODO 환경에 따라 삭제 예정
 # TODO 이 값을 모델 config에서 로드하는 방향으로 수정
-DEFAULT_LOOKBACK_DAYS = 2555
-"""시계열 예측 기본 lookback 기간 (일)"""
-
-DEFAULT_NEWS_LOOKBACK_DAYS = 7
-"""뉴스 분석 기본 lookback 기간 (일)"""
-
-DEFAULT_PRICE_LOOKBACK_DAYS = 30
-"""가격 분석 기본 lookback 기간 (일)"""
 
 # TODO 환경에 따라 삭제 예정
-MAX_QUERY_LIMIT = 10000
+# MAX_QUERY_LIMIT = 10000
 """쿼리 결과 최대 제한"""
 
 

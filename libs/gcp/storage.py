@@ -36,7 +36,7 @@ class StorageService(GCPServiceBase):
             bucket_name: Default bucket name
             credentials: Pre-existing credentials (optional)
         """
-        super().__init__(project_id=project_id, credentials=credentials)
+        super().__init__(credentials=credentials)
         self.bucket_name = bucket_name
 
     def _default_scopes(self) -> list:
