@@ -98,7 +98,7 @@ REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
 
 **결론**: [날짜] 기준, 시장은 **[전망]**을 유지할 것으로 전망되며, **[주요 성장 동력]**이 주요 성장 동력입니다. 그러나 **[주요 리스크]**에 따른 리스크를 주의 깊게 모니터링해야 합니다.
 
-**중요**: 
+**중요**:
 - 반드시 위 형식을 정확히 따라야 합니다.
 - 표 형식은 마크다운 테이블 문법을 사용하세요.
 - 섹션 번호와 제목은 정확히 일치해야 합니다.
@@ -161,47 +161,55 @@ def news_sentiment_analyzer(target_date: str) -> str:
 
 
 class LLMSummarizer:
-    """Vertex AI를 사용하는 LangChain Agent를 이용한 통합 분석"""
+    """
+    Vertex AI를 사용하는 LangChain Agent 기반 통합 분석기
 
-    def __init__(self, model_name: str = None, project_id: str = None, location: str = None):
+    시계열 예측과 뉴스 감성 분석 결과를 종합하여
+    금융 시장 분석 보고서를 생성합니다.
+
+    Attributes:
+        model_name: LLM 모델명
+        project_id: GCP 프로젝트 ID
+        location: Vertex AI 리전
+
+    Example:
+        >>> summarizer = LLMSummarizer()
+        >>> result = summarizer.summarize(target_date="2025-01-31")
+        >>> print(result["summary"])
+    """
+
+    def __init__(
+        self,
+        model_name: Optional[str] = None,
+        project_id: Optional[str] = None,
+        location: Optional[str] = None,
+    ):
         """
+        LLMSummarizer 초기화
+
         Args:
             model_name: 생성 모델 이름 (기본값: 설정 파일의 GENERATE_MODEL_NAME)
-            project_id: Google Cloud 프로젝트 ID (지정하지 않으면 설정 파일 또는 gcloud config에서 자동으로 가져옴)
+            project_id: GCP 프로젝트 ID (없으면 설정/gcloud에서 가져옴)
             location: Vertex AI 리전 (기본값: 설정 파일의 VERTEX_AI_LOCATION)
         """
-        self.model_name = model_name or GENERATE_MODEL_NAME
-        self.project_id = project_id or VERTEX_AI_PROJECT_ID or self._get_project_id()
-        self.location = location or VERTEX_AI_LOCATION
+        self.model_name = model_name or _config.vertex_ai.model_name
+        self.location = location or _config.vertex_ai.location
+        self._factory = GCPServiceFactory()
+
+        # 프로젝트 ID 결정 (설정 → GCPServiceFactory)
+        self.project_id = project_id or _config.vertex_ai.project_id
+        if not self.project_id:
+            # GCPServiceFactory를 통해 프로젝트 ID 해결
+            self.project_id, _ = self._factory.get_vertex_ai_credentials()
+
         self.llm = None
         self.agent = None
         self._initialize()
 
-    # TODO project id .env로 관리
-    def _get_project_id(self) -> str:
-        """gcloud config에서 프로젝트 ID를 가져옴"""
-        try:
-            result = subprocess.run(
-                ["gcloud", "config", "get-value", "project"], capture_output=True, text=True, timeout=2
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                return result.stdout.strip()
-            else:
-                raise ValueError("gcloud config에서 프로젝트를 찾을 수 없습니다.")
-        except Exception as e:
-            raise ValueError(
-                f"project_id가 필요합니다.\n"
-                f"해결 방법: gcloud config set project YOUR_PROJECT_ID\n"
-                f"또는 환경변수 GOOGLE_CLOUD_PROJECT를 설정하세요.\n"
-                f"오류: {e}"
-            )
-
-    # TODO token 중앙 관리
     def _get_access_token(self) -> str:
-        """Google Cloud 인증 토큰 가져오기"""
-        credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
-        if not credentials.valid:
-            credentials.refresh(Request())
+        """GCPServiceFactory를 통해 인증 토큰 가져오기"""
+        # TODO 필요하면 오류 수정
+        _, credentials = self._factory.get_vertex_ai_credentials()
         return credentials.token
 
     def _build_base_url(self) -> str:
@@ -217,8 +225,8 @@ class LLMSummarizer:
             model=self.model_name,
             base_url=self._build_base_url(),
             api_key=access_token,
-            temperature=GENERATE_MODEL_TEMPERATURE,
-            max_tokens=GENERATE_MODEL_MAX_TOKENS,
+            temperature=_config.vertex_ai.temperature,
+            max_tokens=_config.vertex_ai.max_tokens,
             model_kwargs={
                 "parallel_tool_calls": False,
             },
@@ -228,7 +236,7 @@ class LLMSummarizer:
         """LLM 및 Agent 초기화"""
         access_token = self._get_access_token()
         self.llm = self._create_llm(access_token)
-        print(f"✅ ChatOpenAI (Vertex AI OpenAI 호환 API) 사용: {self.model_name}")
+        logger.info(f"ChatOpenAI (Vertex AI OpenAI 호환 API) 사용: {self.model_name}")
 
         tools = [timeseries_predictor, news_sentiment_analyzer]
         llm_with_tools = self.llm.bind_tools(tools)
@@ -240,37 +248,32 @@ class LLMSummarizer:
         )
 
     def _build_user_input(
-        self,
-        context: str,
-        target_date: str,
-    ) -> str:
+            self,
+            context:
+            str, target_date: str,
+        ) -> str:
         """Agent에게 전달할 사용자 입력 메시지 생성"""
-
-        user_input = f"""다음 정보를 바탕으로 전문적인 금융 시장 분석 보고서를 작성해주세요.
+        return f"""다음 정보를 바탕으로 전문적인 금융 시장 분석 보고서를 작성해주세요.
 
 **분석 맥락**: {context or "최근 시장 상황 분석"}
 **분석 기준 일자**: {target_date}
 
 - `timeseries_predictor`와 `news_sentiment_analyzer` 도구를 모두 사용하여 {target_date}의 시장 데이터를 분석하세요.
 """
-        return user_input
 
     def _validate_output_format(self, summary: str) -> bool:
-        """출력 형식이 올바른지 검증 (최소 검증)
+        """
+        출력 형식 검증 (최소 검증)
 
         Returns:
-            bool: 형식이 올바르면 True, 그렇지 않으면 False
+            bool: 형식이 올바르면 True
         """
-        # 최소한의 길이 확인
         if not summary or len(summary.strip()) < 100:
             return False
-
         return True
 
     def _extract_summary_from_result(self, result: dict) -> str:
         """Agent 실행 결과에서 요약 텍스트 추출"""
-        import json
-
         messages = result.get("messages", [])
 
         # messages에서 마지막 AIMessage의 content 추출
@@ -282,23 +285,23 @@ class LLMSummarizer:
                 # JSON 형식의 tool call arguments는 건너뛰기
                 if content.startswith("{{") and content.strip().endswith("}}"):
                     try:
-                        # JSON 파싱 시도
                         parsed = json.loads(content)
-                        # tool call arguments 형식인지 확인 (texts, data 등의 키가 있으면 건너뛰기)
-                        if isinstance(parsed, dict) and any(key in parsed for key in ["texts", "data", "target_date"]):
+                        if isinstance(parsed, dict) and any(
+                            key in parsed for key in ["texts", "data", "target_date"]
+                        ):
                             continue
                     except (json.JSONDecodeError, ValueError):
-                        # JSON이 아니면 계속 진행
                         pass
 
-                # GPT-OSS-20B 특수 형식 제거 (<|channel|> 등)
-                # tool calling 형식인 경우 실제 텍스트가 없으면 건너뛰기
+                # GPT-OSS-20B 특수 형식 건너뛰기
                 if content.startswith("<|channel|>") and "<|call|>" in content:
-                    # tool calling 형식이고 실제 보고서 내용이 없으면 건너뛰기
-                    if not any(keyword in content for keyword in ["보고서", "분석", "의견", "전망", "시장"]):
+                    if not any(
+                        keyword in content
+                        for keyword in ["보고서", "분석", "의견", "전망", "시장"]
+                    ):
                         continue
 
-                if content and len(content) > 50:  # 의미있는 내용이 있는 경우만
+                if content and len(content) > 50:
                     return content
 
         # messages에서 찾지 못한 경우 output 필드 확인
@@ -306,84 +309,82 @@ class LLMSummarizer:
         if output:
             return str(output).strip().rstrip("\\")
 
-        # 모든 방법 실패 시 전체 결과를 문자열로 변환
         return str(result).strip().rstrip("\\")
 
-    # TODO 재시도 로직 점검
+    # TODO 재시도 로직 개선
     def summarize(
         self,
         context: str = "",
         target_date: Optional[str] = None,
         max_retries: int = 2,
     ) -> dict:
-        """LangChain Agent를 이용한 LLM 요약 생성
+        """
+        LangChain Agent를 이용한 LLM 요약 생성
 
         Args:
             context: 분석 맥락
             target_date: 분석 기준 날짜 (YYYY-MM-DD)
             max_retries: 재시도 횟수
+
+        Returns:
+            dict: 결과 딕셔너리
+                - summary: 생성된 보고서 텍스트
+                - agent_result: Agent 실행 결과
         """
         # 날짜 기본값 (오늘)
         if not target_date:
             from datetime import datetime
-
             target_date = datetime.now().strftime("%Y-%m-%d")
 
         user_input = self._build_user_input(context=context, target_date=target_date)
+        summary = ""
+        agent_result = {"messages": []}
 
         for attempt in range(max_retries + 1):
-            # Agent 실행 (LangChain이 자동으로 tool call을 처리함)
+            # Agent 실행
             if attempt == 0:
                 result = self.agent.invoke({"messages": [HumanMessage(content=user_input)]})
             else:
-                # 재시도 시 기존 메시지 사용
                 result = self.agent.invoke({"messages": result.get("messages", [])})
 
             # 결과 추출
             if isinstance(result, dict):
                 messages = result.get("messages", [])
-
                 summary = self._extract_summary_from_result(result)
                 agent_result = result
 
-                # 디버깅: 메시지 상태 확인
-                print(f"\n[디버깅] 총 메시지 수: {len(messages)}")
-                tool_call_count = sum(1 for msg in messages if isinstance(msg, AIMessage) and msg.tool_calls)
-                tool_result_count = sum(1 for msg in messages if hasattr(msg, "name") and msg.name)
-                print(f"  Tool 호출: {tool_call_count}회, Tool 결과: {tool_result_count}개")
+                # 디버깅 로그
+                tool_call_count = sum(
+                    1 for msg in messages if isinstance(msg, AIMessage) and msg.tool_calls
+                )
+                tool_result_count = sum(
+                    1 for msg in messages if hasattr(msg, "name") and msg.name
+                )
+                logger.debug(
+                    f"Messages: {len(messages)}, Tool calls: {tool_call_count}, Results: {tool_result_count}"
+                )
             else:
                 summary = str(result).strip().rstrip("\\")
-                agent_result = {"messages": []}
 
-            # 요약이 비어있거나 너무 짧은 경우 확인
+            # 요약이 비어있거나 너무 짧은 경우 대체 텍스트 찾기
             if not summary or len(summary.strip()) < 50:
-                print(f"\n⚠️ 요약이 비어있거나 너무 짧습니다 (길이: {len(summary)}자)")
-                # 마지막 AIMessage에서 실제 텍스트 찾기
+                logger.warning(f"요약이 비어있거나 너무 짧습니다 (길이: {len(summary)}자)")
                 if isinstance(result, dict):
-                    messages = result.get("messages", [])
-                    for msg in reversed(messages):
+                    for msg in reversed(result.get("messages", [])):
                         if isinstance(msg, AIMessage) and msg.content:
                             content = str(msg.content)
-                            # GPT-OSS-20B 특수 형식이 아닌 실제 텍스트 찾기
                             if "<|channel|>" not in content and len(content.strip()) > 50:
                                 summary = content.strip()
-                                print(f"  → 대체 텍스트 발견 (길이: {len(summary)}자)")
+                                logger.debug(f"대체 텍스트 발견 (길이: {len(summary)}자)")
                                 break
 
             # 출력 형식 검증
             if summary and len(summary.strip()) > 50 and self._validate_output_format(summary):
-                return {
-                    "summary": summary or "",
-                    "agent_result": agent_result,
-                }
+                return {"summary": summary, "agent_result": agent_result}
 
-            # 형식이 맞지 않으면 재시도
+            # 재시도
             if attempt < max_retries:
-                print(f"\n⚠️ 출력 형식이 올바르지 않습니다. 재시도 중... ({attempt + 1}/{max_retries})")
-                print(f"현재 요약 길이: {len(summary)}자")
-                if summary:
-                    print(f"요약 미리보기 (처음 500자):\n{summary[:500]}...\n")
-
+                logger.warning(f"출력 형식 검증 실패. 재시도 중... ({attempt + 1}/{max_retries})")
                 user_input = f"""{user_input}
 
 **중요**: 이전 응답의 형식이 올바르지 않았습니다. 반드시 다음 형식을 정확히 따라주세요:
@@ -397,13 +398,11 @@ class LLMSummarizer:
 4. 헤더에 "📅 분석 일자"와 "💬 종합 의견"이 포함되어야 합니다
 5. Tool 호출 후 반드시 최종 보고서를 작성해야 합니다"""
             else:
-                print("\n⚠️ 최대 재시도 횟수에 도달했습니다. 형식이 완벽하지 않을 수 있습니다.")
-                print(f"최종 요약 길이: {len(summary)}자")
+                logger.warning("최대 재시도 횟수 도달. 현재 결과를 반환합니다.")
+                logger.info(f"최종 요약 길이: {len(summary)}자")
                 if summary:
-                    print(f"요약 미리보기: {summary[:200]}...")
-                print("검증을 통과하지 못했지만 결과를 반환합니다.")
+                    logger.info(f"최종 요약 내용: {summary[:200]}...")
+                logger.warning(f"검증을 통과하지 못했지만 결과를 반환합니다.")
 
-        return {
-            "summary": summary or "",
-            "agent_result": agent_result,
-        }
+
+        return {"summary": summary or "", "agent_result": agent_result}
