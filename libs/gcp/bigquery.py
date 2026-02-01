@@ -84,26 +84,35 @@ class BigQueryService(GCPServiceBase):
         """BigQuery 클라이언트 초기화"""
         return bigquery.Client(project=self.project_id, credentials=self.credentials)
 
-    def _load_and_execute_query(
-        self,
-        query_name: str,
-        params: Optional[Dict[str, Any]] = None,
-    ) -> pd.DataFrame:
+    # =========================================================================
+    # Core Methods (외부 인터페이스)
+    # =========================================================================
+
+    def execute(self, query_name: str, **params) -> pd.DataFrame:
         """
-        SQL 파일을 로드하고 파라미터와 조합하여 쿼리 실행
+        SQL 파일을 로드하고 실행
 
         Args:
-            query_name: Query name in format "domain.query_file"
-                       (e.g., "prices.get_prophet_features")
-            params: Parameters for string formatting (optional)
+            query_name: "domain.query_file" 형식 (예: "prices.get_prophet_features")
+            **params: 쿼리 파라미터
 
         Returns:
-            pd.DataFrame: Query results
+            pd.DataFrame: 쿼리 결과
 
         Raises:
             FileNotFoundError: SQL 파일이 없을 경우
             ValueError: 쿼리 실행 중 에러 발생시
+
+        Example:
+            >>> bq.execute("prices.get_prophet_features",
+            ...            commodity="corn", start_date="2025-01-01", end_date="2025-01-31")
         """
+        # 기본 파라미터 추가
+        if "project_id" not in params:
+            params["project_id"] = self.project_id
+        if "dataset_id" not in params and self.dataset_id:
+            params["dataset_id"] = self.dataset_id
+
         if params:
             query = self._sql_loader.load_with_params(query_name, **params)
             logger.debug(f"Loaded query '{query_name}' with params: {list(params.keys())}")
@@ -111,53 +120,43 @@ class BigQueryService(GCPServiceBase):
             query = self._sql_loader.load(query_name)
             logger.debug(f"Loaded query '{query_name}' without params")
 
-        return self.execute_query(query)
+        return self.execute_raw(query)
 
-    # def get_prophet_features(
-    #     self,
-    #     target_date: str,
-    #     lookback_days: int = 60,
-    #     commodity: str = "corn",
-    #     dataset_id: Optional[str] = None,
-    #     table_id: str = "daily_prices",
-    #     date_column: str = "date",
-    # ) -> pd.DataFrame:
-    #     """
-    #     Get Prophet/XGBoost model features for a target date from daily_prices
+    # TODO 메모리에 올라가기에 너무 큰 데이터를 받는다면 청킹, 스트리밍 방식으로 처리해야할 것 같음
+    def execute_raw(self, query: str) -> pd.DataFrame:
+        """
+        SQL 문자열 직접 실행 (내부/테스트용)
 
-    #     Retrieves data from (target_date - lookback_days) to target_date inclusive.
-    #     Returns data formatted for Prophet (ds, y columns) with additional features.
+        Args:
+            query: 실행할 SQL 쿼리
 
-    #     Args:
-    #         target_date: Target date (YYYY-MM-DD)
-    #         lookback_days: Number of days to look back (default 60)
-    #         commodity: Commodity name (default 'corn')
-    #         dataset_id: Dataset ID (if None, uses instance default)
-    #         table_id: Table ID (default 'daily_prices')
-    #         date_column: Date column name (default 'date')
+        Returns:
+            pd.DataFrame: 쿼리 결과
 
-    #     Returns:
-    #         pd.DataFrame: Feature data with ds, y, and additional columns
+        Note:
+            가능하면 execute() 메서드를 사용하세요.
+            이 메서드는 SQL 파일 기반이 아닌 직접 쿼리가 필요한 경우에만 사용합니다.
+        """
+        logger.debug(f"Executing query: {query[:100]}...")
+        job = self.client.query(query)
+        return job.to_dataframe()
 
-    #     Example:
-    #         >>> df = bq.get_prophet_features(
-    #         ...     target_date="2025-01-20",
-    #         ...     lookback_days=60,
-    #         ...     commodity="corn"
-    #         ... )
-    #     """
-    #     dataset = dataset_id or self.dataset_id
-    #     if not dataset:
-    #         raise ValueError("dataset_id is required")
+    def list_queries(self, domain: Optional[str] = None) -> Dict[str, list]:
+        """
+        사용 가능한 쿼리 목록 조회
 
-    #     # Calculate date range
-    #     try:
-    #         target_dt = datetime.strptime(target_date, "%Y-%m-%d")
-    #     except ValueError:
-    #         raise ValueError(f"Invalid date format: {target_date}. Use YYYY-MM-DD")
+        Args:
+            domain: 도메인으로 필터링 ('prices', 'news') - None이면 전체 조회
 
-    #     start_dt = target_dt - timedelta(days=lookback_days)
-    #     start_date_str = start_dt.strftime("%Y-%m-%d")
+        Returns:
+            Dict[str, list]: 도메인별 쿼리 이름 딕셔너리
+
+        Example:
+            >>> queries = bq.list_queries()
+            >>> print(queries)
+            {'prices': ['get_prophet_features', 'get_price_history', ...], ...}
+        """
+        return self._sql_loader.list_queries(domain)
 
     #     query = f"""
     #         SELECT
