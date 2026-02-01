@@ -1,23 +1,29 @@
-from typing import Optional
-from langchain_core.tools import tool
-import subprocess
-import json
-from google.auth import default
-from google.auth.transport.requests import Request
-from langchain_core.messages import HumanMessage, AIMessage
+"""
+LLM 기반 금융 보고서 생성 모듈
 
+Vertex AI와 LangChain을 사용하여 시계열 예측 및 뉴스 감성 분석 결과를
+종합한 금융 시장 분석 보고서를 생성합니다.
+"""
+
+import json
+import logging
+from typing import Optional
+
+from langchain_core.tools import tool
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 
-from config.settings import (
-    GENERATE_MODEL_NAME,
-    GENERATE_MODEL_TEMPERATURE,
-    GENERATE_MODEL_MAX_TOKENS,
-    VERTEX_AI_PROJECT_ID,
-    VERTEX_AI_LOCATION,
-)
+from libs.gcp import GCPServiceFactory
+from libs.utils.config import get_config
+
 from models.timeseries_predictor import predict_market_trend
 from models.sentiment_analyzer import SentimentAnalyzer
+
+logger = logging.getLogger(__name__)
+
+# 설정 로드
+_config = get_config()
 
 
 # 상수 정의
