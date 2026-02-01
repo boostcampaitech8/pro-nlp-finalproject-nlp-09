@@ -1,20 +1,29 @@
 """
-Centralized configuration management with Pydantic
+중앙 집중식 설정 관리
 
-This module provides type-safe configuration loading from environment variables.
-All configuration models use Pydantic for validation and type checking.
+이 모듈은 환경 변수에서 타입 안전한 설정을 로드합니다.
+모든 설정 모델은 Pydantic을 사용하여 검증과 타입 체크를 수행합니다.
 
-Environment variables are loaded from libs/gcp/.env
-Only essential/sensitive values are loaded from .env, rest use sensible defaults.
+환경 변수는 libs/gcp/.env 파일에서 로드됩니다.
+필수/민감한 값만 .env에서 로드하고, 나머지는 적절한 기본값을 사용합니다.
+
+순수 상수는 constants.py에서 정의됩니다.
+
+Example:
+    >>> from libs.utils.config import get_config
+    >>> config = get_config()
+    >>> project_id = config.vertex_ai.project_id
+    >>> dataset_id = config.bigquery.dataset_id
 """
 
-import os
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# .env file location: libs/gcp/.env
+from .constants import DATE_FORMAT
+
+# .env 파일 위치: libs/gcp/.env
 _ENV_FILE = Path(__file__).parent.parent / "gcp" / ".env"
 
 
@@ -100,9 +109,9 @@ class BigQueryConfig(BaseSettings):
             from datetime import datetime
 
             try:
-                datetime.strptime(v, "%Y-%m-%d")
+                datetime.strptime(v, DATE_FORMAT)
             except ValueError:
-                raise ValueError("base_date must be in YYYY-MM-DD format")
+                raise ValueError(f"base_date must be in {DATE_FORMAT} format")
         return v
 
 
@@ -148,7 +157,7 @@ class APIConfig(BaseSettings):
         return bool(v)
 
 
-# TODO: __init__ 메서드 생성 방식 데코레이를 활용한 패턴으로 변경
+# TODO __init__ 메서드 생성 방식 데코레이를 활용한 패턴으로 변경
 class AppConfig:
     """
     Complete application configuration container
