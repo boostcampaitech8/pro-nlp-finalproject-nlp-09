@@ -7,7 +7,7 @@ Vertex AI와 LangChain을 사용하여 시계열 예측 및 뉴스 감성 분석
 
 import json
 import logging
-from typing import Optional
+from typing import Optional, Dict
 
 from langchain_core.tools import tool
 from langchain_core.messages import HumanMessage, AIMessage
@@ -24,7 +24,6 @@ logger = logging.getLogger(__name__)
 
 # 설정 로드
 _config = get_config()
-
 
 # 상수 정의
 REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
@@ -129,35 +128,45 @@ SYSTEM_PROMPT = (
 )
 
 
-# LangChain Tools 정의
-@tool
-def timeseries_predictor(target_date: str) -> str:
+def create_tools(commodity: str) -> list:
     """
-    특정 날짜의 금융 시장 추세(상승/하락)와 가격을 예측합니다.
+    commodity가 바인딩된 LangChain tool 목록 생성
 
     Args:
-        target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
+        commodity: 분석 대상 원자재 (corn, wheat, soybean)
 
     Returns:
-        JSON 형식의 예측 결과 문자열 (예측값, 방향, 신뢰도, 추세 분석 등 포함)
+        list: commodity가 바인딩된 LangChain tool 목록
     """
-    return predict_market_trend(target_date)
+    @tool
+    def timeseries_predictor(target_date: str) -> str:
+        """
+        특정 날짜의 금융 시장 추세(상승/하락)와 가격을 예측합니다.
 
+        Args:
+            target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
 
-@tool
-def news_sentiment_analyzer(target_date: str) -> str:
-    """
-    특정 날짜의 뉴스를 분석하여 시장 영향력을 예측하고 주요 근거 뉴스(제목, 영향력 점수, 관계 정보 등)를 제공합니다.
+        Returns:
+            JSON 형식의 예측 결과 문자열 (예측값, 방향, 신뢰도, 추세 분석 등 포함)
+        """
+        return predict_market_trend(target_date, commodity)
 
-    Args:
-        target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
+    @tool
+    def news_sentiment_analyzer(target_date: str) -> str:
+        """
+        특정 날짜의 뉴스를 분석하여 시장 영향력을 예측하고 주요 근거 뉴스(제목, 영향력 점수, 관계 정보 등)를 제공합니다.
 
-    Returns:
-        JSON 형식의 예측 결과 문자열 (상승 확률, 근거 뉴스 리스트, 피처 요약 포함)
-    """
-    analyzer = SentimentAnalyzer()
-    result = analyzer.predict_market_impact(target_date)
-    return json.dumps(result, ensure_ascii=False)
+        Args:
+            target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
+
+        Returns:
+            JSON 형식의 예측 결과 문자열 (상승 확률, 근거 뉴스 리스트, 피처 요약 포함)
+        """
+        analyzer = SentimentAnalyzer(commodity=commodity)
+        result = analyzer.predict_market_impact(target_date)
+        return json.dumps(result, ensure_ascii=False)
+
+    return [timeseries_predictor, news_sentiment_analyzer]
 
 
 class LLMSummarizer:
@@ -195,13 +204,15 @@ class LLMSummarizer:
         self.model_name = model_name or _config.vertex_ai.model_name
         self.location = location or _config.vertex_ai.location
         self._factory = GCPServiceFactory()
-
-        # 프로젝트 ID 결정 (설정 → GCPServiceFactory)
         self.project_id = _config.gcp.project_id
+
         logger.debug(f"초기화된 프로젝트 ID: {self.project_id}")
 
-        self.llm = None
+        self.llm: Optional[ChatOpenAI] = None
+    
         self.agent = None
+        # TODO commodity 별 에이전트 캐싱 고려
+        # self._agents: Dict[str, object] = {}
         self._initialize()
 
     def _get_access_token(self) -> str:
@@ -237,15 +248,17 @@ class LLMSummarizer:
         )
 
     def _initialize(self):
-        """LLM 및 Agent 초기화"""
+        """LLM 초기화 (Agent는 commodity별로 생성)"""
         access_token = self._get_access_token()
         self.llm = self._create_llm(access_token)
         logger.info(f"ChatOpenAI (Vertex AI OpenAI 호환 API) 사용: {self.model_name}")
 
-        tools = [timeseries_predictor, news_sentiment_analyzer]
+    def _create_agent(self, commodity: str):
+        """commodity가 바인딩된 Agent 생성"""
+        tools = create_tools(commodity)
         llm_with_tools = self.llm.bind_tools(tools)
 
-        self.agent = create_agent(
+        return create_agent(
             model=llm_with_tools,
             tools=tools,
             system_prompt=SYSTEM_PROMPT,
@@ -320,6 +333,7 @@ class LLMSummarizer:
         self,
         context: str = "",
         target_date: Optional[str] = None,
+        commodity: str = "corn",
         max_retries: int = 2,
     ) -> dict:
         """
@@ -328,6 +342,7 @@ class LLMSummarizer:
         Args:
             context: 분석 맥락
             target_date: 분석 기준 날짜 (YYYY-MM-DD)
+            commodity: 분석 대상 상품
             max_retries: 재시도 횟수
 
         Returns:
@@ -345,14 +360,18 @@ class LLMSummarizer:
         summary = ""
         agent_result = {"messages": []}
 
+        # commodity가 바인딩된 Agent 생성
+        agent = self._create_agent(commodity)
+        logger.info(f"Agent 생성 완료 (commodity={commodity})")
+
         for attempt in range(max_retries + 1):
             # Agent 실행
             if attempt == 0:
-                result = self.agent.invoke(
+                result = agent.invoke(
                     {"messages": [HumanMessage(content=user_input)]}
                 )
             else:
-                result = self.agent.invoke({"messages": result.get("messages", [])})
+                result = agent.invoke({"messages": result.get("messages", [])})
 
             # 결과 추출
             if isinstance(result, dict):

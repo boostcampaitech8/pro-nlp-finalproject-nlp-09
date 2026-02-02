@@ -51,6 +51,7 @@ def main():
     # 분석 기준 날짜 설정 (기본값: 오늘, 또는 테스트용 특정 날짜)
     # 실제 운영시에는 datetime.now().strftime('%Y-%m-%d') 사용
     target_date = "2025-11-14"
+    current_commodity = "corn"
 
     print("=" * 70)
     print("금융 분석 파이프라인 시작 (Vertex AI + LangChain Agent)")
@@ -72,6 +73,7 @@ def main():
         # Orchestrator 함수 직접 호출
         result, agent_result = orchestrate_analysis(
             target_date=target_date,
+            commodity=current_commodity,
             context=f"일일 금융 시장 분석 ({target_date})",
             return_agent_result=True,
         )

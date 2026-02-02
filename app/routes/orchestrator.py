@@ -87,6 +87,7 @@ def parse_agent_result(agent_result: dict) -> Tuple[TimeSeriesPrediction, list]:
 
 def orchestrate_analysis(
     target_date: Optional[str] = None,
+    commodity: str = "corn",
     context: str = "금융 시장 분석",
     return_agent_result: bool = False,
     **kwargs,
@@ -100,7 +101,9 @@ def orchestrate_analysis(
     if not target_date:
         target_date = datetime.now().strftime("%Y-%m-%d")
 
-    result = summarizer.summarize(context=context, target_date=target_date)
+    result = summarizer.summarize(
+        context=context, target_date=target_date, commodity=commodity
+    )
 
     agent_result = result.get("agent_result", {})
     timeseries_prediction, sentiment_analysis = parse_agent_result(agent_result)
