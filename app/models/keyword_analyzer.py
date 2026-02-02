@@ -8,7 +8,7 @@
 import json
 import re
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict, List, Optional, Tuple, Any, Union
 
 import networkx as nx
 import numpy as np
@@ -90,6 +90,8 @@ NOISE_ENTITIES = {
 }
 
 BE_FORMS = {"is", "are", "was", "were", "be", "been", "being"}
+HAVE_FORMS = {"has", "have", "had"}  # 의미 약한 have 동사 → 낮은 weight
+MEANINGLESS_VERB_FORMS = BE_FORMS | HAVE_FORMS
 
 # Lemmatizer 인스턴스
 _lemmatizer = WordNetLemmatizer()
@@ -111,17 +113,20 @@ def _get_wordnet_pos(tag: str):
 
 def _is_meaningless_be(verb: str) -> bool:
     """
-    verb가 '의미 없는' 단독 be동사인지 판별.
-    - 단일 be 형태 → True (의미 없음, 낮은 weight)
+    verb가 '의미 없는' 단독 be/have 동사인지 판별.
+    - 단일 be/has 형태 → True (의미 없음, 낮은 weight)
     - be + VBN(ed형) 수동태 → False (의미 있음)
     """
     if not verb or not isinstance(verb, str):
         return False
     verb_tokens = verb.lower().strip().split()
-    if len(verb_tokens) == 1 and verb_tokens[0] in BE_FORMS:
+    if len(verb_tokens) == 1 and verb_tokens[0] in MEANINGLESS_VERB_FORMS:
         return True
     if len(verb_tokens) >= 2 and verb_tokens[0] in BE_FORMS and verb_tokens[1].endswith("ed"):
         return False
+    # "has CAGR of", "have been" 등: 첫 토큰이 has/have/had면 의미 약함
+    if len(verb_tokens) >= 1 and verb_tokens[0] in HAVE_FORMS:
+        return True
     return False
 
 
@@ -246,7 +251,7 @@ class KeywordAnalyzer:
         self,
         target_date: str,
         days: int = 3,
-        keyword_filter: str = "corn and (price or demand or supply or inventory)",
+        keyword_filter: str = "corn and (price or demand or supply or inventory) OR united states department of agriculture",
         top_k: int = 20
     ) -> Dict[str, Any]:
         """
@@ -255,16 +260,25 @@ class KeywordAnalyzer:
         Args:
             target_date: 분석 기준 날짜 (형식: "YYYY-MM-DD")
             days: 분석할 일수 (기본 3일)
-            keyword_filter: BigQuery WHERE 절 키워드 필터
+            keyword_filter: BigQuery key_word 필터. " OR "로 구분하면 여러 값 OR 검색 (기본: corn 관련 + united states department of agriculture)
             top_k: 반환할 상위 키워드 수
         
         Returns:
             Dict containing:
                 - top_entities: 상위 엔티티와 PageRank 점수
+                - top_triples: 핵심 엔티티(top_entities)가 포함된 triple 중 중요도(엣지 실제 weight × entity PageRank) 상위 10개, 각 항목 {"triple": [s,v,o], "importance": 점수}
                 - top_verbs: 상위 verb와 contribution 점수
                 - graph_stats: 그래프 통계 (노드 수, 엣지 수)
                 - triples_count: 분석된 triples 수
         """
+        # key_word 조건: " OR "로 구분하면 여러 값 OR 검색
+        parts = [p.strip() for p in keyword_filter.split(" OR ") if p.strip()]
+        if not parts:
+            parts = [keyword_filter]
+        key_conditions = " OR ".join(
+            f"key_word = '{k.replace(chr(39), chr(39) + chr(39))}'" for k in parts
+        )
+        where_clause = f"filter_status = 'T' AND ({key_conditions})"
         # 1. BigQuery에서 데이터 가져오기
         news_data = self.client.get_timeseries_data(
             table_id="news_article",
@@ -272,7 +286,7 @@ class KeywordAnalyzer:
             date_column="publish_date",
             base_date=target_date,
             days=days,
-            where_clause=f"filter_status = 'T' AND key_word = '{keyword_filter}'"
+            where_clause=where_clause
         )
         
         if not news_data:
@@ -327,21 +341,30 @@ class KeywordAnalyzer:
             reverse=True
         )[:top_k]
         
-        # 각 top entity가 포함된 모든 triple: 정규화/클러스터링 적용 전 원본 [s, v, o] 수집
-        # final_triples[i]와 raw_triples_kept[i]는 1:1 대응
-        entity_triples: Dict[str, List[List[str]]] = {}
-        for e, _ in top_entities:
-            entity_triples[e] = [
-                raw_triples_kept[i]
-                for i in range(len(final_triples))
-                if final_triples[i][0] == e or final_triples[i][2] == e
-            ]
+        # 핵심 엔티티(top_entities)가 포함된 triple만 대상으로, 중요도(엣지 실제 weight × entity PageRank) 상위 10개만 원본 [s,v,o]로 수집
+        # graph 엣지 weight = verb 중요도(contribution·stance·price_demand 반영)가 반영된 실제 weight
+        top_entity_names = {e for e, _ in top_entities}
+        candidates = []
+        for i in range(len(final_triples)):
+            s_f, v_f, o_f = final_triples[i][0], final_triples[i][1], final_triples[i][2]
+            if s_f not in top_entity_names and o_f not in top_entity_names:
+                continue
+            raw = raw_triples_kept[i]
+            edge_weight = graph[s_f][o_f].get("weight", 0.0) if graph.has_edge(s_f, o_f) else 0.0
+            entity_score = pagerank_scores.get(s_f, 0.0) + pagerank_scores.get(o_f, 0.0)
+            importance = edge_weight * entity_score
+            candidates.append((importance, raw))
+        candidates.sort(key=lambda x: x[0], reverse=True)
+        top_triples = [
+            {"triple": raw, "importance": round(imp, 4)}
+            for imp, raw in candidates[:10]
+        ]
         
         return {
             "top_entities": [
                 {"entity": e, "score": round(s, 4)} for e, s in top_entities
             ],
-            "entity_triples": entity_triples,
+            "top_triples": top_triples,
             "top_verbs": [
                 {"verb": v, "score": round(s, 4)} for v, s in top_verbs
             ],
@@ -539,11 +562,7 @@ class KeywordAnalyzer:
             
             for s, o, data in G.edges(data=True):
                 verb = data["verb"]
-                verb_tokens = (verb or "").lower().strip().split()
-                first = verb_tokens[0] if verb_tokens else ""
-                passive = len(verb_tokens) >= 2 and first in BE_FORMS and verb_tokens[1].endswith("ed")
-                
-                if first in BE_FORMS and not passive:
+                if _is_meaningless_be(verb):
                     w = BE_VERB_WEIGHT
                 else:
                     contrib = verb_avg.get(verb, 0.0)

@@ -173,12 +173,12 @@ def keyword_analyzer(target_date: str, days: int = 3) -> str:
         days: 분석할 일수 (기본 3일, 최대 7일 권장)
 
     Returns:
-        JSON: top_entities (상위 10개), entity_triples (각 entity가 포함된 모든 triple [s,v,o] 원본 형태)
+        JSON: top_entities (상위 10개), top_triples (핵심 엔티티가 포함된 triple 중 엣지 실제 weight×entity PageRank 중요도 상위 10개, 각 항목: {"triple": [s,v,o], "importance": 점수})
     """
     result = json.loads(_analyze_keywords(target_date=target_date, days=days, top_k=10))
     top_entities = result.get("top_entities", [])[:10]
-    entity_triples = result.get("entity_triples", {})
-    return json.dumps({"top_entities": top_entities, "entity_triples": entity_triples}, ensure_ascii=False, indent=2)
+    top_triples = result.get("top_triples", [])
+    return json.dumps({"top_entities": top_entities, "top_triples": top_triples}, ensure_ascii=False, indent=2)
 
 
 class LLMSummarizer:
