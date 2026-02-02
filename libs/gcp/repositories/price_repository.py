@@ -10,7 +10,7 @@ import pandas as pd
 from datetime import datetime, date
 from typing import Optional, List, Dict, Any
 
-from .bigquery import BigQueryService
+from ..bigquery import BigQueryService
 
 
 logger = logging.getLogger(__name__)
