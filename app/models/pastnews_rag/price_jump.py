@@ -45,30 +45,32 @@ def fetch_prices_for_dates(client, dates):
       SELECT date as base_date
       FROM UNNEST(@dates) as date
     ),
-    offsets AS (
-      SELECT base_date, base_date as target_date, 0 as offset_days FROM base_dates
-      UNION ALL SELECT base_date, DATE_ADD(base_date, INTERVAL 1 DAY), 1 FROM base_dates
-      UNION ALL SELECT base_date, DATE_ADD(base_date, INTERVAL 3 DAY), 3 FROM base_dates
-    ),
-    next_trading AS (
+    trading_days AS (
       SELECT
-        o.base_date,
-        o.offset_days,
-        MIN(p.time) AS traded_date
-      FROM offsets o
-      JOIN `{full_table}` p
-        ON p.time >= o.target_date
-      GROUP BY o.base_date, o.offset_days
+        b.base_date,
+        p.time AS traded_date,
+        ROW_NUMBER() OVER (PARTITION BY b.base_date ORDER BY p.time) - 1 AS trade_offset
+      FROM base_dates b
+      JOIN (
+        SELECT DISTINCT time
+        FROM `{full_table}`
+      ) p
+        ON p.time >= b.base_date
+    ),
+    offsets AS (
+      SELECT 0 AS offset_days UNION ALL SELECT 1 UNION ALL SELECT 3
     )
     SELECT
-      n.base_date,
-      n.offset_days,
-      n.traded_date,
+      t.base_date,
+      o.offset_days,
+      t.traded_date,
       p.close
-    FROM next_trading n
+    FROM offsets o
+    JOIN trading_days t
+      ON t.trade_offset = o.offset_days
     JOIN `{full_table}` p
-      ON p.time = n.traded_date
-    ORDER BY n.base_date, n.offset_days
+      ON p.time = t.traded_date
+    ORDER BY t.base_date, o.offset_days
     """
     job = client.query(
         query,
