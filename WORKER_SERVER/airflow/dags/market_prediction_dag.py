@@ -107,7 +107,7 @@ with DAG(
             print("⚠️ 최종 리포트가 없습니다. 업로드를 건너뜁니다.")
             return
 
-        BUCKET_NAME = "agri-market-reports" 
+        BUCKET_NAME = "team-blue-raw-data" 
         print(f"☁️ [Task 4] 리포트 GCS 업로드 시작 (Bucket: {BUCKET_NAME})")
         upload_report_to_gcs(final_report, target_date, bucket_name=BUCKET_NAME)
 

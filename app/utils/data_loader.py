@@ -58,7 +58,7 @@ def load_news_prediction(prediction_data: Dict[str, Any], dataset_id: Optional[s
         raise e
 
 
-def upload_report_to_gcs(report_text: str, target_date: str, bucket_name: str = "agri-market-reports") -> None:
+def upload_report_to_gcs(report_text: str, target_date: str, bucket_name: str = "team-blue-raw-data") -> None:
     """
     최종 리포트 텍스트를 GCS에 업로드합니다.
     경로: reports/{YYYY}/{MM}/market_report_{YYYY-MM-DD}.txt
