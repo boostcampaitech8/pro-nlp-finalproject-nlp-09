@@ -17,14 +17,15 @@ if PROJECT_ROOT not in sys.path:
 
 try:
     from app.routes.orchestrator import run_market_analysis
-    from app.utils.data_loader import load_timeseries_prediction
-    # 데이터셋 ID는 명시적으로 'tilda' 사용
-    DATASET_ID = "tilda"
+    from app.utils.data_loader import load_timeseries_prediction, load_news_prediction, upload_report_to_gcs
+    from app.config.settings import BIGQUERY_DATASET_ID
 except ImportError as e:
     print(f"❌ Import Error: {e}")
     run_market_analysis = None
     load_timeseries_prediction = None
-    DATASET_ID = "tilda"
+    load_news_prediction = None
+    upload_report_to_gcs = None
+    BIGQUERY_DATASET_ID = "tilda"
 
 default_args = {
     'owner': 'airflow',
@@ -48,16 +49,12 @@ with DAG(
         if not run_market_analysis:
             raise ImportError("run_market_analysis 함수를 불러오지 못했습니다. PROJECT_ROOT를 확인하세요.")
             
-        # Airflow 실행 날짜 (YYYY-MM-DD)
         execution_date = context['ds'] 
-        
         # [테스트 공지] 현재 데이터 부재 방지를 위해 2025-11-10로 고정하여 실행합니다.
-        # 실제 운영 시 target_date=execution_date 로 변경하세요.
         target_date = "2025-11-10" 
         
         print(f"🚀 [Task 1] 시장 분석 시작 (Target: {target_date}, RunDate: {execution_date})")
         result = run_market_analysis(target_date=target_date)
-        
         return result
 
     def load_timeseries_task(**context):
@@ -66,7 +63,6 @@ with DAG(
             raise ImportError("load_timeseries_prediction 함수를 불러오지 못했습니다.")
 
         analysis_result = context['ti'].xcom_pull(task_ids='run_analysis')
-        
         if not analysis_result:
             raise ValueError("분석 결과가 없습니다 (XCom Pull Failed).")
             
@@ -75,8 +71,45 @@ with DAG(
             print("⚠️ 시계열 데이터가 없습니다. 적재를 건너뜁니다.")
             return
 
-        print(f"💾 [Task 2] 시계열 데이터 적재 시작 (Dataset: {DATASET_ID})")
-        load_timeseries_prediction(timeseries_data, dataset_id=DATASET_ID)
+        print(f"💾 [Task 2] 시계열 데이터 적재 시작 (Dataset: {BIGQUERY_DATASET_ID})")
+        load_timeseries_prediction(timeseries_data, dataset_id=BIGQUERY_DATASET_ID)
+
+    def load_news_task(**context):
+        """XCom에서 데이터를 받아 뉴스 테이블에 적재"""
+        if not load_news_prediction:
+            raise ImportError("load_news_prediction 함수를 불러오지 못했습니다.")
+
+        analysis_result = context['ti'].xcom_pull(task_ids='run_analysis')
+        if not analysis_result:
+            raise ValueError("분석 결과가 없습니다.")
+            
+        news_data = analysis_result.get('news_data')
+        if not news_data:
+            print("⚠️ 뉴스 예측 데이터가 없습니다. 적재를 건너뜁니다.")
+            return
+
+        print(f"💾 [Task 3] 뉴스 데이터 적재 시작 (Dataset: {BIGQUERY_DATASET_ID})")
+        load_news_prediction(news_data, dataset_id=BIGQUERY_DATASET_ID)
+
+    def upload_report_task(**context):
+        """XCom에서 리포트를 받아 GCS에 업로드"""
+        if not upload_report_to_gcs:
+            raise ImportError("upload_report_to_gcs 함수를 불러오지 못했습니다.")
+
+        analysis_result = context['ti'].xcom_pull(task_ids='run_analysis')
+        if not analysis_result:
+            raise ValueError("분석 결과가 없습니다.")
+            
+        final_report = analysis_result.get('final_report')
+        target_date = analysis_result.get('target_date')
+        
+        if not final_report:
+            print("⚠️ 최종 리포트가 없습니다. 업로드를 건너뜁니다.")
+            return
+
+        BUCKET_NAME = "agri-market-reports" 
+        print(f"☁️ [Task 4] 리포트 GCS 업로드 시작 (Bucket: {BUCKET_NAME})")
+        upload_report_to_gcs(final_report, target_date, bucket_name=BUCKET_NAME)
 
     # Task 정의
     t1_analyze = PythonOperator(
@@ -91,5 +124,17 @@ with DAG(
         provide_context=True
     )
 
-    # 실행 순서
-    t1_analyze >> t2_load_timeseries
+    t3_load_news = PythonOperator(
+        task_id='load_news',
+        python_callable=load_news_task,
+        provide_context=True
+    )
+
+    t4_upload_report = PythonOperator(
+        task_id='upload_report',
+        python_callable=upload_report_task,
+        provide_context=True
+    )
+
+    # 실행 순서: 분석 -> [시계열 적재, 뉴스 적재, 리포트 업로드] 병렬 실행
+    t1_analyze >> [t2_load_timeseries, t3_load_news, t4_upload_report]
