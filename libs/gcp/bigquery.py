@@ -37,7 +37,7 @@ from .query_params import (
 from libs.utils.constants import (
     VALID_COMMODITIES,
     VALID_FILTER_STATUS,
-    DEFAULT_LOOKBACK_DAYS,
+    DEFAULT_PROPHET_LOOKBACK_DAYS,
     DEFAULT_NEWS_LOOKBACK_DAYS,
     DATE_FORMAT,
 )
@@ -231,7 +231,7 @@ class BigQueryService(GCPServiceBase):
         self,
         commodity: str,
         target_date: str,
-        lookback_days: int = DEFAULT_LOOKBACK_DAYS,
+        lookback_days: int,
         dataset_id: Optional[str] = None,
     ) -> pd.DataFrame:
         """

@@ -1,6 +1,6 @@
 import json
-from schema.models import OrchestratorOutput, TimeSeriesPrediction, SentimentAnalysis
-from models.llm_summarizer import LLMSummarizer
+from app.schema.models import OrchestratorOutput, TimeSeriesPrediction, SentimentAnalysis
+from app.models.llm_summarizer import LLMSummarizer
 from datetime import datetime
 from typing import Optional, Tuple, Union
 
