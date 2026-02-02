@@ -28,8 +28,13 @@ def get_inference_engine():
     if _inference_engine is None:
         if TimeSeriesXGBoostInference is None:
             raise ImportError("TimeSeriesXGBoostInference 모듈을 사용할 수 없습니다.")
-        # config.yaml 경로 설정 (run_xg.py와 같은 디렉토리)
-        config_path = os.path.join(root_dir, 'model', 'timeseries_model', 'config.yaml')
+        # config.yaml 경로 설정 (app/model/timeseries_model/config.yaml)
+        # root_dir는 프로젝트 최상위이므로 app/ 을 경로에 추가해야 합니다.
+        config_path = os.path.join(root_dir, 'app', 'model', 'timeseries_model', 'config.yaml')
+        
+        if not os.path.exists(config_path):
+            print(f"⚠️ Warning: config.yaml을 찾을 수 없습니다: {config_path}")
+            
         _inference_engine = TimeSeriesXGBoostInference(config_path=config_path)
     return _inference_engine
 
