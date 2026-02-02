@@ -227,8 +227,6 @@ class BigQueryService(GCPServiceBase):
             end_date=params.end_date,
         )
 
-    # TODO prophet 피처 자체를 빅쿼리에 올려두고 활용
-    # TODO 쿼리, 메서드 수정 (prophet 피쳐를 bq에서 가져올 것)
     def get_prophet_forecast_features(
         self,
         commodity: str,
@@ -237,8 +235,9 @@ class BigQueryService(GCPServiceBase):
         dataset_id: Optional[str] = None,
     ) -> pd.DataFrame:
         """
-        Prophet 피처 조회 (prices.get_prophet_features.sql)
+        Prophet 예측 피처 조회 (prices.get_prophet_forecast_features.sql)
 
+        prophet_forecast_features 테이블에서 사전 계산된 Prophet 피처를 조회합니다.
         target_date를 기준으로 lookback_days만큼의 과거 데이터를 조회합니다.
 
         Args:
@@ -248,11 +247,13 @@ class BigQueryService(GCPServiceBase):
             dataset_id: 데이터셋 ID (없으면 인스턴스 기본값 사용)
 
         Returns:
-            pd.DataFrame: Prophet 형식 데이터
-                columns: ds (날짜), y (close), open, high, low, ema, volume
+            pd.DataFrame: Prophet 예측 피처 데이터
+                columns: ds, yhat, yhat_lower, yhat_upper, trend, weekly, yearly,
+                         extra_regressors_multiplicative, volume_lag1_effect, ema_lag1_effect,
+                         y, volume, ema, volume_lag1, ema_lag1, y_change, direction
 
         Example:
-            >>> df = bq.get_prophet_features(
+            >>> df = bq.get_prophet_forecast_features(
             ...     commodity="corn",
             ...     target_date="2025-01-31",
             ...     lookback_days=90
@@ -275,7 +276,7 @@ class BigQueryService(GCPServiceBase):
         )
 
         return self.execute(
-            "prices.get_prophet_features",
+            "prices.get_prophet_forecast_features",
             dataset_id=dataset_id or self.dataset_id,
             commodity=params.commodity,
             start_date=start_date,

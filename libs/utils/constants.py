@@ -96,9 +96,6 @@ DEFAULT_DEBUG = False
 # =============================================================================
 
 # TODO 환경에 따라 삭제 예정
-# TODO 이 값을 모델 config에서 로드하는 방향으로 수정
-
-# TODO 환경에 따라 삭제 예정
 # MAX_QUERY_LIMIT = 10000
 """쿼리 결과 최대 제한"""
 
@@ -113,6 +110,7 @@ class Tables:
 
     # 가격 관련
     DAILY_PRICES = "daily_prices"
+    PROPHET_FORECAST_FEATURES = "prophet_forecast_features"
     STG_PRICES = "stg_prices"
 
     # 뉴스 관련

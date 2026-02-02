@@ -100,17 +100,17 @@ def predict_market_trend(target_date: str, commodity: str) -> str:
 
         # Prophet 피처 조회 (타겟 날짜 기준 90일치)
         # 7일 평균 통계와 추세 문맥을 충분히 확보하기 위해 90일치를 조회합니다.
-        # history_df = bq.get_prophet_forecast_features(
-        #     commodity=commodity,
-        #     target_date=target_date,
-        #     lookback_days=90,
-        # )
-
-        history_df = bq.get_daily_prices(
-            commodity="corn",
+        history_df = bq.get_prophet_forecast_features(
+            commodity=commodity,
             target_date=target_date,
             lookback_days=90,
         )
+
+        # history_df = bq.get_daily_prices(
+        #     commodity="corn",
+        #     target_date=target_date,
+        #     lookback_days=90,
+        # )
 
         if history_df.empty:
             return json.dumps(

@@ -100,9 +100,8 @@ class VertexAIConfig(BaseSettings):
 # # TODO 테이블별로 속성 나누는 게 나음 이거 지금 안됨
 class BigQueryConfig(BaseSettings):
     """
-    BigQuery configuration for daily_prices table
+    BigQuery general configuration
 
-    Table schema: commodity, date, open, high, low, close, ema, volume, ingested_at
     """
 
     dataset_id: str = Field(alias="BIGQUERY_DATASET_ID")
@@ -182,7 +181,6 @@ class APIConfig(BaseSettings):
         return bool(v)
 
 
-# TODO __init__ 메서드 생성 방식 데코레이를 활용한 패턴으로 변경
 class AppConfig:
     """
     Complete application configuration container
