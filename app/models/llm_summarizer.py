@@ -2,12 +2,10 @@ from typing import Optional
 from langchain_core.tools import tool
 import subprocess
 import json
-from google.auth import default
-from google.auth.transport.requests import Request
 from langchain_core.messages import HumanMessage, AIMessage
 
 from langchain.agents import create_agent
-from langchain_openai import ChatOpenAI
+from langchain_google_vertexai import ChatVertexAI
 
 from config.settings import (
     GENERATE_MODEL_NAME,
@@ -218,39 +216,20 @@ class LLMSummarizer:
                 f"오류: {e}"
             )
 
-    # TODO token 중앙 관리
-    def _get_access_token(self) -> str:
-        """Google Cloud 인증 토큰 가져오기"""
-        credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
-        if not credentials.valid:
-            credentials.refresh(Request())
-        return credentials.token
-
-    def _build_base_url(self) -> str:
-        """Vertex AI OpenAI 호환 API base URL 생성"""
-        return (
-            f"https://{self.location}-aiplatform.googleapis.com/v1/"
-            f"projects/{self.project_id}/locations/{self.location}/endpoints/openapi"
-        )
-
-    def _create_llm(self, access_token: str) -> ChatOpenAI:
-        """ChatOpenAI 인스턴스 생성"""
-        return ChatOpenAI(
+    def _create_llm(self) -> ChatVertexAI:
+        """ChatVertexAI 인스턴스 생성 (모델명·프로젝트·리전은 env에서 로드)"""
+        return ChatVertexAI(
             model=self.model_name,
-            base_url=self._build_base_url(),
-            api_key=access_token,
+            project=self.project_id,
+            location=self.location,
             temperature=GENERATE_MODEL_TEMPERATURE,
-            max_tokens=GENERATE_MODEL_MAX_TOKENS,
-            model_kwargs={
-                "parallel_tool_calls": False,
-            },
+            max_output_tokens=GENERATE_MODEL_MAX_TOKENS,
         )
 
     def _initialize(self):
         """LLM 및 Agent 초기화"""
-        access_token = self._get_access_token()
-        self.llm = self._create_llm(access_token)
-        print(f"✅ ChatOpenAI (Vertex AI OpenAI 호환 API) 사용: {self.model_name}")
+        self.llm = self._create_llm()
+        print(f"✅ ChatVertexAI 사용 (모델: {self.model_name}, env 기반)")
 
         tools = [timeseries_predictor, news_sentiment_analyzer, keyword_analyzer]
         llm_with_tools = self.llm.bind_tools(tools)
@@ -290,6 +269,34 @@ class LLMSummarizer:
 
         return True
 
+    def _normalize_ai_content(self, content) -> str:
+        """Vertex AI 등에서 content가 [{'type': 'text', 'text': '...'}, ...] 형태일 때 텍스트만 추출"""
+        if content is None:
+            return ""
+        # 리스트(part 형식)인 경우
+        if isinstance(content, list):
+            parts = []
+            for part in content:
+                if isinstance(part, dict) and part.get("type") == "text" and "text" in part:
+                    parts.append(str(part["text"]))
+            if parts:
+                return "\n".join(parts)
+        # 문자열로 직렬화된 리스트인 경우 (예: "[{'type': 'text', 'text': '...'}]")
+        if isinstance(content, str) and content.strip().startswith("[") and "'text'" in content:
+            try:
+                import ast
+                parsed = ast.literal_eval(content)
+                if isinstance(parsed, list):
+                    parts = []
+                    for part in parsed:
+                        if isinstance(part, dict) and part.get("type") == "text" and "text" in part:
+                            parts.append(str(part["text"]))
+                    if parts:
+                        return "\n".join(parts)
+            except (ValueError, SyntaxError):
+                pass
+        return str(content)
+
     def _extract_summary_from_result(self, result: dict) -> str:
         """Agent 실행 결과에서 요약 텍스트 추출"""
         import json
@@ -299,7 +306,8 @@ class LLMSummarizer:
         # messages에서 마지막 AIMessage의 content 추출
         for msg in reversed(messages):
             if isinstance(msg, AIMessage):
-                content = str(msg.content) if msg.content else ""
+                raw = msg.content
+                content = self._normalize_ai_content(raw)
                 content = content.strip().rstrip("\\")
 
                 # JSON 형식의 tool call arguments는 건너뛰기
@@ -381,13 +389,12 @@ class LLMSummarizer:
             # 요약이 비어있거나 너무 짧은 경우 확인
             if not summary or len(summary.strip()) < 50:
                 print(f"\n⚠️ 요약이 비어있거나 너무 짧습니다 (길이: {len(summary)}자)")
-                # 마지막 AIMessage에서 실제 텍스트 찾기
+                # 마지막 AIMessage에서 실제 텍스트 찾기 (Vertex AI part 형식 포함)
                 if isinstance(result, dict):
                     messages = result.get("messages", [])
                     for msg in reversed(messages):
                         if isinstance(msg, AIMessage) and msg.content:
-                            content = str(msg.content)
-                            # GPT-OSS-20B 특수 형식이 아닌 실제 텍스트 찾기
+                            content = self._normalize_ai_content(msg.content)
                             if "<|channel|>" not in content and len(content.strip()) > 50:
                                 summary = content.strip()
                                 print(f"  → 대체 텍스트 발견 (길이: {len(summary)}자)")
