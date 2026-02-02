@@ -195,8 +195,15 @@ with DAG(
 
     def upload_to_bigquery_task_func(**context):
         # 업로드 대상: final_processed_news.json, entity.json, triple.json
+        os.environ["BIGQUERY_DATASET_ID"] = os.getenv("BIGQUERY_DATASET_ID", "tilda")
+        os.environ["BIGQUERY_TABLE_ID"] = "news_article"
+        os.environ["ENTITIES_TABLE"] = "news_article_entities"
+        os.environ["TRIPLES_TABLE"] = "news_article_triples"
         upload_processed_news()
-        upload_entities_and_triples()
+        upload_entities_and_triples(
+            entities_table="news_article_entities",
+            triples_table="news_article_triples",
+        )
 
     upload_bigquery = PythonOperator(
         task_id='upload_bigquery',

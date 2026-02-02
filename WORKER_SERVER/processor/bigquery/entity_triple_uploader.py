@@ -36,7 +36,9 @@ def _upload_rows(client, dataset_id, table_id, rows, schema):
     if not rows:
         print(f"No rows to upload for {table_id}.")
         return 0
+    location = os.getenv("BIGQUERY_LOCATION", "US")
     full_table_id = f"{client.project}.{dataset_id}.{table_id}"
+    print(f"[BQ] project={client.project} dataset={dataset_id} table={table_id} location={location}")
     temp_table_id = f"{dataset_id}.temp_{table_id}_{int(__import__('time').time())}"
     temp_full_table_id = f"{client.project}.{temp_table_id}"
     job_config = bigquery.LoadJobConfig(
@@ -44,7 +46,9 @@ def _upload_rows(client, dataset_id, table_id, rows, schema):
         write_disposition="WRITE_TRUNCATE",
         ignore_unknown_values=True,
     )
-    load_job = client.load_table_from_json(rows, temp_full_table_id, job_config=job_config)
+    load_job = client.load_table_from_json(
+        rows, temp_full_table_id, job_config=job_config, location=location
+    )
     load_job.result()
 
     columns = [field.name for field in schema]
@@ -59,7 +63,7 @@ def _upload_rows(client, dataset_id, table_id, rows, schema):
     WHEN NOT MATCHED THEN
       INSERT ({cols_csv}) VALUES ({cols_values})
     """
-    client.query(merge_sql).result()
+    client.query(merge_sql, location=location).result()
     client.delete_table(temp_full_table_id, not_found_ok=True)
 
     print(f"Uploaded {len(rows)} rows to {full_table_id} (dedup by hash_id)")
@@ -71,12 +75,14 @@ def upload_entities_and_triples(
     entities_filename="entity.json",
     triples_filename="triple.json",
     dataset_id=None,
-    entities_table="news_article_entities",
-    triples_table="news_article_triples",
+    entities_table=None,
+    triples_table=None,
 ):
-    dataset_id = dataset_id or os.getenv("BIGQUERY_DATASET_ID")
+    dataset_id = dataset_id or os.getenv("BIGQUERY_DATASET_ID", "tilda")
     if not dataset_id:
         raise ValueError("BIGQUERY_DATASET_ID must be set")
+    entities_table = entities_table or os.getenv("ENTITIES_TABLE", "news_article_entities")
+    triples_table = triples_table or os.getenv("TRIPLES_TABLE", "news_article_triples")
 
     client = _get_bq_client()
 
