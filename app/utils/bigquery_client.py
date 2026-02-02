@@ -544,7 +544,7 @@ if __name__ == "__main__":
         # news_article 테이블에서 description 컬럼 가져오기 (filter_status='T'만)
         print("\n[news_article 테이블 조회]")
         article_data = client.get_timeseries_data(
-            table_id="news_article",
+            table_id="corn_all_news_with_sentiment", ### 이부분 조정
             value_column="description",
             date_column="publish_date",
             where_clause="filter_status = 'T'",
