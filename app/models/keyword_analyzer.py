@@ -296,9 +296,9 @@ class KeywordAnalyzer:
                 "error": "유효한 triples가 없습니다."
             }
         
-        # 3. 정규화 및 필터링
-        normalized_triples, normalized_entities = self._normalize_triples(triples)
-        
+        # 3. 정규화 및 필터링 (entity_triples용 원본은 raw_triples_kept에 보관)
+        normalized_triples, normalized_entities, raw_triples_kept = self._normalize_triples(triples)
+
         # 4. 클러스터링 (선택적)
         final_triples, final_entities = self._cluster_entities(
             normalized_triples, normalized_entities
@@ -327,10 +327,21 @@ class KeywordAnalyzer:
             reverse=True
         )[:top_k]
         
+        # 각 top entity가 포함된 모든 triple: 정규화/클러스터링 적용 전 원본 [s, v, o] 수집
+        # final_triples[i]와 raw_triples_kept[i]는 1:1 대응
+        entity_triples: Dict[str, List[List[str]]] = {}
+        for e, _ in top_entities:
+            entity_triples[e] = [
+                raw_triples_kept[i]
+                for i in range(len(final_triples))
+                if final_triples[i][0] == e or final_triples[i][2] == e
+            ]
+        
         return {
             "top_entities": [
                 {"entity": e, "score": round(s, 4)} for e, s in top_entities
             ],
+            "entity_triples": entity_triples,
             "top_verbs": [
                 {"verb": v, "score": round(s, 4)} for v, s in top_verbs
             ],
@@ -364,23 +375,26 @@ class KeywordAnalyzer:
     
     def _normalize_triples(
         self, triples: List[List[str]]
-    ) -> Tuple[List[List[str]], set]:
-        """Triples 정규화 및 필터링"""
+    ) -> Tuple[List[List[str]], set, List[List[str]]]:
+        """Triples 정규화 및 필터링. 유지된 raw triple 목록도 동일 순서로 반환."""
         normalized_entities_set = set()
         normalized_triples = []
-        
+        raw_triples_kept: List[List[str]] = []
+
         for s, v, o in triples:
             if not _is_valid_entity(s) or not _is_valid_entity(o):
                 continue
-            
+
+            raw_triples_kept.append([s, v, o])
+
             s_normalized = _normalize_entity(s, aggressive=True)
             o_normalized = _normalize_entity(o, aggressive=True)
-            
+
             if s_normalized:
                 normalized_entities_set.add(s_normalized)
             if o_normalized:
                 normalized_entities_set.add(o_normalized)
-            
+
             # 대문자 고유명사 우선
             if s.isupper() and len(s) > 1:
                 normalized_entities_set.add(s)
@@ -388,29 +402,29 @@ class KeywordAnalyzer:
             if o.isupper() and len(o) > 1:
                 normalized_entities_set.add(o)
                 o_normalized = o
-            
+
             normalized_triples.append([s_normalized, v, o_normalized])
-        
+
         # 복수형을 단수형으로 통합
         plural_to_singular_map = {}
         entities_to_remove = set()
-        
+
         for entity in normalized_entities_set:
             if ' ' not in entity and "'" not in entity and entity.endswith('s') and len(entity) > 3:
                 singular_candidate = entity[:-1]
                 if singular_candidate in normalized_entities_set:
                     plural_to_singular_map[entity] = singular_candidate
                     entities_to_remove.add(entity)
-        
+
         normalized_entities_set -= entities_to_remove
-        
+
         for i, (s, v, o) in enumerate(normalized_triples):
             if s in plural_to_singular_map:
                 normalized_triples[i][0] = plural_to_singular_map[s]
             if o in plural_to_singular_map:
                 normalized_triples[i][2] = plural_to_singular_map[o]
-        
-        return normalized_triples, normalized_entities_set
+
+        return normalized_triples, normalized_entities_set, raw_triples_kept
     
     def _cluster_entities(
         self,
