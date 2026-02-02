@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 # TimeSeriesInference 모듈 임포트 (지연 로딩)
 try:
-    from model.timeseries_model.inference import TimeSeriesInference
+    from app.model.timeseries_model.inference import TimeSeriesInference
 except ImportError as e:
     logger.warning(f"TimeSeriesInference를 임포트할 수 없습니다: {e}")
     TimeSeriesInference = None

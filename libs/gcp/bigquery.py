@@ -132,6 +132,8 @@ class BigQueryService(GCPServiceBase):
             logger.debug(
                 f"Loaded query '{query_name}' with params: {list(params.keys())}"
             )
+            for key, value in params.items():
+                logger.debug(f"  Param: {key} = {value}")
         else:
             query = self._sql_loader.load(query_name)
             logger.debug(f"Loaded query '{query_name}' without params")
@@ -153,7 +155,7 @@ class BigQueryService(GCPServiceBase):
             가능하면 execute() 메서드를 사용하세요.
             이 메서드는 SQL 파일 기반이 아닌 직접 쿼리가 필요한 경우에만 사용합니다.
         """
-        logger.debug(f"Executing query: {query[:100]}...")
+        logger.debug(f"Executing query: {query[:100]}... {query[-100:]}")
         job = self.client.query(query)
         return job.to_dataframe()
 

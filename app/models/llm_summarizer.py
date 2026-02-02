@@ -329,6 +329,7 @@ class LLMSummarizer:
         return str(result).strip().rstrip("\\")
 
     # TODO 재시도 로직 개선
+    # TODO 쿼리 2번 날리는 버그 존재함 고칠것
     def summarize(
         self,
         context: str = "",
