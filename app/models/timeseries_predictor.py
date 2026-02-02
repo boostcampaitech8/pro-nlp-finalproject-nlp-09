@@ -68,9 +68,10 @@ def predict_market_trend(target_date: str) -> str:
     try:
         bq_client = BigQueryClient() # 환경변수의 프로젝트/데이터셋 설정을 사용
         
-        # 과거 데이터 조회 (타겟 날짜 + 문맥 정보)
-        # 7일 평균 통계와 추세 문맥을 충분히 확보하기 위해 90일치를 조회합니다.
-        history_df = bq_client.get_prophet_features(target_date=target_date, lookback_days=90)
+        # 과거 데이터 조회 (타겟 날짜 + 문맥 정보 + 학습 데이터)
+        # XGBoost Walk-Forward 학습을 위해 충분한 데이터가 필요합니다 (config.yaml의 window_size 참조)
+        # 1500일(약 4년) 정도의 데이터를 조회합니다. 모든 필요 컬럼(yhat, direction 등)은 BQ에 있다고 가정합니다.
+        history_df = bq_client.get_prophet_features(target_date=target_date, lookback_days=1500)
         
         if history_df.empty:
             return json.dumps({
