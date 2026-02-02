@@ -17,8 +17,8 @@ from langchain_openai import ChatOpenAI
 from libs.gcp import GCPServiceFactory
 from libs.utils.config import get_config
 
-from models.timeseries_predictor import predict_market_trend
-from models.sentiment_analyzer import SentimentAnalyzer
+from app.models.timeseries_predictor import predict_market_trend
+from app.models.sentiment_analyzer import SentimentAnalyzer
 
 logger = logging.getLogger(__name__)
 
