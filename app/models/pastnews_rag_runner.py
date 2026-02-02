@@ -7,11 +7,9 @@ from typing import List, Optional, Any, Dict
 
 from google.cloud import bigquery
 
-from app.models.pastnews_rag import get_bq_client, fetch_article_dates, fetch_prices_for_dates
+from app.models.pastnews_rag.price_jump import get_bq_client as _get_bq_client
+from app.models.pastnews_rag.price_jump import fetch_article_dates, fetch_prices_for_dates
 
-
-def _get_bq_client():
-    return get_bq_client()
 
 
 def extract_triples_from_today():

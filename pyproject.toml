@@ -26,6 +26,9 @@ dependencies = [
     "scikit-learn>=1.8.0",
     "streamlit>=1.53.1",
     "ruff>=0.14.14",
+    "langchain-google-vertexai>=3.2.2",
+    "networkx>=3.6.1",
+    "nltk>=3.9.2",
 ]
 
 [tool.ruff]
