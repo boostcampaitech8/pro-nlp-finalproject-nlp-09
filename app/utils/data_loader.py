@@ -15,20 +15,24 @@ if project_root not in sys.path:
 
 from libs.gcp.base import GCPServiceFactory
 from libs.gcp.repositories.price_repository import PriceRepository
+from app.config.settings import BIGQUERY_DATASET_ID
 
 
-def load_timeseries_prediction(prediction_data: Dict[str, Any], dataset_id: str = "market") -> None:
+def load_timeseries_prediction(prediction_data: Dict[str, Any], dataset_id: Optional[str] = None) -> None:
     """
     시계열 예측 결과를 BigQuery 'prediction_timeseries' 테이블에 적재합니다.
     (PriceRepository 사용)
 
     Args:
         prediction_data (dict): 시계열 모델 예측 결과 (JSON 구조)
-        dataset_id (str): 대상 BigQuery 데이터셋 ID (기본값: market)
+        dataset_id (str): 대상 BigQuery 데이터셋 ID (기본값: settings.BIGQUERY_DATASET_ID)
     """
+    # 데이터셋 ID 결정 (인자값 -> 설정값 -> 기본값 'market')
+    target_dataset = dataset_id or BIGQUERY_DATASET_ID or "tilda"
+
     # 팩토리를 통해 BigQuery 서비스 생성
     factory = GCPServiceFactory()
-    bq_service = factory.get_bigquery_client(dataset_id=dataset_id)
+    bq_service = factory.get_bigquery_client(dataset_id=target_dataset)
     
     # 리포지토리 초기화 및 저장 수행
     price_repo = PriceRepository(bq_service)
