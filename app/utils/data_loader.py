@@ -15,20 +15,16 @@ if project_root not in sys.path:
 
 from libs.gcp.base import GCPServiceFactory
 from libs.gcp.repositories.price_repository import PriceRepository
+from libs.gcp.repositories.news_repository import NewsRepository
+from libs.gcp.storage import StorageService
 from app.config.settings import BIGQUERY_DATASET_ID
+from datetime import datetime
 
 
 def load_timeseries_prediction(prediction_data: Dict[str, Any], dataset_id: Optional[str] = None) -> None:
-    """
-    시계열 예측 결과를 BigQuery 'prediction_timeseries' 테이블에 적재합니다.
-    (PriceRepository 사용)
-
-    Args:
-        prediction_data (dict): 시계열 모델 예측 결과 (JSON 구조)
-        dataset_id (str): 대상 BigQuery 데이터셋 ID (기본값: settings.BIGQUERY_DATASET_ID)
-    """
+    # ... (기존 코드 유지) ...
     # 데이터셋 ID 결정 (인자값 -> 설정값 -> 기본값 'market')
-    target_dataset = dataset_id or BIGQUERY_DATASET_ID or "tilda"
+    target_dataset = dataset_id or BIGQUERY_DATASET_ID or "market"
 
     # 팩토리를 통해 BigQuery 서비스 생성
     factory = GCPServiceFactory()
@@ -42,4 +38,53 @@ def load_timeseries_prediction(prediction_data: Dict[str, Any], dataset_id: Opti
         print(f"✅ 시계열 예측 데이터 적재 완료: {prediction_data.get('target_date', 'Unknown Date')}")
     except Exception as e:
         print(f"❌ 적재 실패: {str(e)}")
+        raise e
+
+
+def load_news_prediction(prediction_data: Dict[str, Any], dataset_id: Optional[str] = None) -> None:
+    # ... (기존 코드 유지) ...
+    target_dataset = dataset_id or BIGQUERY_DATASET_ID or "market"
+
+    factory = GCPServiceFactory()
+    bq_service = factory.get_bigquery_client(dataset_id=target_dataset)
+    
+    news_repo = NewsRepository(bq_service)
+    
+    try:
+        news_repo.save_prediction(prediction_data)
+        print(f"✅ 뉴스 예측 데이터 적재 완료: {prediction_data.get('target_date', 'Unknown Date')}")
+    except Exception as e:
+        print(f"❌ 뉴스 적재 실패: {str(e)}")
+        raise e
+
+
+def upload_report_to_gcs(report_text: str, target_date: str, bucket_name: str = "agri-market-reports") -> None:
+    """
+    최종 리포트 텍스트를 GCS에 업로드합니다.
+    경로: reports/{YYYY}/{MM}/market_report_{YYYY-MM-DD}.txt
+
+    Args:
+        report_text (str): 리포트 내용
+        target_date (str): 분석 날짜 (YYYY-MM-DD)
+        bucket_name (str): GCS 버킷 이름
+    """
+    if not report_text:
+        print("⚠️ 리포트 내용이 비어있어 업로드를 건너뜁니다.")
+        return
+
+    try:
+        dt = datetime.strptime(target_date, "%Y-%m-%d")
+        year = dt.strftime("%Y")
+        month = dt.strftime("%m")
+        blob_path = f"reports/{year}/{month}/market_report_{target_date}.txt"
+
+        factory = GCPServiceFactory()
+        # 버킷 이름이 지정되지 않았으면 팩토리 기본값 사용
+        storage_service = factory.get_storage_client(bucket_name=bucket_name)
+        
+        storage_service.upload_from_string(report_text, blob_path)
+        print(f"✅ 리포트 GCS 업로드 완료: gs://{bucket_name}/{blob_path}")
+        
+    except Exception as e:
+        print(f"❌ 리포트 업로드 실패: {str(e)}")
         raise e
