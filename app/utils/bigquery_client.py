@@ -159,7 +159,7 @@ class BigQueryClient:
         target_date: str,
         lookback_days: int = 7,
         dataset_id: Optional[str] = None,
-        table_id: str = "news_article",
+        table_id: str = "corn_all_news_with_sentiment",
     ) -> pd.DataFrame:
         """
         뉴스 감성 모델 예측용 뉴스 데이터를 가져옵니다.
