@@ -88,7 +88,7 @@ def run_pastnews_rag(
         dimensions: (미사용, 호환용)
 
     Returns:
-        dict: article_info (각 항목: {"description": str, "publish_date": str, "price_0일후": float, "price_1일후": float, "price_3일후": float}), error(있을 경우)
+        dict: article_info (각 항목: {"description": str, "publish_date": str, "0": float, "1": float, "3": float}), error(있을 경우)
     """
     result = {"article_info": []}
 
@@ -161,13 +161,13 @@ def run_pastnews_rag(
         # 해당 날짜의 가격 데이터 추가
         if publish_date_str in prices_by_date:
             price_data = prices_by_date[publish_date_str]
-            article_item["price_0일후"] = price_data.get(0)
-            article_item["price_1일후"] = price_data.get(1)
-            article_item["price_3일후"] = price_data.get(3)
+            article_item["0"] = price_data.get(0)
+            article_item["1"] = price_data.get(1)
+            article_item["3"] = price_data.get(3)
         else:
-            article_item["price_0일후"] = None
-            article_item["price_1일후"] = None
-            article_item["price_3일후"] = None
+            article_item["0"] = None
+            article_item["1"] = None
+            article_item["3"] = None
         
         result["article_info"].append(article_item)
 
