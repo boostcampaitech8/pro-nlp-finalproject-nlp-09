@@ -16,6 +16,9 @@ Example:
 from .base import GCPServiceBase, GCPServiceFactory
 from .bigquery import BigQueryService
 from .storage import StorageService
+from .provider import (
+    get_bq_service,
+)
 from .query_params import (
     PriceQueryParams,
     ProphetFeaturesParams,
@@ -30,6 +33,7 @@ __all__ = [
     # Services
     "BigQueryService",
     "StorageService",
+    "get_bq_service",
     # Query params
     "PriceQueryParams",
     "ProphetFeaturesParams",

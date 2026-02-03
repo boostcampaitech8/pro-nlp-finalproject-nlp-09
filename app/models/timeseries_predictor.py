@@ -4,6 +4,7 @@
 BigQuery에서 데이터를 가져와 시계열 모델로 시장 추세를 예측합니다.
 """
 
+from libs.gcp import get_bq_service
 import sys
 import os
 import json
@@ -96,7 +97,7 @@ def predict_market_trend(target_date: str, commodity: str) -> str:
     # TODO 90일치로 고정된 부분 반드시 config로 수정
     # TODO bigquery 조회 전혀 못하고 있는 중
     try:
-        bq = _get_bq_service()
+        bq = get_bq_service()
 
         # Prophet 피처 조회 (타겟 날짜 기준 90일치)
         # 7일 평균 통계와 추세 문맥을 충분히 확보하기 위해 90일치를 조회합니다.
