@@ -3,6 +3,7 @@ triple_text로 tilda.news_article_triples에서 embedding 조회 → 유사 hash
 """
 
 import os
+from datetime import date
 from typing import List, Optional, Any, Dict
 
 from google.cloud import bigquery
@@ -79,7 +80,7 @@ def run_pastnews_rag(
 ) -> Dict[str, Any]:
     """
     top_triples 중 첫 번째 triple만 사용: tilda.news_article_triples에서 triple_text로
-    embedding 조회 후 유사 hash_id 검색 → 해당 뉴스 publish_date 전후 가격 조회.
+    embedding 조회 후 유사 hash_id 검색 → 해당 뉴스 description 조회.
 
     Args:
         triples: [[s, v, o], ...]. None이면 extract_triples_from_today() 사용.
@@ -87,9 +88,9 @@ def run_pastnews_rag(
         dimensions: (미사용, 호환용)
 
     Returns:
-        dict: hash_ids, article_mappings, price_data, error(있을 경우)
+        dict: article_info (각 항목: {"description": str, "publish_date": str, "0": float, "1": float, "3": float}), error(있을 경우)
     """
-    result = {"hash_ids": [], "article_mappings": [], "price_data": []}
+    result = {"article_info": []}
 
     if triples is None or len(triples) == 0:
         triples = extract_triples_from_today()
@@ -113,30 +114,61 @@ def run_pastnews_rag(
         return result
 
     hash_ids = vector_search_similar_hash_ids(client, embedding, top_k=top_k)
-    result["hash_ids"] = hash_ids
 
     if not hash_ids:
         return result
 
-    mappings = fetch_article_dates(client, hash_ids)
-    result["article_mappings"] = [
-        {"hash_id": r.hash_id, "article_id": r.article_id, "publish_date": str(r.publish_date)}
-        for r in mappings
-    ]
-
-    dates = [r.publish_date for r in mappings]
-    if not dates:
-        return result
-
-    prices = fetch_prices_for_dates(client, dates)
-    result["price_data"] = [
-        {
-            "base_date": str(r.base_date),
-            "offset_days": r.offset_days,
-            "traded_date": str(r.traded_date),
-            "close": float(r.close) if r.close is not None else None,
+    articles = fetch_article_dates(client, hash_ids)
+    
+    # publish_date 추출 (DATE 타입으로 변환)
+    dates = []
+    for r in articles:
+        if hasattr(r, 'publish_date') and r.publish_date:
+            if isinstance(r.publish_date, date):
+                dates.append(r.publish_date)
+            elif isinstance(r.publish_date, str):
+                try:
+                    dates.append(date.fromisoformat(r.publish_date))
+                except (ValueError, AttributeError):
+                    pass
+    
+    # 가격 데이터 조회
+    prices_by_date = {}
+    if dates:
+        prices = fetch_prices_for_dates(client, dates)
+        for price_row in prices:
+            base_date_str = str(price_row.base_date)
+            if base_date_str not in prices_by_date:
+                prices_by_date[base_date_str] = {}
+            offset = price_row.offset_days
+            prices_by_date[base_date_str][offset] = float(price_row.close) if price_row.close is not None else None
+    
+    # article_info 구성 (가격 데이터 포함)
+    result["article_info"] = []
+    for r in articles:
+        if not (hasattr(r, 'description') and r.description):
+            continue
+        
+        publish_date_str = str(r.publish_date) if hasattr(r, 'publish_date') and r.publish_date else None
+        if not publish_date_str:
+            continue
+        
+        article_item = {
+            "description": r.description,
+            "publish_date": publish_date_str,
         }
-        for r in prices
-    ]
+        
+        # 해당 날짜의 가격 데이터 추가
+        if publish_date_str in prices_by_date:
+            price_data = prices_by_date[publish_date_str]
+            article_item["0"] = price_data.get(0)
+            article_item["1"] = price_data.get(1)
+            article_item["3"] = price_data.get(3)
+        else:
+            article_item["0"] = None
+            article_item["1"] = None
+            article_item["3"] = None
+        
+        result["article_info"].append(article_item)
 
     return result
