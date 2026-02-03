@@ -55,7 +55,8 @@ class BigQueryClient:
             base_date: 기준 날짜 (None이면 환경변수 또는 오늘)
             days: 기본 일수 (None이면 환경변수에서 가져옴, 기본값: 30)
         """
-        self.project_id = project_id or VERTEX_AI_PROJECT_ID
+        # self.project_id = project_id or VERTEX_AI_PROJECT_ID
+        self.project_id = "project-5b75bb04-485d-454e-af7"
 
         if not self.project_id:
             raise ValueError(
