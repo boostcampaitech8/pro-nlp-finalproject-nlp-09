@@ -1,4 +1,4 @@
-## 임베딩 분리(하지만 쉽게 다시 합칠 수 있게 View 제공), 그리고 파티션/클러스터 + 비용 가드레일까지 반영한 BigQuery 스키마 초안입니다.
+<!-- ## 임베딩 분리(하지만 쉽게 다시 합칠 수 있게 View 제공), 그리고 파티션/클러스터 + 비용 가드레일까지 반영한 BigQuery 스키마 초안입니다.
 
 -- =========================================================
 -- (2) 뉴스 기사 — bq.core.news_articles (권장 스키마)
@@ -135,4 +135,4 @@ LEFT JOIN `bq.core.news_article_texts` t
 LEFT JOIN `bq.core.news_article_enrichments_raw` r
   ON a.article_id = r.article_id AND a.publish_date = r.publish_date
 LEFT JOIN `bq.core.article_embeddings` e
-  ON a.article_id = e.article_id AND a.publish_date = e.publish_date;
+  ON a.article_id = e.article_id AND a.publish_date = e.publish_date; -->

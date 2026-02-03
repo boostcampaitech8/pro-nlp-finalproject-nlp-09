@@ -5,7 +5,10 @@
 
 # logger = logging.getLogger(__name__)
 
-# load_dotenv(dotenv_path="/data/ephemeral/home/kdh/pro-nlp-finalproject-nlp-09/.env")
+# # load_dotenv(dotenv_path="/data/ephemeral/home/kdh/pro-nlp-finalproject-nlp-09/.env")
+# load_dotenv(
+#     dotenv_path="/root/boostcampAI_final/pro-nlp-finalproject-nlp-09/legacy/.env_legacy"
+# )
 
 # # LSTM 설정 (추후 구현 예정)
 # LSTM_MODEL_PATH = os.getenv("LSTM_MODEL_PATH", "models/lstm_model.h5")
@@ -33,6 +36,8 @@
 # BIGQUERY_VALUE_COLUMN = os.getenv("BIGQUERY_VALUE_COLUMN", "close")
 # BIGQUERY_BASE_DATE = os.getenv("BIGQUERY_BASE_DATE")  # YYYY-MM-DD 형식, None이면 오늘
 # BIGQUERY_DAYS = int(os.getenv("BIGQUERY_DAYS", "30"))
+
+# TS_MODEL_PATH = os.getenv("TS_MODEL_PATH", "should_be_set_in_env")
 
 # # 참고: run_pipeline.py에서 Tool에 전달하는 파라미터로 테이블명 등을 지정할 수 있습니다.
 # # 기본값:

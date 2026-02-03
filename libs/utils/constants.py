@@ -114,6 +114,7 @@ class Tables:
     STG_PRICES = "stg_prices"
 
     # 뉴스 관련
+    NEWS_ARTICLES_RESOURCES_FEATURES_CORN = "corn_all_news_with_sentiment"
     NEWS_ARTICLES = "news_articles"
     NEWS_ARTICLE_TEXTS = "news_article_texts"
     NEWS_ARTICLE_ENRICHMENTS_RAW = "news_article_enrichments_raw"
