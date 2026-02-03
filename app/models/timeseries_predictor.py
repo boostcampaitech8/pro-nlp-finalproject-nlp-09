@@ -10,7 +10,7 @@ if root_dir not in sys.path:
     sys.path.append(root_dir)
 
 try:
-    from model.timeseries_model.run_xg import TimeSeriesXGBoostInference
+    from model.timeseries_model.xg_inference import TimeSeriesXGBoostInference
 except ImportError as e:
     print(f"경고: TimeSeriesXGBoostInference를 임포트할 수 없습니다. 오류: {e}")
     TimeSeriesXGBoostInference = None

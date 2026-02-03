@@ -6,7 +6,11 @@ Vertex AI를 사용하는 LangChain Agent 방식 (날짜 기반 자동 조회)
 
 import sys
 import os
+import warnings
 from datetime import datetime
+
+# FutureWarning 무시 (Google API Python 버전 경고)
+warnings.filterwarnings('ignore', category=FutureWarning)
 
 # 프로젝트 경로 설정
 project_root = os.path.dirname(os.path.abspath(__file__))
