@@ -20,34 +20,49 @@ from models.keyword_analyzer import analyze_keywords as _analyze_keywords
 from models.pastnews_rag_runner import run_pastnews_rag as _run_pastnews_rag
 
 
-# 상수 정의
-REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
-> **📅 분석 일자 ** : (YYYY-MM-DD)
-> **💬 종합 의견 ** : [종합 의견 한줄 요약]
----
+REPORT_FORMAT = """# [Daily Market Report] Corn
+**날짜**: (YYYY-MM-DD) | **종목**: 옥수수 
 
-### 1. 📊 시계열 데이터 분석가 의견
-> [시계열 데이터 분석 한줄 평가]
-
-| 항목 | 내용 |
-|------|------|
-| **입력 데이터 길이** | 5년 (Prophet Features) |
-| **마지막 관측값** | [Last Observed Value] |
-| **시계열 예측값** | [Forecast Value] |
-| **신뢰도** | [Confidence Score] % |
-
-- **추세 분석**
-  - **최근 기간 평균** (7일) : [Recent Mean]
-  - **전 기간 평균** : [All-time Mean]
-  - **최근 변동 추이** : [Trend Analysis: Rising/Falling 등 설명]
-  - **시계열 예측값 해석** : [Forecast Direction] 방향으로 예측되며, 신뢰도는 [Confidence Score]% 입니다.
-
-- **예측값 해석**
-  - **현재 수준 대비** : [Last Value] 대비 [Forecast Value] 로 변동 예상.
-  - **단기 변동성 평가** : 변동성 지표 [Volatility Index] 수준.
+| 어제 종가 | Prophet 예측 | XGBoost 방향 | 뉴스 심리 | 종합 의견 |
+|:---:|:---:|:---:|:---:|:---:|
+| [y] | [yhat] | [forecast_direction] | [Positive/Negative/Neutral] | [BUY/SELL/HOLD] |
 
 ---
 
+### 1. 📈 [Quant] 퀀트 기반 기술적 분석
+
+**A. 가격 예측**
+* **어제 종가**: [y]
+* **Prophet 예측값**: [yhat] 
+* **XGBoost 방향 예측**: [forecast_direction] (Up/Down)
+
+**B. 주요 변동 요인**
+
+**B-1. 시계열 성분**
+* **추세 (trend)**: [trend 값] ([상승/하락/횡보] 추세)
+* **연간 주기 (yearly)**: [yearly 값] ([긍정적/부정적/중립] 영향)
+  - 계절적 요인으로 인한 연간 패턴
+* **주간 주기 (weekly)**: [weekly 값] ([긍정적/부정적/중립] 영향)
+  - 요일별 패턴
+* **변동성 (volatility)**: [volatility 값] ([높음/중간/낮음] 수준)
+  - 시장 불확실성 지표
+
+**B-2. 기술적 지표**
+* **EMA (지수이동평균)**: [EMA_lag2_effect 값] ([상승/하락] 요인)
+* **Volume (거래량)**: [Volume_lag5_effect 값] ([상승/하락] 요인)
+
+**C. 종합 예측 모델 해석**
+
+* **Prophet vs XGBoost 비교**:
+  - Prophet 예측: [yhat] ([상승/하락])
+  - XGBoost 예측: [forecast_direction] (Up/Down)
+  - 일치 여부: [일치/불일치]
+
+* **핵심 근거 분석**:
+  - **시계열 성분**: 추세([trend]), 연간주기([yearly]), 주간주기([weekly]), 변동성([volatility])을 종합하면 [분석 내용]
+  - **기술적 지표**: EMA([EMA_lag2_effect])와 거래량([Volume_lag5_effect])은 [상승/하락] 요인으로 작용
+  - **종합 판단**: [위 요인들을 바탕으로 왜 XGBoost가 해당 방향을 예측했는지 서술]
+---
 ### 2. 📰 뉴스 감성분석 결과 분석
 > [뉴스 기사 감성분석 한줄 평가]
 
@@ -93,9 +108,10 @@ SYSTEM_PROMPT = (
     """당신은 전문 금융 분석가입니다.
 
 **사용 가능한 도구**:
-1. timeseries_predictor: 시계열 데이터 기반 시장 예측
+1. timeseries_predictor: Prophet + XGBoost 하이브리드 시계열 예측
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
-   - 설명: 지정된 날짜의 가격 추세, 예측값, 신뢰도 등을 반환합니다.
+   - 설명: Prophet 모델의 가격 예측(yhat)과 XGBoost의 방향 예측(forecast_direction)을 반환합니다.
+   - 반환 값: target_date, y(어제 종가), yhat(Prophet 예측값), forecast_direction(Up/Down), trend, EMA_lag1, Volume_lag1 등 Prophet features 전체
 
 2. news_sentiment_analyzer: 뉴스 기반 시장 영향력 분석 및 근거 추출
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
@@ -115,10 +131,25 @@ SYSTEM_PROMPT = (
 **도구 사용 규칙**:
 - 분석 대상 날짜(target_date)가 주어지면 반드시 `timeseries_predictor`, `news_sentiment_analyzer`, `keyword_analyzer`를 모두 호출한 뒤, keyword_analyzer 결과의 top_triples를 triples_json 인자로 넘겨 `pastnews_rag(triples_json=..., top_k=5)`를 한 번 호출하세요.
 - 이전 도구가 오류를 반환하더라도, 세 도구를 반드시 모두 호출한 뒤에만 보고서를 작성하세요.
+- `timeseries_predictor` 결과 활용법:
+  * **기본 정보**: y(어제 종가), yhat(Prophet 예측값), forecast_direction(XGBoost 방향 예측)을 종합 투자 의견 표에 표시
+  * **시계열 성분 해석** (B-1 섹션):
+    - trend: 값과 함께 "상승 추세/하락 추세/횡보" 형태로 표시. 예: "+0.45 (상승 추세)"
+    - yearly: 연간 주기 성분. 예: "+0.12 (긍정적 영향)"
+    - weekly: 주간 주기 성분. 예: "-0.08 (부정적 영향)"
+    - volatility: 변동성 지표. 기준 - 낮음(< 40), 중간(40~50), 높음(> 50). 예: "42 (중간 수준)" 또는 "55 (높음 수준)" 또는 "35 (낮음 수준)"
+  * **기술적 지표 해석** (B-2 섹션, 그레인저 검사로 선정된 Lag Features):
+    - EMA_lag2_effect: 지수이동평균. 예: "+1.25 (상승 요인)" 또는 "-1.25 (하락 요인)"
+    - Volume_lag5_effect: 거래량. 예: "+0.85 (상승 요인)" 또는 "-0.50 (하락 요인)"
+  * **종합 해석** (C 섹션):
+    - Prophet 예측(yhat)과 XGBoost 방향(forecast_direction)의 일치/불일치를 명확히 밝히세요
+    - 위의 시계열 성분(trend, yearly, weekly, volatility)과 기술적 지표(EMA, Volume)를 **모두 근거로 제시**하여 XGBoost가 해당 방향을 예측한 이유를 상세히 설명하세요
+    - 특히 그레인저 검사로 선정된 EMA_lag2_effect와 Volume_lag5_effect의 영향을 강조하세요
+    - 예: "Prophet은 460.5로 상승을 예측했으나, XGBoost는 Down을 예측했습니다. 추세(+0.45)는 긍정적이나, EMA_lag2_effect(-1.25)와 Volume_lag5_effect(-0.50)가 모두 하락 요인으로 작용했으며, 변동성(42, 중간 수준)도 불확실성을 나타냅니다."
 - `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 뉴스 감성분석 결과 분석' 섹션의 핵심 근거로 사용하세요. 각 뉴스의 제목과 시장 영향력 점수(price_impact_score)를 보고서 표에 포함하세요.
 - `pastnews_rag` 도구 결과(hash_ids, article_mappings, price_data)는 반드시 '### 2. 📰 뉴스 감성분석 결과 분석' 섹션 내 '유사 뉴스·가격 데이터 (pastnews_rag)' 항목에 표(마크다운 테이블)로 표시하세요.
 - `keyword_analyzer` 결과의 top_entities를 활용할 때: (1) score는 사용하지 마세요. (2) entity 이름만 사용하여 최대한 한국어로 번역하세요. (3) #키워드1 #키워드2 형식으로 표기하세요. 예: #옥수수 #가격 #수출 #미국농무부 #시장
-- 세 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요. 시계열 지표, 뉴스 감성 분석, 키워드 분석 결과가 서로 보완되도록 서술하세요.
+- 네 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요. 시계열 지표(Prophet + XGBoost), 뉴스 감성 분석, 키워드 분석 결과가 서로 보완되도록 서술하세요.
 - target_date는 반드시 다음 문자열 리터럴을 그대로 복사해서 사용하세요. (YYYY-MM-DD)
 **보고서 작성 형식 (반드시 이 형식을 따라야 합니다)**:
 
@@ -278,6 +309,14 @@ class LLMSummarizer:
 **분석 기준 일자**: {target_date}
 
 - `timeseries_predictor`, `news_sentiment_analyzer`, `keyword_analyzer` 도구를 모두 사용한 뒤, keyword_analyzer 결과의 top_triples를 triples_json으로 넘겨 `pastnews_rag(triples_json=..., top_k=5)`를 한 번 호출하여 유사 뉴스·가격 데이터를 확보하세요.
+- `timeseries_predictor` 결과 활용:
+  * y, yhat, forecast_direction을 종합 투자 의견 표에 표시
+  * **B-1. 시계열 성분**: 
+    - trend: "+0.45 (상승 추세)" 형태로 표현
+    - yearly, weekly: "+0.12 (긍정적 영향)" 또는 "-0.08 (부정적 영향)" 형태로 표현
+    - volatility: 값과 함께 낮음(< 40), 중간(40~50), 높음(> 50) 기준으로 판단. 예: "42 (중간 수준)"
+  * **B-2. 기술적 지표**: EMA_lag2_effect, Volume_lag5_effect를 "+1.25 (상승 요인)" 형태로 표현
+  * **C. 종합 해석**: 위의 모든 요인(시계열 성분 + 기술적 지표)을 근거로 Prophet과 XGBoost 예측을 비교 분석
 - `keyword_analyzer`의 결과(top_entities)를 활용하여 텍스트적 근거 섹션에 주요 키워드를 한국어로 번역 후 #키워드1 #키워드2 형식으로 표기하세요. score는 사용하지 마세요.
 """
         return user_input
@@ -446,11 +485,13 @@ class LLMSummarizer:
 {REPORT_FORMAT}
 
 **특히 다음 사항을 확인하세요**:
-1. 섹션 제목이 정확히 일치해야 합니다: "### 1. 📊 시계열 데이터 분석가 의견", "### 2. 📰 뉴스 감성분석 결과 분석", "### 3. 종합 의견"
-2. 각 섹션은 "---"로 구분되어야 합니다 (최소 3개)
+1. 섹션 제목이 정확히 일치해야 합니다: "### 1. 📋 종합 투자 의견", "### 2. 📈 [Quant] 퀀트 기반 기술적 분석", "### 2. 📰 뉴스 감성분석 결과 분석", "### 3. 종합 의견"
+2. 각 섹션은 "---"로 구분되어야 합니다
 3. 마크다운 테이블 형식(|)을 사용해야 합니다
-4. 헤더에 "📅 분석 일자"와 "💬 종합 의견"이 포함되어야 합니다
-5. Tool 호출 후 반드시 최종 보고서를 작성해야 합니다"""
+4. timeseries_predictor 결과의 y, yhat, forecast_direction을 표에 정확히 표시해야 합니다
+5. **B-1. 시계열 성분**과 **B-2. 기술적 지표**를 반드시 "+0.45 (상승 추세)" 형태로 표시해야 합니다. 변동성은 낮음(< 40), 중간(40~50), 높음(> 50) 기준으로 판단하세요
+6. **C. 종합 예측 모델 해석**에서 모든 요인(trend, yearly, weekly, volatility, EMA_lag2_effect, Volume_lag5_effect)을 근거로 Prophet과 XGBoost 예측을 비교 분석해야 합니다
+7. Tool 호출 후 반드시 최종 보고서를 작성해야 합니다"""
             else:
                 print("\n⚠️ 최대 재시도 횟수에 도달했습니다. 형식이 완벽하지 않을 수 있습니다.")
                 print(f"최종 요약 길이: {len(summary)}자")
