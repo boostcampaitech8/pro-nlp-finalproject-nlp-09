@@ -75,7 +75,7 @@ class TimeSeriesXGBoostInference:
         target_row_idx = history_df.index.get_loc(target_idx)
         
         # 피처 컬럼 정의
-        exclude_cols = ['ds', 'y', 'direction', 'y_change', 'yhat_lower', 'yhat_upper']
+        exclude_cols = ['ds', 'y', 'direction', 'y_change', 'yhat_lower', 'yhat_upper', 'EMA', 'Volume']
         feature_columns = [col for col in history_df.columns if col not in exclude_cols]
         
         print(f"\n📊 데이터 준비")
@@ -193,8 +193,13 @@ class TimeSeriesXGBoostInference:
                 # NaN 체크 후 변환
                 if pd.isna(value):
                     result[col] = None
+                elif isinstance(value, (bool, np.bool_)):
+                    # bool 타입은 int로 변환 (JSON 직렬화 호환)
+                    result[col] = int(value)
+                elif isinstance(value, (np.integer, np.floating, int, float)):
+                    result[col] = float(value)
                 else:
-                    result[col] = float(value) if isinstance(value, (np.integer, np.floating, int, float)) else value
+                    result[col] = value
         
         print(f"\n📈 예측 결과")
         print(f"  - xgboost 예측 방향: {result['forecast_direction']} ({'상승' if prediction == 1 else '하락'})")
