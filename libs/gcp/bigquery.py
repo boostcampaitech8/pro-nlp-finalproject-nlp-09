@@ -328,7 +328,52 @@ class BigQueryService(GCPServiceBase):
     # Convenience Methods - 뉴스 데이터
     # =========================================================================
 
-    def get_news_articles(
+    def get_news_articles_resources_features_corn(
+        self,
+        target_date: str,
+        lookback_days: int = 7,
+        dataset_id: Optional[str] = None,
+    ) -> pd.DataFrame:
+        """
+        (임시 구현 함수) 옥수수 뉴스 감성 모델 예측용 뉴스 피처 조회 (news.get_articles_resources_features_corn.sql)
+
+        corn_all_news_with_sentiment 테이블에서 필요한 컬럼을 가져옵니다.
+        target_date 기준으로 lookback_days 만큼의 과거 뉴스 데이터를 조회합니다.
+
+        Args:
+            target_date: 타겟 날짜 (YYYY-MM-DD)
+            lookback_days: lookback 기간 (일 단위, 기본값 7)
+            dataset_id: 데이터셋 ID (없으면 인스턴스 기본값 사용)
+
+        Returns:
+            pd.DataFrame: 뉴스 기사 + 리소스 + 피처 데이터
+                columns: publish_date, title, all_text, article_embedding,
+                         price_impact_score, sentiment_confidence,
+                         positive_score, negative_score, triples, filter_status
+
+        Example:
+            >>> df = bq.get_news_articles_resources_features_corn(
+            ...     target_date="2025-01-31",
+            ...     lookback_days=7
+            ... )
+        """
+        # 시작 날짜 계산
+        target_dt = datetime.strptime(target_date, DATE_FORMAT)
+        start_dt = target_dt - timedelta(days=lookback_days)
+        start_date = start_dt.strftime(DATE_FORMAT)
+
+        logger.info(
+            f"옥수수 분석을 위한 뉴스 데이터 피쳐 쿼리 요청중.. 기간: {start_date} ~ {target_date}"
+        )
+
+        return self.execute(
+            "news.get_articles_resources_features_corn",
+            dataset_id=dataset_id or self.dataset_id,
+            start_date=start_date,
+            end_date=target_date,
+        )
+
+    def get_news_articles_resource(
         self,
         start_date: str,
         end_date: str,
@@ -379,52 +424,52 @@ class BigQueryService(GCPServiceBase):
             limit_clause=limit_clause,
         )
 
-    def get_news_for_prediction(
-        self,
-        target_date: str,
-        lookback_days: int = DEFAULT_NEWS_LOOKBACK_DAYS,
-        dataset_id: Optional[str] = None,
-    ) -> pd.DataFrame:
-        """
-        예측용 뉴스 데이터 조회 (news.get_articles_for_prediction.sql)
+    # def get_news_for_prediction(
+    #     self,
+    #     target_date: str,
+    #     lookback_days: int = DEFAULT_NEWS_LOOKBACK_DAYS,
+    #     dataset_id: Optional[str] = None,
+    # ) -> pd.DataFrame:
+    #     """
+    #     예측용 뉴스 데이터 조회 (news.get_articles_for_prediction.sql)
 
-        뉴스 기사 메타 + 본문 + 임베딩 + enrichment 정보를 함께 조회합니다.
+    #     뉴스 기사 메타 + 본문 + 임베딩 + enrichment 정보를 함께 조회합니다.
 
-        Args:
-            target_date: 타겟 날짜 (YYYY-MM-DD)
-            lookback_days: lookback 기간 (일 단위, 기본값 7)
-            dataset_id: 데이터셋 ID (없으면 인스턴스 기본값 사용)
+    #     Args:
+    #         target_date: 타겟 날짜 (YYYY-MM-DD)
+    #         lookback_days: lookback 기간 (일 단위, 기본값 7)
+    #         dataset_id: 데이터셋 ID (없으면 인스턴스 기본값 사용)
 
-        Returns:
-            pd.DataFrame: 예측 입력용 뉴스 데이터
-                columns: article_id, publish_date, title, description, key_word,
-                         all_text, article_embedding, named_entities_json, triples_json
+    #     Returns:
+    #         pd.DataFrame: 예측 입력용 뉴스 데이터
+    #             columns: article_id, publish_date, title, description, key_word,
+    #                      all_text, article_embedding, named_entities_json, triples_json
 
-        Example:
-            >>> df = bq.get_news_for_prediction(
-            ...     target_date="2025-01-31",
-            ...     lookback_days=7
-            ... )
-        """
-        # 파라미터 검증
-        params = NewsForPredictionParams(
-            target_date=target_date,
-            lookback_days=lookback_days,
-        )
+    #     Example:
+    #         >>> df = bq.get_news_for_prediction(
+    #         ...     target_date="2025-01-31",
+    #         ...     lookback_days=7
+    #         ... )
+    #     """
+    #     # 파라미터 검증
+    #     params = NewsForPredictionParams(
+    #         target_date=target_date,
+    #         lookback_days=lookback_days,
+    #     )
 
-        # 시작 날짜 계산
-        target_dt = datetime.strptime(params.target_date, DATE_FORMAT)
-        start_dt = target_dt - timedelta(days=params.lookback_days)
-        start_date = start_dt.strftime(DATE_FORMAT)
+    #     # 시작 날짜 계산
+    #     target_dt = datetime.strptime(params.target_date, DATE_FORMAT)
+    #     start_dt = target_dt - timedelta(days=params.lookback_days)
+    #     start_date = start_dt.strftime(DATE_FORMAT)
 
-        logger.info(f"Getting news for prediction: {start_date} ~ {params.target_date}")
+    #     logger.info(f"Getting news for prediction: {start_date} ~ {params.target_date}")
 
-        return self.execute(
-            "news.get_articles_for_prediction",
-            dataset_id=dataset_id or self.dataset_id,
-            start_date=start_date,
-            end_date=params.target_date,
-        )
+    #     return self.execute(
+    #         "news.get_articles_for_prediction",
+    #         dataset_id=dataset_id or self.dataset_id,
+    #         start_date=start_date,
+    #         end_date=params.target_date,
+    #     )
 
     # =========================================================================
     # Legacy Methods (하위 호환성)
