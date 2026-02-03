@@ -14,7 +14,11 @@ class TimeSeriesInference:
 
         # 모델 경로 설정
         # 우선순위: 1. 인자값 2. 환경변수 3. 기본 로컬 경로
-        self.model_path = model_path or os.getenv("TS_MODEL_PATH") or os.path.join(self.base_dir, "xgboost_model.pkl")
+        self.model_path = (
+            model_path
+            or os.getenv("TS_MODEL_PATH")
+            or os.path.join(self.base_dir, "xgboost_model.pkl")
+        )
 
         self.model = None
         self._load_model()
@@ -48,7 +52,9 @@ class TimeSeriesInference:
         try:
             target_ts = pd.Timestamp(target_date)
         except ValueError:
-            raise ValueError(f"잘못된 날짜 형식입니다: {target_date}. YYYY-MM-DD 형식을 사용하세요.")
+            raise ValueError(
+                f"잘못된 날짜 형식입니다: {target_date}. YYYY-MM-DD 형식을 사용하세요."
+            )
 
         # 'ds' 컬럼이 datetime 형식인지 확인
         if not pd.api.types.is_datetime64_any_dtype(history_df["ds"]):
@@ -58,7 +64,9 @@ class TimeSeriesInference:
         row = history_df[history_df["ds"] == target_ts]
 
         if row.empty:
-            raise ValueError(f"제공된 데이터프레임에서 해당 날짜({target_date})의 데이터를 찾을 수 없습니다.")
+            raise ValueError(
+                f"제공된 데이터프레임에서 해당 날짜({target_date})의 데이터를 찾을 수 없습니다."
+            )
 
         # 피처 컬럼 정의 (학습 시 제외했던 컬럼들 제거)
         exclude_cols = ["ds", "y", "direction", "y_change", "yhat_lower", "yhat_upper"]
@@ -92,8 +100,12 @@ class TimeSeriesInference:
             "confidence_score": float(confidence) * 100,  # 신뢰도 (%)
             "recent_mean_7d": float(recent_mean),  # 최근 7일 평균
             "all_time_mean": float(all_time_mean),  # 전체 기간 평균
-            "trend_analysis": "Rising" if yhat > recent_mean else "Falling",  # 단순 추세
-            "volatility_index": float(recent_7_days["yhat"].std()),  # 변동성 지표 (표준편차)
+            "trend_analysis": "Rising"
+            if yhat > recent_mean
+            else "Falling",  # 단순 추세
+            "volatility_index": float(
+                recent_7_days["yhat"].std()
+            ),  # 변동성 지표 (표준편차)
             "last_observed_value": float(row["y"].values[0])
             if "y" in row and not pd.isna(row["y"].values[0])
             else None,  # 실제값 (있으면)

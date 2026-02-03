@@ -12,7 +12,9 @@ from libs.gcp.storage import StorageService
 
 @patch("libs.gcp.storage.storage.Client")
 @patch("libs.gcp.base.default")
-def test_storage_service_initialization(mock_default, mock_client_class, mock_credentials, mock_env_vars):
+def test_storage_service_initialization(
+    mock_default, mock_client_class, mock_credentials, mock_env_vars
+):
     """Test StorageService initialization"""
     mock_default.return_value = (mock_credentials, None)
     mock_client = Mock()

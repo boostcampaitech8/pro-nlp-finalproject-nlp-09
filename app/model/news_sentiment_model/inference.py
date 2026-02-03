@@ -60,7 +60,9 @@ class CornPricePredictor:
         # 3. 피처 컬럼 로드
         feature_path = os.path.join(self.model_dir, "feature_columns.json")
         if not os.path.exists(feature_path):
-            raise FileNotFoundError(f"피처 컬럼 파일을 찾을 수 없습니다: {feature_path}")
+            raise FileNotFoundError(
+                f"피처 컬럼 파일을 찾을 수 없습니다: {feature_path}"
+            )
 
         with open(feature_path, "r") as f:
             self.feature_columns = json.load(f)
@@ -99,7 +101,9 @@ class CornPricePredictor:
         """
         # 모델 로드 확인
         if self.model is None or self.pca is None or self.feature_columns is None:
-            raise RuntimeError("모델이 로드되지 않았습니다. load_model()을 먼저 호출하세요.")
+            raise RuntimeError(
+                "모델이 로드되지 않았습니다. load_model()을 먼저 호출하세요."
+            )
 
         print("\n" + "=" * 80)
         print("예측 데이터 전처리 중...")
@@ -155,26 +159,40 @@ class CornPricePredictor:
             "positive_score",
             "negative_score",
         ]
-        missing_news_cols = [col for col in required_news_cols if col not in news_data.columns]
+        missing_news_cols = [
+            col for col in required_news_cols if col not in news_data.columns
+        ]
         if missing_news_cols:
-            raise ValueError(f"뉴스 데이터에 필수 컬럼이 누락되었습니다: {missing_news_cols}")
+            raise ValueError(
+                f"뉴스 데이터에 필수 컬럼이 누락되었습니다: {missing_news_cols}"
+            )
 
         # 가격 데이터 검증
         if "time" not in price_history.columns and "date" not in price_history.columns:
             raise ValueError("가격 데이터에 'time' 또는 'date' 컬럼이 필요합니다.")
 
         required_price_cols = ["close", "ret_1d"]
-        price_history["ret_1d"] = np.log(price_history["close"] / price_history["close"].shift(1))
-        missing_price_cols = [col for col in required_price_cols if col not in price_history.columns]
+        price_history["ret_1d"] = np.log(
+            price_history["close"] / price_history["close"].shift(1)
+        )
+        missing_price_cols = [
+            col for col in required_price_cols if col not in price_history.columns
+        ]
         if missing_price_cols:
-            raise ValueError(f"가격 데이터에 필수 컬럼이 누락되었습니다: {missing_price_cols}")
+            raise ValueError(
+                f"가격 데이터에 필수 컬럼이 누락되었습니다: {missing_price_cols}"
+            )
 
         # 데이터 개수 확인
         if len(news_data) < 3:
-            print(f"경고: 뉴스 데이터가 {len(news_data)}개로 부족합니다. 최소 3일치 권장")
+            print(
+                f"경고: 뉴스 데이터가 {len(news_data)}개로 부족합니다. 최소 3일치 권장"
+            )
 
         if len(price_history) < 5:
-            print(f"경고: 가격 데이터가 {len(price_history)}개로 부족합니다. 최소 5일치 권장")
+            print(
+                f"경고: 가격 데이터가 {len(price_history)}개로 부족합니다. 최소 5일치 권장"
+            )
 
     def _create_features_summary(self, news_data, price_history):
         """피처 요약 정보 생성"""

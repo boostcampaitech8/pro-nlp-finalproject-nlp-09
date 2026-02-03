@@ -26,7 +26,7 @@ class StorageService(GCPServiceBase):
         self,
         project_id: Optional[str] = None,
         bucket_name: Optional[str] = None,
-        credentials: Optional[Credentials] = None
+        credentials: Optional[Credentials] = None,
     ):
         """
         Initialize Cloud Storage service
@@ -36,7 +36,7 @@ class StorageService(GCPServiceBase):
             bucket_name: Default bucket name
             credentials: Pre-existing credentials (optional)
         """
-        super().__init__(project_id=project_id, credentials=credentials)
+        super().__init__(credentials=credentials)
         self.bucket_name = bucket_name
 
     def _default_scopes(self) -> list:
@@ -50,10 +50,7 @@ class StorageService(GCPServiceBase):
 
     def _initialize_client(self):
         """Initialize Cloud Storage client"""
-        return storage.Client(
-            project=self.project_id,
-            credentials=self.credentials
-        )
+        return storage.Client(project=self.project_id, credentials=self.credentials)
 
     def _get_bucket(self, bucket_name: Optional[str] = None):
         """Get bucket object"""
@@ -63,10 +60,7 @@ class StorageService(GCPServiceBase):
         return self.client.bucket(name)
 
     def upload_file(
-        self,
-        source_path: str,
-        destination_blob: str,
-        bucket_name: Optional[str] = None
+        self, source_path: str, destination_blob: str, bucket_name: Optional[str] = None
     ) -> None:
         """
         Upload a file to GCS
@@ -111,10 +105,7 @@ class StorageService(GCPServiceBase):
         blob.upload_from_string(data, content_type=content_type)
 
     def download_file(
-        self,
-        source_blob: str,
-        destination_path: str,
-        bucket_name: Optional[str] = None
+        self, source_blob: str, destination_path: str, bucket_name: Optional[str] = None
     ) -> None:
         """
         Download a file from GCS
@@ -138,9 +129,7 @@ class StorageService(GCPServiceBase):
         blob.download_to_filename(str(destination))
 
     def list_blobs(
-        self,
-        prefix: Optional[str] = None,
-        bucket_name: Optional[str] = None
+        self, prefix: Optional[str] = None, bucket_name: Optional[str] = None
     ) -> List[str]:
         """
         List blobs in a bucket
@@ -161,11 +150,7 @@ class StorageService(GCPServiceBase):
         blobs = bucket.list_blobs(prefix=prefix)
         return [blob.name for blob in blobs]
 
-    def blob_exists(
-        self,
-        blob_name: str,
-        bucket_name: Optional[str] = None
-    ) -> bool:
+    def blob_exists(self, blob_name: str, bucket_name: Optional[str] = None) -> bool:
         """
         Check if a blob exists
 
@@ -184,11 +169,7 @@ class StorageService(GCPServiceBase):
         blob = bucket.blob(blob_name)
         return blob.exists()
 
-    def delete_blob(
-        self,
-        blob_name: str,
-        bucket_name: Optional[str] = None
-    ) -> None:
+    def delete_blob(self, blob_name: str, bucket_name: Optional[str] = None) -> None:
         """
         Delete a blob from GCS
 

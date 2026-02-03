@@ -45,19 +45,13 @@ def test_build_vertex_ai_url(mock_env_vars):
     """Test build_vertex_ai_url constructs correct URL"""
     url = build_vertex_ai_url()
 
-    expected = (
-        "https://us-central1-aiplatform.googleapis.com/v1/"
-        "projects/test-project/locations/us-central1/endpoints/openapi"
-    )
+    expected = "https://us-central1-aiplatform.googleapis.com/v1/projects/test-project/locations/us-central1/endpoints/openapi"
     assert url == expected
 
 
 def test_build_vertex_ai_url_custom_params():
     """Test build_vertex_ai_url with custom parameters"""
-    url = build_vertex_ai_url(
-        project_id="custom-project",
-        location="europe-west1"
-    )
+    url = build_vertex_ai_url(project_id="custom-project", location="europe-west1")
 
     expected = (
         "https://europe-west1-aiplatform.googleapis.com/v1/"
@@ -93,9 +87,7 @@ def test_get_vertex_ai_config_custom_params(mock_get_token, mock_env_vars):
     mock_get_token.return_value = "test-token"
 
     config = get_vertex_ai_config(
-        model_name="custom-model",
-        temperature=0.5,
-        max_tokens=1024
+        model_name="custom-model", temperature=0.5, max_tokens=1024
     )
 
     assert config["model"] == "custom-model"

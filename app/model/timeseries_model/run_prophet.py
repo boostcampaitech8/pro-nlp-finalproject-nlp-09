@@ -71,7 +71,9 @@ def extract_prophet_features_walkforward(df, config):
     regressor_columns = prophet_config["regressors"]
 
     print("Walk-Forward")
-    print(f"학습 윈도우: {prophet_config['train_window_years']}년 ({train_window_days}일)")
+    print(
+        f"학습 윈도우: {prophet_config['train_window_years']}년 ({train_window_days}일)"
+    )
 
     prophet_features_list = []
     start_idx = train_window_days
@@ -103,7 +105,9 @@ def extract_prophet_features_walkforward(df, config):
             forecast = model.predict(future)
 
             # Features 추출
-            prophet_feat = forecast[["ds", "yhat", "yhat_lower", "yhat_upper", "trend"]].copy()
+            prophet_feat = forecast[
+                ["ds", "yhat", "yhat_lower", "yhat_upper", "trend"]
+            ].copy()
 
             if "weekly" in forecast.columns:
                 prophet_feat["weekly"] = forecast["weekly"]
@@ -111,7 +115,9 @@ def extract_prophet_features_walkforward(df, config):
                 prophet_feat["yearly"] = forecast["yearly"]
 
             if "extra_regressors_multiplicative" in forecast.columns:
-                prophet_feat["extra_regressors_multiplicative"] = forecast["extra_regressors_multiplicative"]
+                prophet_feat["extra_regressors_multiplicative"] = forecast[
+                    "extra_regressors_multiplicative"
+                ]
 
             for reg in regressor_columns:
                 if reg in forecast.columns:

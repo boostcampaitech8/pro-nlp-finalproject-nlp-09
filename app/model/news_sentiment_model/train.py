@@ -37,7 +37,9 @@ from preprocessing import (
 )
 
 
-def load_data(news_path="corn_all_news_with_sentiment.csv", price_path="corn_future_price.csv"):
+def load_data(
+    news_path="corn_all_news_with_sentiment.csv", price_path="corn_future_price.csv"
+):
     """
     데이터 로드
 
@@ -196,7 +198,11 @@ def train_model(X_train, y_train, X_test, y_test):
     print(f"Recall (상승 탐지율): {metrics['recall']:.4f}")
     print(f"F1-Score: {metrics['f1_score']:.4f}")
     print("\nClassification Report:")
-    print(classification_report(y_test, y_pred, target_names=["하락(0)", "상승(1)"], zero_division=0))
+    print(
+        classification_report(
+            y_test, y_pred, target_names=["하락(0)", "상승(1)"], zero_division=0
+        )
+    )
 
     return xgb_model, metrics
 
@@ -284,9 +290,9 @@ def main():
     print("주요 피처 분석 (Top 20)")
     print("=" * 80)
 
-    feature_importance = pd.DataFrame({"feature": feature_cols, "importance": model.feature_importances_}).sort_values(
-        "importance", ascending=False
-    )
+    feature_importance = pd.DataFrame(
+        {"feature": feature_cols, "importance": model.feature_importances_}
+    ).sort_values("importance", ascending=False)
 
     print("\n" + feature_importance.head(20).to_string(index=False))
 

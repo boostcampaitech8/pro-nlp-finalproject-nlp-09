@@ -1,60 +1,92 @@
 """
-Centralized configuration management with Pydantic
+중앙 집중식 설정 관리
 
-This module provides type-safe configuration loading from environment variables.
-All configuration models use Pydantic for validation and type checking.
+이 모듈은 환경 변수에서 타입 안전한 설정을 로드합니다.
+모든 설정 모델은 Pydantic을 사용하여 검증과 타입 체크를 수행합니다.
 
-Environment variables are loaded from libs/gcp/.env
-Only essential/sensitive values are loaded from .env, rest use sensible defaults.
+환경 변수는 libs/gcp/.env 파일에서 로드됩니다.
+필수/민감한 값만 .env에서 로드하고, 나머지는 적절한 기본값을 사용합니다.
+
+순수 상수는 constants.py에서 정의됩니다.
+
+Example:
+    >>> from libs.utils.config import get_config
+    >>> config = get_config()
+    >>> project_id = config.vertex_ai.project_id
+    >>> dataset_id = config.bigquery.dataset_id
 """
 
-import os
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-# .env file location: libs/gcp/.env
+from .constants import (
+    DATE_FORMAT,
+    DATETIME_FORMAT,
+    DEFAULT_PROPHET_LOOKBACK_DAYS,
+    DEFAULT_NEWS_LOOKBACK_DAYS,
+    ARTICLE_EMBEDDING_DIM,
+    ENTITY_EMBEDDING_DIM,
+    TRIPLE_EMBEDDING_DIM,
+    VERTEX_AI_LOCATION,
+    GENERATE_MODEL_NAME,
+    GENERATE_MODEL_TEMPERATURE,
+    GENERATE_MODEL_MAX_TOKENS,
+    DEFAULT_API_HOST,
+    DEFAULT_API_PORT,
+    DEFAULT_DEBUG,
+    Tables,
+)
+
+# .env 파일 위치: libs/gcp/.env
 _ENV_FILE = Path(__file__).parent.parent / "gcp" / ".env"
 
 
 class GCPConfig(BaseSettings):
     """
-    Common GCP configuration
+    공통 GCP 설정
 
-    This configuration is shared across all GCP services.
+    이 설정은 모든 GCP 서비스에서 공유됩니다.
+    속성값을 환경 변수에서 로드합니다.
     """
 
-    project_id: Optional[str] = Field(default=None, alias="GCP_PROJECT_ID")
-    location: str = Field(default="us-east1", alias="GCP_LOCATION")
+    project_id: str = Field(alias="GCP_PROJECT_ID")
+    location: str = Field(alias="GCP_LOCATION")
 
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
 
 class VertexAIConfig(BaseSettings):
-    """Vertex AI configuration"""
+    """
+    Vertex AI configuration
+    libs/gcp/.env에 값이 존재하면 이를 사용하고 없으면 constants의 기본값을 사용합니다.
+    """
 
-    project_id: Optional[str] = Field(default=None, alias="VERTEX_AI_PROJECT_ID")
-    location: str = Field(default="us-central1", alias="VERTEX_AI_LOCATION")
-    model_name: str = Field(default="meta/llama-3.1-70b-instruct-maas", alias="GENERATE_MODEL_NAME")
-    temperature: float = Field(default=0.7, alias="GENERATE_MODEL_TEMPERATURE")
-    max_tokens: int = Field(default=2048, alias="GENERATE_MODEL_MAX_TOKENS")
-
+    project_id: str = Field(alias="VERTEX_AI_PROJECT_ID")
+    location: str = Field(alias="VERTEX_AI_LOCATION")
+    model_name: str = Field(default=GENERATE_MODEL_NAME, alias="GENERATE_MODEL_NAME")
+    temperature: float = Field(
+        default=GENERATE_MODEL_TEMPERATURE, alias="GENERATE_MODEL_TEMPERATURE"
+    )
+    max_tokens: int = Field(
+        default=GENERATE_MODEL_MAX_TOKENS, alias="GENERATE_MODEL_MAX_TOKENS"
+    )
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
     @field_validator("temperature")
     @classmethod
     def validate_temperature(cls, v: float) -> float:
-        if not 0.0 <= v <= 1.0:
-            raise ValueError("temperature must be between 0.0 and 1.0")
+        if not 0.0 <= v <= 2.0:
+            raise ValueError("temperature must be between 0.0 and 2.0")
         return v
 
     @field_validator("max_tokens")
@@ -65,56 +97,57 @@ class VertexAIConfig(BaseSettings):
         return v
 
 
+# # TODO 테이블별로 속성 나누는 게 나음 이거 지금 안됨
 class BigQueryConfig(BaseSettings):
     """
-    BigQuery configuration for daily_prices table
+    BigQuery general configuration
 
-    Table schema: commodity, date, open, high, low, close, ema, volume, ingested_at
     """
 
-    dataset_id: Optional[str] = Field(default=None, alias="BIGQUERY_DATASET_ID")
-    table_id: str = Field(default="daily_prices", alias="BIGQUERY_TABLE_ID")
-    date_column: str = Field(default="date", alias="BIGQUERY_DATE_COLUMN")
-    value_column: str = Field(default="close", alias="BIGQUERY_VALUE_COLUMN")
-    commodity: str = Field(default="corn", alias="BIGQUERY_COMMODITY")
-    base_date: Optional[str] = Field(default=None, alias="BIGQUERY_BASE_DATE")
-    days: int = Field(default=30, alias="BIGQUERY_DAYS")
+    dataset_id: str = Field(alias="BIGQUERY_DATASET_ID")
+    dataset_location: str = Field(alias="BIGQUERY_DATASET_LOCATION")
+    # table_id: str = Field(alias="BIGQUERY_TABLE_ID")
+    # date_column: str = Field(default="date", alias="BIGQUERY_DATE_COLUMN")
+    # value_column: str = Field(default="close", alias="BIGQUERY_VALUE_COLUMN")
+    # commodity: str = Field(default="corn", alias="BIGQUERY_COMMODITY")
+    # base_date: Optional[str] = Field(default=None, alias="BIGQUERY_BASE_DATE")
+    # days: int = Field(default=30, alias="BIGQUERY_DAYS")
 
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
-    @field_validator("days")
-    @classmethod
-    def validate_days(cls, v: int) -> int:
-        if v <= 0:
-            raise ValueError("days must be positive")
-        return v
+    # @field_validator("days")
+    # @classmethod
+    # def validate_days(cls, v: int) -> int:
+    #     if v <= 0:
+    #         raise ValueError("days must be positive")
+    #     return v
 
-    @field_validator("base_date")
-    @classmethod
-    def validate_base_date(cls, v: Optional[str]) -> Optional[str]:
-        if v is not None and v:
-            from datetime import datetime
+    # @field_validator("base_date")
+    # @classmethod
+    # def validate_base_date(cls, v: Optional[str]) -> Optional[str]:
+    #     if v is not None and v:
+    #         from datetime import datetime
 
-            try:
-                datetime.strptime(v, "%Y-%m-%d")
-            except ValueError:
-                raise ValueError("base_date must be in YYYY-MM-DD format")
-        return v
+    #         try:
+    #             datetime.strptime(v, DATE_FORMAT)
+    #         except ValueError:
+    #             raise ValueError(f"base_date must be in {DATE_FORMAT} format")
+    #     return v
 
 
 class StorageConfig(BaseSettings):
     """Google Cloud Storage configuration"""
 
-    bucket_name: Optional[str] = Field(default=None, alias="GCS_BUCKET_NAME")
+    bucket_name: str = Field(alias="GCS_BUCKET_NAME")
 
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
 
@@ -128,7 +161,7 @@ class APIConfig(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=str(_ENV_FILE),
         env_file_encoding="utf-8",
-        extra="ignore"
+        extra="ignore",
     )
 
     @field_validator("port")
@@ -148,7 +181,6 @@ class APIConfig(BaseSettings):
         return bool(v)
 
 
-# TODO: __init__ 메서드 생성 방식 데코레이를 활용한 패턴으로 변경
 class AppConfig:
     """
     Complete application configuration container
@@ -169,7 +201,7 @@ class AppConfig:
             f"AppConfig(\n"
             f"  gcp={self.gcp},\n"
             f"  vertex_ai={self.vertex_ai},\n"
-            f"  bigquery={self.bigquery},\n"
+            # f"  bigquery={self.bigquery},\n"
             f"  storage={self.storage},\n"
             f"  api={self.api}\n"
             f")"

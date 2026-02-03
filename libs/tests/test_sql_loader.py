@@ -55,9 +55,7 @@ def test_load_query_with_params(temp_sql_directory):
     loader = SQLQueryLoader(base_path=temp_sql_directory)
 
     query = loader.load_with_params(
-        "market.test_query",
-        table_id="corn_price",
-        date="2025-01-20"
+        "market.test_query", table_id="corn_price", date="2025-01-20"
     )
 
     assert "corn_price" in query
