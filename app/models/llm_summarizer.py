@@ -21,9 +21,9 @@ from models.pastnews_rag_runner import run_pastnews_rag as _run_pastnews_rag
 
 
 # 상수 정의
-REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
-> **📅 분석 일자 ** : (YYYY-MM-DD)
-> **💬 종합 의견 ** : [종합 의견 한줄 요약]
+REPORT_FORMAT = """**일일 금융 시장 분석 보고서**
+> **📅 분석 일자** : (YYYY-MM-DD)
+> **💬 종합 의견** : [종합 의견 한줄 요약]
 ---
 
 ### 1. 📊 시계열 데이터 분석가 의견
