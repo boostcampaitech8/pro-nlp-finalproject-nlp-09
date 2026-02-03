@@ -7,10 +7,11 @@ SQL 쿼리는 libs/gcp/sql/news/ 디렉토리에서 로드합니다.
 
 import logging
 import pandas as pd
+import json
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 
-from .price_repository import BigQueryService
+from ..bigquery import BigQueryService
 
 
 logger = logging.getLogger(__name__)
@@ -45,6 +46,34 @@ class NewsRepository:
         self._bq = bq_service
         self._project_id = bq_service.project_id
         self._dataset_id = bq_service.dataset_id
+
+    def save_prediction(self, prediction_data: Dict[str, Any]) -> None:
+        """
+        뉴스 감성 분석 결과를 prediction_news_sentiment 테이블에 적재
+
+        Args:
+            prediction_data: 뉴스 모델의 반환값 (JSON/Dict)
+        """
+        if not prediction_data or "error" in prediction_data:
+            logger.error("Skipping save: Invalid news prediction data")
+            return
+
+        table_id = "prediction_news_sentiment"
+        
+        # JSON 필드 직렬화 (BigQuery JSON 타입 대응)
+        row = prediction_data.copy()
+        if "features_summary" in row and isinstance(row["features_summary"], dict):
+            row["features_summary"] = json.dumps(row["features_summary"], ensure_ascii=False)
+        
+        if "evidence_news" in row and isinstance(row["evidence_news"], list):
+            row["evidence_news"] = json.dumps(row["evidence_news"], ensure_ascii=False)
+
+        logger.info(f"Saving news prediction for date: {row.get('target_date')}")
+        
+        errors = self._bq.insert_rows_json(table_id, [row])
+        
+        if errors:
+            raise RuntimeError(f"Failed to save news prediction: {errors}")
 
     def _validate_date(self, date_str: str, param_name: str = "date") -> str:
         """날짜 형식 검증"""
