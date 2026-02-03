@@ -138,6 +138,7 @@ def create_tools(commodity: str) -> list:
     Returns:
         list: commodity가 바인딩된 LangChain tool 목록
     """
+
     @tool
     def timeseries_predictor(target_date: str) -> str:
         """
@@ -149,7 +150,10 @@ def create_tools(commodity: str) -> list:
         Returns:
             JSON 형식의 예측 결과 문자열 (예측값, 방향, 신뢰도, 추세 분석 등 포함)
         """
-        return predict_market_trend(target_date, commodity)
+        timeseries_predictor_output = predict_market_trend(target_date, commodity)
+        logger.info(f"timeseries_predictor output: {timeseries_predictor_output}")
+
+        return timeseries_predictor_output
 
     @tool
     def news_sentiment_analyzer(target_date: str) -> str:
@@ -164,6 +168,7 @@ def create_tools(commodity: str) -> list:
         """
         analyzer = SentimentAnalyzer(commodity=commodity)
         result = analyzer.predict_market_impact(target_date)
+        logger.info(f"news_sentiment_analyzer output: {result}")
         return json.dumps(result, ensure_ascii=False)
 
     return [timeseries_predictor, news_sentiment_analyzer]
@@ -209,7 +214,6 @@ class LLMSummarizer:
         logger.debug(f"초기화된 프로젝트 ID: {self.project_id}")
 
         self.llm: Optional[ChatOpenAI] = None
-    
         self.agent = None
         # TODO commodity 별 에이전트 캐싱 고려
         # self._agents: Dict[str, object] = {}
@@ -335,7 +339,7 @@ class LLMSummarizer:
         context: str = "",
         target_date: Optional[str] = None,
         commodity: str = "corn",
-        max_retries: int = 2,
+        max_retries: int = 1,
     ) -> dict:
         """
         LangChain Agent를 이용한 LLM 요약 생성
@@ -368,9 +372,7 @@ class LLMSummarizer:
         for attempt in range(max_retries + 1):
             # Agent 실행
             if attempt == 0:
-                result = agent.invoke(
-                    {"messages": [HumanMessage(content=user_input)]}
-                )
+                result = agent.invoke({"messages": [HumanMessage(content=user_input)]})
             else:
                 result = agent.invoke({"messages": result.get("messages", [])})
 

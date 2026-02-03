@@ -8,6 +8,7 @@ import numpy as np
 import ast
 
 
+# TODO 반드시 수정하고 삭제할 것
 def parse_embedding(embedding_str):
     """문자열 형태의 임베딩을 numpy 배열로 변환"""
     try:
@@ -22,6 +23,7 @@ def parse_embedding(embedding_str):
         return np.zeros(512, dtype=np.float32)
 
 
+# 임베딩을 여기서 저장할 이유가 전혀 없음
 def preprocess_news_data(news_df, filter_status=True):
     """
     뉴스 데이터 전처리
