@@ -11,9 +11,7 @@ from datetime import datetime
 from app.routes.orchestrator import orchestrate_analysis
 
 # 프로젝트 경로 설정
-# project_root = os.path.dirname(os.path.abspath(__file__))
-# app_dir = os.path.join(project_root, "app")
-# sys.path.insert(0, app_dir)
+_project_root = os.path.dirname(os.path.abspath(__file__))
 
 
 def setup_logging():
@@ -124,7 +122,7 @@ def save_results_from_orchestrator(result, agent_result: dict):
     """
     try:
         # 결과 저장 디렉토리 생성
-        output_dir = os.path.join(project_root, "outputs")
+        output_dir = os.path.join(_project_root, "outputs")
         os.makedirs(output_dir, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
