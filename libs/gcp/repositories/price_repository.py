@@ -10,7 +10,7 @@ import pandas as pd
 from datetime import datetime, date
 from typing import Optional, List, Dict, Any
 
-from .bigquery import BigQueryService
+from ..bigquery import BigQueryService
 
 
 logger = logging.getLogger(__name__)
@@ -287,3 +287,24 @@ class PriceRepository:
         job.result()
 
         logger.info(f"Loaded {job.output_rows} rows to {table_ref}")
+
+    def save_prediction(self, prediction_data: Dict[str, Any]) -> None:
+        """
+        시계열 예측 결과를 prediction_timeseries 테이블에 적재
+
+        Args:
+            prediction_data: 시계열 모델의 반환값 (JSON/Dict)
+        """
+        if not prediction_data or "error" in prediction_data:
+            logger.error("Skipping save: Invalid prediction data")
+            return
+
+        # 테이블 이름 (dataset_id 제외, insert_rows_json에서 처리함)
+        table_id = "prediction_timeseries"
+        
+        logger.info(f"Saving timeseries prediction for date: {prediction_data.get('target_date')}")
+        
+        errors = self._bq.insert_rows_json(table_id, [prediction_data])
+        
+        if errors:
+            raise RuntimeError(f"Failed to save timeseries prediction: {errors}")

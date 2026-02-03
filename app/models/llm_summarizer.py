@@ -2,12 +2,10 @@ from typing import Optional
 from langchain_core.tools import tool
 import subprocess
 import json
-from google.auth import default
-from google.auth.transport.requests import Request
 from langchain_core.messages import HumanMessage, AIMessage
 
 from langchain.agents import create_agent
-from langchain_openai import ChatOpenAI
+from langchain_google_vertexai import ChatVertexAI
 
 from config.settings import (
     GENERATE_MODEL_NAME,
@@ -18,6 +16,8 @@ from config.settings import (
 )
 from models.timeseries_predictor import predict_market_trend
 from models.sentiment_analyzer import SentimentAnalyzer
+from models.keyword_analyzer import analyze_keywords as _analyze_keywords
+from models.pastnews_rag_runner import run_pastnews_rag as _run_pastnews_rag
 
 
 # 상수 정의
@@ -63,27 +63,16 @@ REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
 
 - **텍스트적 근거**
   - [각 기사가 시장에 미치는 영향 분석]
-  - [주요 키워드 및 관계 정보(Triple) 활용]
+  - **주요 키워드**: [keyword_analyzer 결과의 top_entities 상위 10개 entity]
+
+- **유사 뉴스·가격 데이터 (pastnews_rag)**
+  - pastnews_rag 도구 결과를 반드시 아래 형식으로 표시하세요.
+  - **검색된 뉴스 (article_mappings)**: hash_id, article_id, publish_date를 표로 정리하세요.
+  - **가격 데이터 (price_data)**: base_date, offset_days, traded_date, close를 표로 정리하세요. (있을 경우)
 
 ---
 
-### 3. 미래 시장 전망
-
-| 구분 | 근거 | 전망 |
-|------|------|------|
-| **단기(1–3일)** | [시계열 예측 결과 및 뉴스 단기 영향] | **[전망]** [상세 설명] |
-| **중기(1주)** | [뉴스 트렌드 및 중기 이슈] | **[전망]** [상세 설명] |
-| **장기(1개월)** | [거시 경제 및 정책 뉴스] | **[전망]** [상세 설명] |
-
-- **위험 요인**
-  - [주요 위험 요인 나열]
-
-- **기회 요인**
-  - [주요 기회 요인 나열]
-
----
-
-### 4. 종합 의견
+### 3. 종합 의견
 
 - **[현재 시장 상황 요약]**
 - **[주요 지표 및 뉴스 요약]**
@@ -97,6 +86,7 @@ REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
 - 표 형식은 마크다운 테이블 문법을 사용하세요.
 - 섹션 번호와 제목은 정확히 일치해야 합니다.
 - 각 섹션은 "---"로 구분하세요.
+- 주요 키워드는 #키워드1 #키워드2 형식으로 표기
 - 언어는 반드시 순수 한국어(한글)만 사용하세요."""
 
 SYSTEM_PROMPT = (
@@ -111,11 +101,25 @@ SYSTEM_PROMPT = (
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
    - 설명: 해당 날짜 전후의 뉴스를 분석하여 시장 상승/하락 확률을 예측하고, 예측의 핵심 근거가 된 주요 뉴스들을 반환합니다.
 
-**도구 사용 규칙**:
-- 분석 대상 날짜(target_date)가 주어지면 반드시 두 도구(`timeseries_predictor`, `news_sentiment_analyzer`)를 모두 호출하여 데이터를 확보하세요.
-- `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 뉴스 감성분석 결과 분석' 섹션의 핵심 근거로 사용하세요. 각 뉴스의 제목과 시장 영향력 점수(price_impact_score)를 보고서 표에 포함하세요.
-- 두 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요. 시계열 지표와 뉴스 분석 결과가 서로 보완되도록 서술하세요.
+3. keyword_analyzer: 뉴스 기사의 주요 키워드 분석 (Entity Confidence / PageRank 기반)
+   - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
+   - days: 분석할 일수 (기본 3일)
+   - 설명: PageRank 알고리즘을 활용하여 뉴스의 Entity Confidence(중요도) 상위 키워드를 추출합니다.
+   - 반환 값: top_entities (상위 10개, 각 항목: {"entity": "...", "score": ...})
 
+4. pastnews_rag: 전달받은 triples로 유사 뉴스·가격 조회
+   - triples_json: keyword_analyzer 결과의 top_triples에서 각 항목의 "triple" 배열만 모은 JSON 문자열. 예: [["United States","experiencing","government shutdown"], ...]
+   - top_k: 유사 hash_id 개수 (기본 5)
+   - 설명: keyword_analyzer 호출 후, 그 결과의 top_triples를 triples_json 인자로 넘겨서 호출하세요.
+
+**도구 사용 규칙**:
+- 분석 대상 날짜(target_date)가 주어지면 반드시 `timeseries_predictor`, `news_sentiment_analyzer`, `keyword_analyzer`를 모두 호출한 뒤, keyword_analyzer 결과의 top_triples를 triples_json 인자로 넘겨 `pastnews_rag(triples_json=..., top_k=5)`를 한 번 호출하세요.
+- 이전 도구가 오류를 반환하더라도, 세 도구를 반드시 모두 호출한 뒤에만 보고서를 작성하세요.
+- `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 뉴스 감성분석 결과 분석' 섹션의 핵심 근거로 사용하세요. 각 뉴스의 제목과 시장 영향력 점수(price_impact_score)를 보고서 표에 포함하세요.
+- `pastnews_rag` 도구 결과(hash_ids, article_mappings, price_data)는 반드시 '### 2. 📰 뉴스 감성분석 결과 분석' 섹션 내 '유사 뉴스·가격 데이터 (pastnews_rag)' 항목에 표(마크다운 테이블)로 표시하세요.
+- `keyword_analyzer` 결과의 top_entities를 활용할 때: (1) score는 사용하지 마세요. (2) entity 이름만 사용하여 최대한 한국어로 번역하세요. (3) #키워드1 #키워드2 형식으로 표기하세요. 예: #옥수수 #가격 #수출 #미국농무부 #시장
+- 세 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요. 시계열 지표, 뉴스 감성 분석, 키워드 분석 결과가 서로 보완되도록 서술하세요.
+- target_date는 반드시 다음 문자열 리터럴을 그대로 복사해서 사용하세요. (YYYY-MM-DD)
 **보고서 작성 형식 (반드시 이 형식을 따라야 합니다)**:
 
 """
@@ -154,6 +158,53 @@ def news_sentiment_analyzer(target_date: str) -> str:
     return json.dumps(result, ensure_ascii=False)
 
 
+@tool
+def keyword_analyzer(target_date: str, days: int = 3) -> str:
+    """
+    특정 날짜 기준으로 뉴스 기사의 주요 키워드를 분석합니다.
+    PageRank 알고리즘(Entity Confidence)과 임베딩 기반 클러스터링을 활용하여 핵심 엔티티를 추출합니다.
+
+    Args:
+        target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
+        days: 분석할 일수 (기본 3일, 최대 7일 권장)
+
+    Returns:
+        JSON: top_entities (상위 10개), top_triples (핵심 엔티티가 포함된 triple 중 엣지 실제 weight×entity PageRank 중요도 상위 10개, 각 항목: {"triple": [s,v,o], "importance": 점수})
+    """
+    result = json.loads(_analyze_keywords(target_date=target_date, days=days, top_k=10))
+    top_entities = result.get("top_entities", [])[:10]
+    top_triples = result.get("top_triples", [])
+    return json.dumps({"top_entities": top_entities, "top_triples": top_triples}, ensure_ascii=False, indent=2)
+
+
+@tool
+def pastnews_rag(triples_json: str, top_k: int = 5) -> str:
+    """
+    전달받은 triples(triples_json)로 유사 뉴스 hash_id 검색 및 해당 뉴스 publish_date 전후 옥수수 가격을 조회합니다.
+    keyword_analyzer 호출 후, 그 결과의 top_triples에서 각 항목의 "triple" 배열만 모아 JSON 문자열로 넘기세요.
+
+    Args:
+        triples_json: triples 배열의 JSON 문자열. 각 triple은 [주어, 동사, 목적어]. 예: [["United States","experiencing","government shutdown"], ...]
+        top_k: 유사 hash_id 개수 (기본 5)
+
+    Returns:
+        JSON: hash_ids, article_mappings, price_data (및 error 있을 경우)
+    """
+    triples = []
+    try:
+        parsed = json.loads(triples_json)
+        if isinstance(parsed, list):
+            for item in parsed:
+                if isinstance(item, (list, tuple)) and len(item) >= 3:
+                    triples.append(list(item[:3]))
+                elif isinstance(item, dict) and "triple" in item and isinstance(item["triple"], (list, tuple)) and len(item["triple"]) >= 3:
+                    triples.append(list(item["triple"][:3]))
+    except (json.JSONDecodeError, TypeError):
+        pass
+    result = _run_pastnews_rag(triples=triples if triples else None, top_k=top_k)
+    return json.dumps(result, ensure_ascii=False, indent=2)
+
+
 class LLMSummarizer:
     """Vertex AI를 사용하는 LangChain Agent를 이용한 통합 분석"""
 
@@ -190,41 +241,22 @@ class LLMSummarizer:
                 f"오류: {e}"
             )
 
-    # TODO token 중앙 관리
-    def _get_access_token(self) -> str:
-        """Google Cloud 인증 토큰 가져오기"""
-        credentials, _ = default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
-        if not credentials.valid:
-            credentials.refresh(Request())
-        return credentials.token
-
-    def _build_base_url(self) -> str:
-        """Vertex AI OpenAI 호환 API base URL 생성"""
-        return (
-            f"https://{self.location}-aiplatform.googleapis.com/v1/"
-            f"projects/{self.project_id}/locations/{self.location}/endpoints/openapi"
-        )
-
-    def _create_llm(self, access_token: str) -> ChatOpenAI:
-        """ChatOpenAI 인스턴스 생성"""
-        return ChatOpenAI(
+    def _create_llm(self) -> ChatVertexAI:
+        """ChatVertexAI 인스턴스 생성 (모델명·프로젝트·리전은 env에서 로드)"""
+        return ChatVertexAI(
             model=self.model_name,
-            base_url=self._build_base_url(),
-            api_key=access_token,
+            project=self.project_id,
+            location=self.location,
             temperature=GENERATE_MODEL_TEMPERATURE,
-            max_tokens=GENERATE_MODEL_MAX_TOKENS,
-            model_kwargs={
-                "parallel_tool_calls": False,
-            },
+            max_output_tokens=GENERATE_MODEL_MAX_TOKENS,
         )
 
     def _initialize(self):
         """LLM 및 Agent 초기화"""
-        access_token = self._get_access_token()
-        self.llm = self._create_llm(access_token)
-        print(f"✅ ChatOpenAI (Vertex AI OpenAI 호환 API) 사용: {self.model_name}")
+        self.llm = self._create_llm()
+        print(f"✅ ChatVertexAI 사용 (모델: {self.model_name}, env 기반)")
 
-        tools = [timeseries_predictor, news_sentiment_analyzer]
+        tools = [timeseries_predictor, news_sentiment_analyzer, keyword_analyzer, pastnews_rag]
         llm_with_tools = self.llm.bind_tools(tools)
 
         self.agent = create_agent(
@@ -245,7 +277,8 @@ class LLMSummarizer:
 **분석 맥락**: {context or "최근 시장 상황 분석"}
 **분석 기준 일자**: {target_date}
 
-- `timeseries_predictor`와 `news_sentiment_analyzer` 도구를 모두 사용하여 {target_date}의 시장 데이터를 분석하세요.
+- `timeseries_predictor`, `news_sentiment_analyzer`, `keyword_analyzer` 도구를 모두 사용한 뒤, keyword_analyzer 결과의 top_triples를 triples_json으로 넘겨 `pastnews_rag(triples_json=..., top_k=5)`를 한 번 호출하여 유사 뉴스·가격 데이터를 확보하세요.
+- `keyword_analyzer`의 결과(top_entities)를 활용하여 텍스트적 근거 섹션에 주요 키워드를 한국어로 번역 후 #키워드1 #키워드2 형식으로 표기하세요. score는 사용하지 마세요.
 """
         return user_input
 
@@ -261,6 +294,34 @@ class LLMSummarizer:
 
         return True
 
+    def _normalize_ai_content(self, content) -> str:
+        """Vertex AI 등에서 content가 [{'type': 'text', 'text': '...'}, ...] 형태일 때 텍스트만 추출"""
+        if content is None:
+            return ""
+        # 리스트(part 형식)인 경우
+        if isinstance(content, list):
+            parts = []
+            for part in content:
+                if isinstance(part, dict) and part.get("type") == "text" and "text" in part:
+                    parts.append(str(part["text"]))
+            if parts:
+                return "\n".join(parts)
+        # 문자열로 직렬화된 리스트인 경우 (예: "[{'type': 'text', 'text': '...'}]")
+        if isinstance(content, str) and content.strip().startswith("[") and "'text'" in content:
+            try:
+                import ast
+                parsed = ast.literal_eval(content)
+                if isinstance(parsed, list):
+                    parts = []
+                    for part in parsed:
+                        if isinstance(part, dict) and part.get("type") == "text" and "text" in part:
+                            parts.append(str(part["text"]))
+                    if parts:
+                        return "\n".join(parts)
+            except (ValueError, SyntaxError):
+                pass
+        return str(content)
+
     def _extract_summary_from_result(self, result: dict) -> str:
         """Agent 실행 결과에서 요약 텍스트 추출"""
         import json
@@ -270,7 +331,8 @@ class LLMSummarizer:
         # messages에서 마지막 AIMessage의 content 추출
         for msg in reversed(messages):
             if isinstance(msg, AIMessage):
-                content = str(msg.content) if msg.content else ""
+                raw = msg.content
+                content = self._normalize_ai_content(raw)
                 content = content.strip().rstrip("\\")
 
                 # JSON 형식의 tool call arguments는 건너뛰기
@@ -352,13 +414,12 @@ class LLMSummarizer:
             # 요약이 비어있거나 너무 짧은 경우 확인
             if not summary or len(summary.strip()) < 50:
                 print(f"\n⚠️ 요약이 비어있거나 너무 짧습니다 (길이: {len(summary)}자)")
-                # 마지막 AIMessage에서 실제 텍스트 찾기
+                # 마지막 AIMessage에서 실제 텍스트 찾기 (Vertex AI part 형식 포함)
                 if isinstance(result, dict):
                     messages = result.get("messages", [])
                     for msg in reversed(messages):
                         if isinstance(msg, AIMessage) and msg.content:
-                            content = str(msg.content)
-                            # GPT-OSS-20B 특수 형식이 아닌 실제 텍스트 찾기
+                            content = self._normalize_ai_content(msg.content)
                             if "<|channel|>" not in content and len(content.strip()) > 50:
                                 summary = content.strip()
                                 print(f"  → 대체 텍스트 발견 (길이: {len(summary)}자)")
@@ -385,7 +446,7 @@ class LLMSummarizer:
 {REPORT_FORMAT}
 
 **특히 다음 사항을 확인하세요**:
-1. 섹션 제목이 정확히 일치해야 합니다: "### 1. 📊 시계열 데이터 분석가 의견", "### 2. 📰 뉴스 감성분석 결과 분석", "### 3. 미래 시장 전망", "### 4. 종합 의견"
+1. 섹션 제목이 정확히 일치해야 합니다: "### 1. 📊 시계열 데이터 분석가 의견", "### 2. 📰 뉴스 감성분석 결과 분석", "### 3. 종합 의견"
 2. 각 섹션은 "---"로 구분되어야 합니다 (최소 3개)
 3. 마크다운 테이블 형식(|)을 사용해야 합니다
 4. 헤더에 "📅 분석 일자"와 "💬 종합 의견"이 포함되어야 합니다
