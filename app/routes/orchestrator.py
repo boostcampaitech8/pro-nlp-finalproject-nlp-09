@@ -7,7 +7,7 @@ from app.schema.models import (
 )
 from app.models.llm_summarizer import LLMSummarizer
 from datetime import datetime
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, Union, Dict, Any
 
 # 로거 설정
 logger = logging.getLogger(__name__)
@@ -26,6 +26,79 @@ def get_llm_summarizer():
     else:
         logger.debug("기존 LLM Summarizer 인스턴스 재사용")
     return llm_summarizer
+
+
+def parse_agent_result_raw(agent_result: dict) -> Dict[str, Any]:
+    """
+    Agent 실행 결과에서 DB 적재를 위한 Raw 데이터를 추출합니다.
+    Airflow 파이프라인에서 사용됩니다.
+    """
+    from langchain_core.messages import ToolMessage
+
+    messages = agent_result.get("messages", []) if isinstance(agent_result, dict) else []
+    
+    extracted_data = {
+        "timeseries_data": None,
+        "news_data": None
+    }
+
+    for msg in messages:
+        if isinstance(msg, ToolMessage):
+            # 시계열 예측 결과 (JSON)
+            if msg.name == "timeseries_predictor":
+                try:
+                    ts_data = json.loads(msg.content)
+                    if "error" not in ts_data:
+                        extracted_data["timeseries_data"] = ts_data
+                except json.JSONDecodeError:
+                    print(f"Warning: Failed to parse timeseries JSON in raw extractor")
+
+            # 뉴스 분석 결과 (JSON)
+            elif msg.name == "news_sentiment_analyzer":
+                try:
+                    news_res = json.loads(msg.content)
+                    if "error" not in news_res:
+                        extracted_data["news_data"] = news_res
+                except json.JSONDecodeError:
+                    print(f"Warning: Failed to parse news analysis JSON in raw extractor")
+
+    return extracted_data
+
+
+def run_market_analysis(target_date: Optional[str] = None, context: str = "금융 시장 분석") -> Dict[str, Any]:
+    """
+    [Airflow용] 시장 분석을 실행하고 적재할 모든 데이터를 반환합니다.
+    
+    Returns:
+        dict: {
+            "target_date": str,
+            "timeseries_data": dict, # BQ 적재용
+            "news_data": dict,       # BQ 적재용
+            "final_report": str      # GCS 적재용
+        }
+    """
+    summarizer = get_llm_summarizer()
+
+    # 분석 기준일이 없으면 오늘 날짜 사용
+    if not target_date:
+        target_date = datetime.now().strftime("%Y-%m-%d")
+
+    print(f"🚀 Analyzing market for date: {target_date}")
+    result = summarizer.summarize(context=context, target_date=target_date)
+    
+    # 1. Agent Tool 결과에서 데이터 추출
+    agent_result = result.get("agent_result", {})
+    raw_data = parse_agent_result_raw(agent_result)
+    
+    # 2. 최종 결과 조합
+    output = {
+        "target_date": target_date,
+        "timeseries_data": raw_data.get("timeseries_data"),
+        "news_data": raw_data.get("news_data"),
+        "final_report": result.get("summary", "")
+    }
+    
+    return output
 
 
 def parse_agent_result(agent_result: dict) -> Tuple[TimeSeriesPrediction, list]:

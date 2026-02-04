@@ -84,6 +84,26 @@ class StorageService(GCPServiceBase):
         blob = bucket.blob(destination_blob)
         blob.upload_from_filename(str(source))
 
+    def upload_from_string(
+        self,
+        data: str,
+        destination_blob: str,
+        content_type: str = "text/plain",
+        bucket_name: Optional[str] = None
+    ) -> None:
+        """
+        Upload string content directly to GCS
+
+        Args:
+            data: Content string to upload
+            destination_blob: GCS blob name
+            content_type: MIME type (default: text/plain)
+            bucket_name: Bucket name (if None, uses instance default)
+        """
+        bucket = self._get_bucket(bucket_name)
+        blob = bucket.blob(destination_blob)
+        blob.upload_from_string(data, content_type=content_type)
+
     def download_file(
         self, source_blob: str, destination_path: str, bucket_name: Optional[str] = None
     ) -> None:

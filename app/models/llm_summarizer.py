@@ -14,6 +14,20 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
 
+# from langchain_google_vertexai import ChatVertexAI
+# from config.settings import (
+#     GENERATE_MODEL_NAME,
+#     GENERATE_MODEL_TEMPERATURE,
+#     GENERATE_MODEL_MAX_TOKENS,
+#     VERTEX_AI_PROJECT_ID,
+#     VERTEX_AI_LOCATION,
+# )
+
+# from models.timeseries_predictor import predict_market_trend
+# from models.sentiment_analyzer import SentimentAnalyzer
+# from models.keyword_analyzer import analyze_keywords as _analyze_keywords
+# from models.pastnews_rag_runner import run_pastnews_rag as _run_pastnews_rag
+
 from libs.gcp import GCPServiceFactory
 from libs.utils.config import get_config
 
@@ -26,74 +40,108 @@ logger = logging.getLogger(__name__)
 _config = get_config()
 
 # 상수 정의
-REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
-> **📅 분석 일자 ** : (YYYY-MM-DD)
-> **💬 종합 의견 ** : [종합 의견 한줄 요약]
----
+REPORT_FORMAT = f"""# [Daily Market Report] Corn
+**날짜**: (YYYY-MM-DD) | **종목**: 옥수수 
 
-### 1. 📊 시계열 데이터 분석가 의견
-> [시계열 데이터 분석 한줄 평가]
-
-| 항목 | 내용 |
-|------|------|
-| **입력 데이터 길이** | 5년 (Prophet Features) |
-| **마지막 관측값** | [Last Observed Value] |
-| **시계열 예측값** | [Forecast Value] |
-| **신뢰도** | [Confidence Score] % |
-
-- **추세 분석**
-  - **최근 기간 평균** (7일) : [Recent Mean]
-  - **전 기간 평균** : [All-time Mean]
-  - **최근 변동 추이** : [Trend Analysis: Rising/Falling 등 설명]
-  - **시계열 예측값 해석** : [Forecast Direction] 방향으로 예측되며, 신뢰도는 [Confidence Score]% 입니다.
-
-- **예측값 해석**
-  - **현재 수준 대비** : [Last Value] 대비 [Forecast Value] 로 변동 예상.
-  - **단기 변동성 평가** : 변동성 지표 [Volatility Index] 수준.
+| 어제 종가 | Prophet 예측 | XGBoost 방향 | 뉴스 심리 | 종합 의견 |
+|:---:|:---:|:---:|:---:|:---:|
+| [y] | [yhat] | [forecast_direction] | [긍정/부정/중립] | [BUY/SELL/HOLD] |
 
 ---
 
-### 2. 📰 뉴스 감성분석 결과 분석
-> [뉴스 기사 감성분석 한줄 평가]
+### 1. 📈 [Quant] 퀀트 기반 기술적 분석
 
-| 기사 번호 | 제목 | 영향력 점수 | 요약 |
-|-----------|------|-------------|------|
-| 1 | [기사 제목] | [점수] | [내용 요약] |
-| 2 | [기사 제목] | [점수] | [내용 요약] |
-| ... | ... | ... | ... |
+**A. 가격 예측**
+* **어제 종가**: [y]
+* **Prophet 예측값**: [yhat] 
+* **XGBoost 방향 예측**: [forecast_direction] (Up/Down)
 
-- **시장 영향력 분석**
-  - **상승 확률**: [Probability] %
-  - **종합 의견**: [뉴스 기반 상승/하락 예측 의견]
+**B. 주요 변동 요인**
 
-- **텍스트적 근거**
-  - [각 기사가 시장에 미치는 영향 분석]
-  - [주요 키워드 및 관계 정보(Triple) 활용]
+**B-1. 시계열 성분**
 
+| 지표 | 값 | 해석 | 설명 |
+|------|-----|------|------|
+| 추세 (trend) | [값] | [상승/횡보/하락] 추세 | 추세 지표|
+| 연간 주기 (yearly) | [값] | [긍정적/부정적/중립] 영향 | 계절적 요인으로 인한 연간 패턴 |
+| 주간 주기 (weekly) | [값] | [긍정적/부정적/중립] 영향 | 요일별 패턴 |
+| 변동성 (volatility) | [값] | [높음/중간/낮음] 수준 | 시장 불확실성 지표 |
+
+**B-2. 기술적 지표**
+
+| 지표 | 값 | 해석 | 설명 |
+|------|-----|------|------|
+| EMA (지수이동평균) | [값] | [상승/하락] 요인 | EMA 영향 지표 |
+| Volume (거래량) | [값] | [상승/하락] 요인 | 거래량 영향 지표 |
+
+**C. 퀀트 기반 예측 모델 해석**
+
+* **Prophet vs XGBoost 비교**:
+  - Prophet 예측: [yhat] ([상승/하락])
+  - XGBoost 예측: [forecast_direction] (Up/Down)
+  - 일치 여부: [일치/불일치]
+
+* **핵심 근거 분석**:
+  - **시계열 성분**: 추세([trend], [상승/횡보/하락] 추세), 연간주기([yearly]), 주간주기([weekly]), 변동성([volatility], [높음/중간/낮음] 수준)을 종합하면 [분석 내용]
+  - **기술적 지표**: EMA([EMA_lag2_effect])와 거래량([Volume_lag5_effect])은 [상승/하락] 요인으로 작용
+  - **종합 판단**: [위 요인들을 바탕으로 왜 XGBoost가 해당 방향을 예측했는지 서술]
+---
+### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석
+
+**A. 주요 뉴스 (evidence_news)**
+  - news_sentiment_analyzer 도구 결과를 반드시 아래 표 형식으로 표시하세요.
+  - **중요**: title과 all_text가 영어로 되어 있으면 반드시 한국어로 번역하여 표시하세요.
+  - **심리 판단**: price_impact_score > 0 이면 긍정, < 0 이면 부정, = 0 이면 중립
+  
+  | No | 뉴스 제목 | 내용 요약 | 심리 |
+  |:--:|-----------|-----------|:--------:|
+  | 1 | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어)] | [긍정/부정/중립] |
+  | 2 | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어)] | [긍정/부정/중립] |
+  | ... | ... | ... | ... |
+
+
+**B. 주요 키워드**: [keyword_analyzer 결과의 top_entities 상위 10개 entity]
+
+**C. 과거 관련 뉴스**
+  - pastnews_rag 도구 결과를 반드시 아래 표 형식으로 표시하세요.
+  - **중요**: description이 영어로 되어 있으면 반드시 한국어로 번역하여 "뉴스 제목" 컬럼에 표시하세요.
+  
+  | 뉴스 날짜 | 뉴스 내용 | 당일 | 1일후 | 3일후 |
+  |-----------|-----------|------|------|------|
+  | [뉴스 날짜] | [뉴스 내용(한국어 번역)] | [0] | [1] | [3] |
+  | [뉴스 날짜] | [뉴스 내용(한국어 번역)] | [0] | [1] | [3] |
+  | ... | ... | ... | ... | ... |
+
+**D. 뉴스 빅데이터 기반 시장 심리 분석**
+
+  * **주요 뉴스 분석**
+    - 주요 긍정 요인: [긍정적 뉴스들의 공통 주제/키워드]
+    - 주요 부정 요인: [부정적 뉴스들의 공통 주제/키워드]
+
+  * **과거 유사 상황 분석**
+    - C 섹션의 과거 관련 뉴스를 분석하여 당시 시장 반응(당일, 1일후, 3일후 가격 변동)을 서술
+    - 공통 패턴: [과거 유사 뉴스 발생 시 가격 변동 패턴]
+
+  * **종합 시장 심리**
+    - 판단: [긍정적/중립적/부정적]
+    - 근거: [위의 분석을 바탕으로 한 종합 판단 이유]
 ---
 
-### 3. 미래 시장 전망
+### 3. 종합 의견
 
-| 구분 | 근거 | 전망 |
-|------|------|------|
-| **단기(1–3일)** | [시계열 예측 결과 및 뉴스 단기 영향] | **[전망]** [상세 설명] |
-| **중기(1주)** | [뉴스 트렌드 및 중기 이슈] | **[전망]** [상세 설명] |
-| **장기(1개월)** | [거시 경제 및 정책 뉴스] | **[전망]** [상세 설명] |
+* **퀀트 분석 요약** :
+  - Prophet 예측: [yhat] ([상승/하락])
+  - XGBoost 방향: [forecast_direction] (Up/Down)
+  - 주요 근거: [trend, EMA, Volume 등 핵심 요인 요약]
 
-- **위험 요인**
-  - [주요 위험 요인 나열]
+* **뉴스 심리 분석 요약** :
+  - 시장 심리: [긍정적/중립적/부정적]
+  - 주요 테마: [핵심 키워드 및 테마]
 
-- **기회 요인**
-  - [주요 기회 요인 나열]
-
----
-
-### 4. 종합 의견
-
-- **[현재 시장 상황 요약]**
-- **[주요 지표 및 뉴스 요약]**
-- **[단기/중기/장기 전망 요약]**
-- **[투자자 입장에서의 조언]**
+* **최종 투자 의견**:
+  - **단기 전망** : [퀀트 + 뉴스 분석 종합]
+  - **핵심 근거**: [퀀트 모델과 뉴스 심리가 일치/불일치하는지, 어떤 신호가 더 강한지]
+  - **투자자 조언**: [BUY/SELL/HOLD 근거와 함께 리스크 요인 명시]
 
 **결론**: [날짜] 기준, 시장은 **[전망]**을 유지할 것으로 전망되며, **[주요 성장 동력]**이 주요 성장 동력입니다. 그러나 **[주요 리스크]**에 따른 리스크를 주의 깊게 모니터링해야 합니다.
 
@@ -102,25 +150,81 @@ REPORT_FORMAT = """**일일 금융 시장 분석 보고서 **
 - 표 형식은 마크다운 테이블 문법을 사용하세요.
 - 섹션 번호와 제목은 정확히 일치해야 합니다.
 - 각 섹션은 "---"로 구분하세요.
+- 주요 키워드는 #키워드1 #키워드2 형식으로 표기
+- 뉴스 관련 내용이 영어로 되어 있으면 반드시 한국어로 번역하여 표시하세요. 원문을 그대로 표시하지 마세요.
 - 언어는 반드시 순수 한국어(한글)만 사용하세요."""
 
 SYSTEM_PROMPT = (
     """당신은 전문 금융 분석가입니다.
 
 **사용 가능한 도구**:
-1. timeseries_predictor: 시계열 데이터 기반 시장 예측
+1. timeseries_predictor: Prophet + XGBoost 하이브리드 시계열 예측
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
-   - 설명: 지정된 날짜의 가격 추세, 예측값, 신뢰도 등을 반환합니다.
+   - 설명: Prophet 모델의 가격 예측(yhat)과 XGBoost의 방향 예측(forecast_direction)을 반환합니다.
+   - 반환 값: target_date, y(어제 종가), yhat(Prophet 예측값), forecast_direction(Up/Down), trend, EMA_lag1, Volume_lag1 등 Prophet features 전체
 
 2. news_sentiment_analyzer: 뉴스 기반 시장 영향력 분석 및 근거 추출
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
    - 설명: 해당 날짜 전후의 뉴스를 분석하여 시장 상승/하락 확률을 예측하고, 예측의 핵심 근거가 된 주요 뉴스들을 반환합니다.
 
-**도구 사용 규칙**:
-- 분석 대상 날짜(target_date)가 주어지면 반드시 두 도구(`timeseries_predictor`, `news_sentiment_analyzer`)를 모두 호출하여 데이터를 확보하세요.
-- `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 뉴스 감성분석 결과 분석' 섹션의 핵심 근거로 사용하세요. 각 뉴스의 제목과 시장 영향력 점수(price_impact_score)를 보고서 표에 포함하세요.
-- 두 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요. 시계열 지표와 뉴스 분석 결과가 서로 보완되도록 서술하세요.
+3. keyword_analyzer: 뉴스 기사의 주요 키워드 분석 (Entity Confidence / PageRank 기반)
+   - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
+   - days: 분석할 일수 (기본 3일)
+   - 설명: PageRank 알고리즘을 활용하여 뉴스의 Entity Confidence(중요도) 상위 키워드를 추출합니다.
+   - 반환 값: top_entities (상위 10개, 각 항목: {"entity": "...", "score": ...})
 
+4. pastnews_rag: 전달받은 triples로 유사 뉴스 description과 publish_date 조회
+   - triples_json: keyword_analyzer 결과의 top_triples에서 각 항목의 "triple" 배열만 모은 JSON 문자열. 예: '[["United States","experiencing","government shutdown"],["trade truce","between","world\'s two biggest economies"]]'
+   - top_k: 유사 hash_id 개수 (기본 5)
+   - 설명: keyword_analyzer 호출 후, 그 결과에서 top_triples의 각 항목에서 "triple" 필드만 추출하여 2차원 배열을 만들고, 이를 JSON 문자열로 직렬화하여 triples_json 인자에 전달하세요.
+   - 호출 예시: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"], "importance": 0.01}}]}}를 반환하면 → pastnews_rag(triples_json='[["A","B","C"]]', top_k=5)
+
+**도구 사용 규칙**:
+- 분석 대상 날짜(target_date)가 주어지면 반드시 다음 순서로 도구를 호출하세요:
+  1. `timeseries_predictor(target_date="YYYY-MM-DD")` 호출
+  2. `news_sentiment_analyzer(target_date="YYYY-MM-DD")` 호출
+  3. `keyword_analyzer(target_date="YYYY-MM-DD")` 호출
+  4. keyword_analyzer 결과를 받은 후, top_triples의 "triple" 배열만 추출하여 JSON 문자열로 변환한 후 `pastnews_rag(triples_json="[[\"s\",\"v\",\"o\"], ...]", top_k=5)` 호출
+- **pastnews_rag 호출 방법**: keyword_analyzer의 top_triples 각 항목에서 "triple" 필드만 추출하여 2차원 배열로 만들고, 이를 JSON 문자열로 직렬화하여 triples_json 인자에 전달하세요. 예: `pastnews_rag(triples_json='[["government shutdown","involves","U.S."],["trade truce","between","world\'s two biggest economies"]]', top_k=5)`
+- 이전 도구가 오류를 반환하더라도, 네 도구를 반드시 모두 호출한 뒤에만 보고서를 작성하세요.
+- `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션의 '주요 뉴스 (evidence_news)' 항목에 아래 표 형식으로 표시하세요. **title과 all_text가 영어로 되어 있으면 반드시 한국어로 번역하여 표시하세요.**
+  | No | 뉴스 제목 | 내용 요약 | 시장 심리 |
+  |:--:|-----------|-----------|:--------:|
+  | [번호] | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어)] | [긍정적/부정적/중립적] |
+  - 시장 심리 판단: price_impact_score가 양수면 긍정적, 음수면 부정적, 0이면 중립적으로 표시하세요.
+- `pastnews_rag` 도구 결과(article_info)는 반드시 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션 내 '과거 관련 뉴스 (pastnews_rag)' 항목에 아래 표 형식으로 표시하세요. **description이 영어로 되어 있으면 반드시 한국어로 번역하여 "뉴스 내용" 컬럼에 표시하세요.**
+  | 뉴스 날짜 | 뉴스 내용 | 당일 | 1일후 | 3일후 |
+  |-----------|-----------|------|------|------|
+  | [뉴스 날짜] | [뉴스 내용(한국어 번역)] | [0] | [1] | [3] |
+- `timeseries_predictor` 결과 활용법:
+  * **기본 정보**: y(어제 종가), yhat(Prophet 예측값), forecast_direction(XGBoost 방향 예측)을 종합 투자 의견 표에 표시
+  * **시계열 성분 해석** (B-1 섹션):
+    - trend: 값과 함께 추세 해석. 기준 - 상승 추세(> 108.88), 횡보 추세(74.58~108.88), 하락 추세(< 74.58). 예: "94.34 (상승 추세)" 또는 "80.00 (횡보 추세)" 또는 "60.00 (하락 추세)"
+    - yearly: 연간 주기 성분. 예: "+0.12 (긍정적 영향)" 또는 "-0.08 (부정적 영향)"
+    - weekly: 주간 주기 성분. 예: "+0.12 (긍정적 영향)" 또는 "-0.08 (부정적 영향)"
+    - volatility: 변동성 지표. 기준 - 낮음(< 40), 중간(40~50), 높음(> 50). 예: "42 (중간 수준)" 또는 "55 (높음 수준)" 또는 "35 (낮음 수준)"
+  * **기술적 지표 해석** (B-2 섹션, 그레인저 검사로 선정된 Lag Features):
+    - EMA_lag2_effect: 지수이동평균. 예: "+1.25 (상승 요인)" 또는 "-1.25 (하락 요인)"
+    - Volume_lag5_effect: 거래량. 예: "+0.85 (상승 요인)" 또는 "-0.50 (하락 요인)"
+  * **종합 해석** (C 섹션):
+    - Prophet 예측(yhat)과 XGBoost 방향(forecast_direction)의 일치/불일치를 명확히 밝히세요
+    - 위의 시계열 성분(trend, yearly, weekly, volatility)과 기술적 지표(EMA, Volume)를 **모두 근거로 제시**하여 XGBoost가 해당 방향을 예측한 이유를 상세히 설명하세요
+    - 특히 그레인저 검사로 선정된 EMA_lag2_effect와 Volume_lag5_effect의 영향을 강조하세요
+    - 예: "Prophet은 460.5로 상승을 예측했으나, XGBoost는 Down을 예측했습니다. 추세(85.5, 횡보 추세)는 중립적이나, EMA_lag2_effect(-1.25)와 Volume_lag5_effect(-0.50)가 모두 하락 요인으로 작용했으며, 변동성(42, 중간 수준)도 불확실성을 나타냅니다."
+- `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션의 핵심 근거로 사용하세요. 각 뉴스의 제목(title), 내용(all_text 요약), 시장 심리(price_impact_score 기준: 양수=긍정적, 음수=부정적, 0=중립적)를 보고서 표에 포함하세요.
+- `pastnews_rag` 도구 결과(hash_ids, article_mappings, price_data)는 반드시 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션 내 '과거 관련 뉴스 (pastnews_rag)' 항목에 표(마크다운 테이블)로 표시하세요.
+- **D. 뉴스 빅데이터 기반 시장 심리 분석** 섹션 작성 방법:
+  * A 섹션의 evidence_news에서 주요 긍정 요인과 부정 요인을 분석하세요
+  * C 섹션의 과거 관련 뉴스에서 당일, 1일후, 3일후 가격 변동 패턴을 분석하세요
+  * 위 두 가지를 종합하여 현재 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단하고 근거를 명확히 제시하세요
+- `keyword_analyzer` 결과의 top_entities를 활용할 때: (1) score는 사용하지 마세요. (2) entity 이름만 사용하여 최대한 한국어로 번역하세요. (3) #키워드1 #키워드2 형식으로 표기하세요. 예: #옥수수 #가격 #수출 #미국농무부 #시장
+- **### 3. 종합 의견** 섹션 작성 방법:
+  * 섹션 1의 퀀트 분석 결과(Prophet, XGBoost, 시계열 성분, 기술적 지표)를 요약하세요
+  * 섹션 2의 뉴스 심리 분석 결과(시장 심리 판단, 주요 테마)를 요약하세요
+  * 퀀트 모델과 뉴스 심리가 일치하는지 불일치하는지 분석하고, 어떤 신호가 더 강한지 판단하세요
+  * 최종적으로 BUY/SELL/HOLD 의견을 제시하고, 주요 리스크 요인을 명시하세요
+- 네 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요. 시계열 지표(Prophet + XGBoost), 뉴스 감성 분석, 키워드 분석 결과가 서로 보완되도록 서술하세요.
+- target_date는 반드시 다음 문자열 리터럴을 그대로 복사해서 사용하세요. (YYYY-MM-DD)
 **보고서 작성 형식 (반드시 이 형식을 따라야 합니다)**:
 
 """
@@ -173,10 +277,80 @@ def create_tools(commodity: str) -> list:
 
     return [timeseries_predictor, news_sentiment_analyzer]
 
+@tool
+def news_sentiment_analyzer(target_date: str) -> str:
+    """
+    특정 날짜의 뉴스를 분석하여 시장 영향력을 예측하고 주요 근거 뉴스(제목, 영향력 점수, 관계 정보 등)를 제공합니다.
 
+    Args:
+        target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
+
+    Returns:
+        JSON 형식의 예측 결과 문자열 (상승 확률, 근거 뉴스 리스트, 피처 요약 포함)
+    """
+    analyzer = SentimentAnalyzer()
+    result = analyzer.predict_market_impact(target_date)
+    return json.dumps(result, ensure_ascii=False)
+
+# TODO 추가한 툴 위 코드에 넣을 것
+# @tool
+# def keyword_analyzer(targe것_date: str, days: int = 3) -> str:
+#     """
+#     특정 날짜 기준으로 뉴스 기사의 주요 키워드를 분석합니다.
+#     PageRank 알고리즘(Entity Confidence)과 임베딩 기반 클러스터링을 활용하여 핵심 엔티티를 추출합니다.
+
+#     Args:
+#         target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
+#         days: 분석할 일수 (기본 3일, 최대 7일 권장)
+
+#     Returns:
+#         JSON: top_entities (상위 10개), top_triples (핵심 엔티티가 포함된 triple 중 엣지 실제 weight×entity PageRank 중요도 상위 10개, 각 항목: {"triple": [s,v,o], "importance": 점수})
+#     """
+#     result = json.loads(_analyze_keywords(target_date=target_date, days=days, top_k=10))
+#     top_entities = result.get("top_entities", [])[:10]
+#     top_triples = result.get("top_triples", [])
+#     return json.dumps({"top_entities": top_entities, "top_triples": top_triples}, ensure_ascii=False, indent=2)
+
+
+# @tool
+# def pastnews_rag(triples_json: str, top_k: int = 5) -> str:
+#     """
+#     전달받은 triples로 유사 뉴스를 검색하고 해당 뉴스의 description, publish_date, 가격 정보를 조회합니다.
+    
+#     사용 방법:
+#     1. keyword_analyzer를 먼저 호출하여 결과를 받습니다
+#     2. 결과의 top_triples에서 각 항목의 "triple" 필드만 추출합니다
+#     3. 추출한 triples를 JSON 배열 문자열로 변환하여 이 함수에 전달합니다
+    
+#     예시:
+#     - keyword_analyzer 결과: {"top_triples": [{"triple": ["A","B","C"], "importance": 0.01}, {"triple": ["D","E","F"], "importance": 0.02}]}
+#     - pastnews_rag 호출: pastnews_rag(triples_json='[["A","B","C"],["D","E","F"]]', top_k=5)
+
+#     Args:
+#         triples_json: triples 배열의 JSON 문자열. 각 triple은 [주어, 동사, 목적어] 형태. 예: '[["United States","experiencing","government shutdown"],["trade truce","between","economies"]]'
+#         top_k: 유사 hash_id 개수 (기본 5)
+
+#     Returns:
+#         JSON: article_info (각 항목: {"description": str, "publish_date": str, "0": float, "1": float, "3": float}), error(있을 경우)
+#     """
+#     triples = []
+#     try:
+#         parsed = json.loads(triples_json)
+#         if isinstance(parsed, list):
+#             for item in parsed:
+#                 if isinstance(item, (list, tuple)) and len(item) >= 3:
+#                     triples.append(list(item[:3]))
+#                 elif isinstance(item, dict) and "triple" in item and isinstance(item["triple"], (list, tuple)) and len(item["triple"]) >= 3:
+#                     triples.append(list(item["triple"][:3]))
+#     except (json.JSONDecodeError, TypeError):
+#         pass
+#     result = _run_pastnews_rag(triples=triples if triples else None, top_k=top_k)
+#     return json.dumps(result, ensure_ascii=False, indent=2)
+
+# TODO 반드시 기존 dev llmu summarizer 코드와 합칠 것 (현재 이전 버전 코드 사용중)
 class LLMSummarizer:
     """
-    Vertex AI를 사용하는 LangChain Agent 기반 통합 분석기
+    Vertex AI를 사용하는 LangChain Agent 기반 통합 분석중
 
     시계열 예측과 뉴스 감성 분석 결과를 종합하여
     금융 시장 분석 보고서를 생성합니다.
@@ -268,20 +442,54 @@ class LLMSummarizer:
             system_prompt=SYSTEM_PROMPT,
         )
 
+#     def _build_user_input(
+#         self,
+#         context: str,
+#         target_date: str,
+#     ) -> str:
+#         """Agent에게 전달할 사용자 입력 메시지 생성"""
+#         return f"""다음 정보를 바탕으로 전문적인 금융 시장 분석 보고서를 작성해주세요.
+
+# **분석 맥락**: {context or "최근 시장 상황 분석"}
+# **분석 기준 일자**: {target_date}
+
+# - 다음 순서로 도구를 호출하세요:
+#   1. `timeseries_predictor(target_date="{target_date}")`
+#   2. `news_sentiment_analyzer(target_date="{target_date}")`
+#   3. `keyword_analyzer(target_date="{target_date}")`
+#   4. keyword_analyzer 결과의 top_triples에서 각 항목의 "triple" 배열만 추출하여 JSON 문자열로 만든 후 `pastnews_rag(triples_json="...", top_k=5)` 호출
+# - **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"]}}, {{"triple": ["D","E","F"]}}]}}를 반환하면, `pastnews_rag(triples_json='[["A","B","C"],["D","E","F"]]', top_k=5)` 형식으로 호출하세요.
+# - `timeseries_predictor` 결과 활용:
+#   * y, yhat, forecast_direction을 종합 투자 의견 표에 표시
+#   * **B-1. 시계열 성분**: 
+#     - trend: 상승 추세(> 108.88), 횡보 추세(74.58~108.88), 하락 추세(< 74.58) 기준으로 판단. 예: "94.34 (상승 추세)" 또는 "80.00 (횡보 추세)"
+#     - yearly, weekly: "+0.12 (긍정적 영향)" 또는 "-0.08 (부정적 영향)" 형태로 표현
+#     - volatility: 값과 함께 낮음(< 40), 중간(40~50), 높음(> 50) 기준으로 판단. 예: "42 (중간 수준)"
+#   * **B-2. 기술적 지표**: EMA_lag2_effect, Volume_lag5_effect를 "+1.25 (상승 요인)" 형태로 표현
+#   * **C. 종합 해석**: 위의 모든 요인(시계열 성분 + 기술적 지표)을 근거로 Prophet과 XGBoost 예측을 비교 분석
+# - `news_sentiment_analyzer` 및 `pastnews_rag` 결과 활용:
+#   * **D. 뉴스 빅데이터 기반 시장 심리 분석**: 
+#     - evidence_news에서 주요 긍정 요인과 부정 요인 분석
+#     - 과거 관련 뉴스의 당일/1일후/3일후 가격 변동 패턴 분석
+#     - 위 두 가지를 종합하여 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단하고 근거 제시
+# - `keyword_analyzer`의 결과(top_entities)를 활용하여 B 섹션에 주요 키워드를 한국어로 번역 후 #키워드1 #키워드2 형식으로 표기하세요. score는 사용하지 마세요.
+# - **### 3. 종합 의견**: 퀀트 분석(섹션 1)과 뉴스 심리 분석(섹션 2)을 종합하여 최종 투자 의견(BUY/SELL/HOLD)을 제시하고, 주요 근거와 리스크를 명시하세요.
+# """
+        # return user_input
+
+    
     def _build_user_input(
         self,
         context: str,
         target_date: str,
     ) -> str:
         """Agent에게 전달할 사용자 입력 메시지 생성"""
+
         return f"""다음 정보를 바탕으로 전문적인 금융 시장 분석 보고서를 작성해주세요.
-
-**분석 맥락**: {context or "최근 시장 상황 분석"}
-**분석 기준 일자**: {target_date}
-
-- `timeseries_predictor`와 `news_sentiment_analyzer` 도구를 모두 사용하여 {target_date}의 시장 데이터를 분석하세요.
-"""
-
+        **분석 맥락**: {context or "최근 시장 상황 분석"}
+        **분석 기준 일자**: {target_date}
+        - `timeseries_predictor`와 `news_sentiment_analyzer` 도구를 모두 사용하여 {target_date}의 시장 데이터를 분석하세요."""
+    
     def _validate_output_format(self, summary: str) -> bool:
         """
         출력 형식 검증 (최소 검증)
@@ -293,6 +501,34 @@ class LLMSummarizer:
             return False
         return True
 
+    def _normalize_ai_content(self, content) -> str:
+        """Vertex AI 등에서 content가 [{'type': 'text', 'text': '...'}, ...] 형태일 때 텍스트만 추출"""
+        if content is None:
+            return ""
+        # 리스트(part 형식)인 경우
+        if isinstance(content, list):
+            parts = []
+            for part in content:
+                if isinstance(part, dict) and part.get("type") == "text" and "text" in part:
+                    parts.append(str(part["text"]))
+            if parts:
+                return "\n".join(parts)
+        # 문자열로 직렬화된 리스트인 경우 (예: "[{'type': 'text', 'text': '...'}]")
+        if isinstance(content, str) and content.strip().startswith("[") and "'text'" in content:
+            try:
+                import ast
+                parsed = ast.literal_eval(content)
+                if isinstance(parsed, list):
+                    parts = []
+                    for part in parsed:
+                        if isinstance(part, dict) and part.get("type") == "text" and "text" in part:
+                            parts.append(str(part["text"]))
+                    if parts:
+                        return "\n".join(parts)
+            except (ValueError, SyntaxError):
+                pass
+        return str(content)
+
     def _extract_summary_from_result(self, result: dict) -> str:
         """Agent 실행 결과에서 요약 텍스트 추출"""
         messages = result.get("messages", [])
@@ -300,7 +536,8 @@ class LLMSummarizer:
         # messages에서 마지막 AIMessage의 content 추출
         for msg in reversed(messages):
             if isinstance(msg, AIMessage):
-                content = str(msg.content) if msg.content else ""
+                raw = msg.content
+                content = self._normalize_ai_content(raw)
                 content = content.strip().rstrip("\\")
 
                 # JSON 형식의 tool call arguments는 건너뛰기
@@ -436,11 +673,15 @@ class LLMSummarizer:
 {REPORT_FORMAT}
 
 **특히 다음 사항을 확인하세요**:
-1. 섹션 제목이 정확히 일치해야 합니다: "### 1. 📊 시계열 데이터 분석가 의견", "### 2. 📰 뉴스 감성분석 결과 분석", "### 3. 미래 시장 전망", "### 4. 종합 의견"
-2. 각 섹션은 "---"로 구분되어야 합니다 (최소 3개)
+1. 섹션 제목이 정확히 일치해야 합니다: "### 1. 📈 [Quant] 퀀트 기반 기술적 분석", "### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석", "### 3. 종합 의견"
+2. 각 섹션은 "---"로 구분되어야 합니다
 3. 마크다운 테이블 형식(|)을 사용해야 합니다
-4. 헤더에 "📅 분석 일자"와 "💬 종합 의견"이 포함되어야 합니다
-5. Tool 호출 후 반드시 최종 보고서를 작성해야 합니다"""
+4. timeseries_predictor 결과의 y, yhat, forecast_direction을 표에 정확히 표시해야 합니다
+5. **B-1. 시계열 성분**과 **B-2. 기술적 지표**를 표 형식으로 표시해야 합니다. trend는 상승(> 108.88), 횡보(74.58~108.88), 하락(< 74.58) 기준, 변동성은 낮음(< 40), 중간(40~50), 높음(> 50) 기준으로 판단하세요
+6. **C. 퀀트 기반 예측 모델 해석**에서 모든 요인(trend, yearly, weekly, volatility, EMA_lag2_effect, Volume_lag5_effect)을 근거로 Prophet과 XGBoost 예측을 비교 분석해야 합니다
+7. **D. 뉴스 빅데이터 기반 시장 심리 분석**에서 evidence_news의 주요 긍정/부정 요인과 과거 관련 뉴스의 가격 변동 패턴을 분석하여 종합 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단해야 합니다
+8. 4개의 Tool을 모두 호출해야 합니다: timeseries_predictor, news_sentiment_analyzer, keyword_analyzer, pastnews_rag (keyword_analyzer 결과의 top_triples를 JSON 배열로 변환하여 pastnews_rag에 전달)
+9. Tool 호출 후 반드시 최종 보고서를 작성해야 합니다"""
             else:
                 logger.warning("최대 재시도 횟수 도달. 현재 결과를 반환합니다.")
                 logger.info(f"최종 요약 길이: {len(summary)}자")

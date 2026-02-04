@@ -3,6 +3,7 @@ import numpy as np
 from xgboost import XGBClassifier
 import yaml
 import os
+import time
 from typing import Dict, Any
 import warnings
 warnings.filterwarnings('ignore')
@@ -50,6 +51,11 @@ class TimeSeriesXGBoostInference:
         Returns:
             Dict: 예측 상세 결과 사전 (inference.py와 동일한 형식).
         """
+        print(f"\n{'='*70}")
+        print(f"🤖 XGBoost 시계열 예측 시작")
+        print(f"{'='*70}")
+        print(f"📅 타겟 날짜: {target_date}")
+        
         try:
             target_ts = pd.Timestamp(target_date)
         except ValueError:
@@ -69,8 +75,12 @@ class TimeSeriesXGBoostInference:
         target_row_idx = history_df.index.get_loc(target_idx)
         
         # 피처 컬럼 정의
-        exclude_cols = ['ds', 'y', 'direction', 'y_change', 'yhat_lower', 'yhat_upper']
+        exclude_cols = ['ds', 'y', 'direction', 'y_change', 'yhat_lower', 'yhat_upper', 'EMA', 'Volume']
         feature_columns = [col for col in history_df.columns if col not in exclude_cols]
+        
+        print(f"\n📊 데이터 준비")
+        print(f"  - 전체 데이터 크기: {len(history_df)} 행")
+        print(f"  - 사용 피처 수: {len(feature_columns)} 개")
         
         # Walk-Forward 학습을 위한 데이터 준비
         min_train_samples = self.validation_config['min_train_samples']
@@ -106,10 +116,20 @@ class TimeSeriesXGBoostInference:
         X_test = df_until_target.iloc[target_row_idx:target_row_idx+1][feature_columns]
         row = df_until_target.iloc[target_row_idx:target_row_idx+1]
         
+        print(f"\n📂 데이터 분할 완료")
+        print(f"  - Train 데이터: {len(X_train)} 행")
+        print(f"  - Val 데이터: {len(X_val)} 행")
+        print(f"  - Test 데이터: {len(X_test)} 행")
+        
         # 클래스 불균형 처리
         n_positive = (y_train == 1).sum()
         n_negative = (y_train == 0).sum()
         scale_pos_weight = n_negative / n_positive if n_positive > 0 else 1
+        
+        print(f"\n⚖️  클래스 분포")
+        print(f"  - 상승(1): {n_positive} 개 ({n_positive/len(y_train)*100:.1f}%)")
+        print(f"  - 하락(0): {n_negative} 개 ({n_negative/len(y_train)*100:.1f}%)")
+        print(f"  - Scale Pos Weight: {scale_pos_weight:.3f}")
         
         # XGBoost 파라미터 설정
         xgb_params = {
@@ -127,11 +147,36 @@ class TimeSeriesXGBoostInference:
             'random_state': self.xgb_config['random_state'],
             'verbosity': 0
         }
+
+        # 이전 버전에서 활용한 XGBoost 파라미터 설정
+        # xgb_params = {
+        #     'objective': self.xgb_config['objective'],
+        #     'max_depth': self.xgb_config['max_depth'],
+        #     'learning_rate': self.xgb_config['learning_rate'],
+        #     'n_estimators': self.xgb_config['n_estimators'],
+        #     'min_child_weight': self.xgb_config['min_child_weight'],
+        #     'subsample': self.xgb_config['subsample'],
+        #     'colsample_bytree': self.xgb_config['colsample_bytree'],
+        #     'gamma': self.xgb_config['gamma'],
+        #     'reg_alpha': self.xgb_config['reg_alpha'],
+        #     'reg_lambda': self.xgb_config['reg_lambda'],
+        #     'scale_pos_weight': scale_pos_weight,
+        #     'random_state': self.xgb_config['random_state'],
+        #     'verbosity': 0
+        # }
         
         # 모델 학습
         early_stopping_rounds = self.xgb_config.get('early_stopping_rounds')
         
+        print(f"\n🚀 XGBoost 모델 학습 시작")
+        print(f"  - Max Depth: {xgb_params['max_depth']}")
+        print(f"  - Learning Rate: {xgb_params['learning_rate']}")
+        print(f"  - N Estimators: {xgb_params['n_estimators']}")
+        
+        train_start_time = time.time()
+        
         if len(X_val) > 0 and early_stopping_rounds is not None:
+            print(f"  - Early Stopping: {early_stopping_rounds} rounds")
             xgb_params['early_stopping_rounds'] = early_stopping_rounds
             xgb_model = XGBClassifier(**xgb_params)
             xgb_model.fit(
@@ -140,10 +185,15 @@ class TimeSeriesXGBoostInference:
                 verbose=False
             )
         else:
+            print(f"  - Early Stopping: 미사용")
             xgb_model = XGBClassifier(**xgb_params)
             xgb_model.fit(X_train, y_train)
         
+        train_time = time.time() - train_start_time
+        print(f"✅ 모델 학습 완료 (소요 시간: {train_time:.2f}초)")
+        
         # 예측 수행
+        print(f"\n🎯 예측 수행 중...")
         prediction = xgb_model.predict(X_test)[0]  # 0 또는 1
         
         # BigQuery에서 가져온 Prophet features를 반환할 딕셔너리 준비
@@ -160,7 +210,20 @@ class TimeSeriesXGBoostInference:
                 # NaN 체크 후 변환
                 if pd.isna(value):
                     result[col] = None
+                elif isinstance(value, (bool, np.bool_)):
+                    # bool 타입은 int로 변환 (JSON 직렬화 호환)
+                    result[col] = int(value)
+                elif isinstance(value, (np.integer, np.floating, int, float)):
+                    result[col] = float(value)
                 else:
-                    result[col] = float(value) if isinstance(value, (np.integer, np.floating, int, float)) else value
+                    result[col] = value
+        
+        print(f"\n📈 예측 결과")
+        print(f"  - xgboost 예측 방향: {result['forecast_direction']} ({'상승' if prediction == 1 else '하락'})")
+        if 'yhat' in result and result['yhat'] is not None:
+            print(f"  - Prophet 예측값: {result['yhat']:.2f}")
+        if 'y' in result and result['y'] is not None:
+            print(f"  - 어제 종가: {result['y']:.2f}")
+        print(f"{'='*70}\n")
         
         return result

@@ -24,6 +24,7 @@
 # GENERATE_MODEL_TEMPERATURE = float(os.getenv("GENERATE_MODEL_TEMPERATURE", "0.7"))
 # GENERATE_MODEL_MAX_TOKENS = int(os.getenv("GENERATE_MODEL_MAX_TOKENS", "2048"))
 
+# TODO project-id 하드코딩 제거한 상태이니 로깅 체크할 것 (endpoint 노출 제거)
 # # Vertex AI 설정 (플랫폼 관련)
 # VERTEX_AI_PROJECT_ID = os.getenv("VERTEX_AI_PROJECT_ID")
 # VERTEX_AI_LOCATION = os.getenv("VERTEX_AI_LOCATION", "us-central1")

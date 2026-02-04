@@ -641,3 +641,40 @@ class BigQueryService(GCPServiceBase):
             새 코드에서는 list_queries()를 사용하세요.
         """
         return self.list_queries(domain)
+
+    # TODO 이 함수 동작 방식 점검하고 개선
+    def insert_rows_json(
+        self,
+        table_id: str,
+        rows: List[Dict[str, Any]],
+        dataset_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Insert rows into a BigQuery table using JSON format (Streaming Insert)
+
+        Args:
+            table_id: Table ID (without project/dataset prefix)
+            rows: List of dictionaries, where each dict is a row
+            dataset_id: Dataset ID (if None, uses instance default)
+
+        Returns:
+            List[Dict]: A list of error objects if any occurred, otherwise an empty list
+
+        Example:
+            >>> errors = bq.insert_rows_json("prediction_timeseries", [{"target_date": "2026-02-01", ...}])
+        """
+        dataset = dataset_id or self.dataset_id
+        if not dataset:
+            raise ValueError("dataset_id is required for insertion")
+
+        table_full_id = f"{self.project_id}.{dataset}.{table_id}"
+        logger.info(f"Attempting to insert {len(rows)} rows into {table_full_id}")
+
+        errors = self.client.insert_rows_json(table_full_id, rows)
+
+        if not errors:
+            logger.info(f"Successfully inserted {len(rows)} rows into {table_full_id}")
+        else:
+            logger.error(f"Failed to insert some rows into {table_full_id}. Errors: {errors}")
+
+        return errors
