@@ -39,8 +39,12 @@ with DAG(
     'market_prediction_loader_v1',
     default_args=default_args,
     description='시장 예측 분석 및 시계열 데이터 적재 파이프라인 (Tilda Dataset)',
-    schedule_interval='@daily',
-    catchup=False,
+    # 월~금요일 자정(UTC 00:00, KST 09:00)에 실행
+    schedule_interval='0 0 * * 1-5', 
+    # 한 번에 하나의 DAG 실행 건수만 활성화 (순차 처리 보장)
+    max_active_runs=1,
+    # start_date 이후의 누락된 실행 건수를 모두 소급하여 실행
+    catchup=True, 
     tags=['market', 'prediction', 'bigquery', 'tilda']
 ) as dag:
 
