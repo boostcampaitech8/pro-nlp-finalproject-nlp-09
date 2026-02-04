@@ -23,7 +23,7 @@ def fetch_article_dates(client, hash_ids):
         hash_ids: triple hash_id 리스트
         
     Returns:
-        list: 각 행은 description과 publish_date 필드를 가진 Row 객체
+        list: 각 행은 description, publish_date 필드를 가진 Row 객체
     """
     if not hash_ids:
         return []
@@ -34,8 +34,8 @@ def fetch_article_dates(client, hash_ids):
     news_full_table = f"{client.project}.{dataset}.{news_table}"
     
     query = f"""
-    SELECT DISTINCT 
-      n.description, 
+    SELECT DISTINCT
+      n.description,
       CAST(m.publish_date AS DATE) AS publish_date
     FROM `{map_full_table}` m
     JOIN `{news_full_table}` n

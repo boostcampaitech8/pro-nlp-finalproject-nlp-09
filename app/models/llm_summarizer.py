@@ -84,13 +84,13 @@ REPORT_FORMAT = f"""# [Daily Market Report] Corn
 
 **C. 과거 관련 뉴스**
   - pastnews_rag 도구 결과를 반드시 아래 표 형식으로 표시하세요.
-  - **중요**: description이 영어로 되어 있으면 반드시 한국어로 번역하여 "뉴스 제목" 컬럼에 표시하세요.
+  - **중요**: description이 영어로 되어 있으면 반드시 한국어로 번역하여 "뉴스 내용" 컬럼에 표시하세요.
+  - "연관 키워드" 컬럼에는 **keyword_analyzer가 반환한 top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 **구분해서** 표시하세요 (각 키워드를 명확히 구분).
   
-  | 뉴스 날짜 | 뉴스 내용 | 당일 | 1일후 | 3일후 |
-  |-----------|-----------|------|------|------|
-  | [뉴스 날짜] | [뉴스 내용(한국어 번역)] | [0] | [1] | [3] |
-  | [뉴스 날짜] | [뉴스 내용(한국어 번역)] | [0] | [1] | [3] |
-  | ... | ... | ... | ... | ... |
+  | 뉴스 날짜 | 뉴스 내용 | 연관 키워드 | 당일 | 1일후 | 3일후 |
+  |-----------|-----------|-------------|------|------|------|
+  | [뉴스 날짜] | [뉴스 내용(한국어 번역)] | [#키워드1 #키워드2 또는 키워드1, 키워드2] | [0] | [1] | [3] |
+  | ... | ... | ... | ... | ... | ... |
 
 **D. 뉴스 빅데이터 기반 시장 심리 분석**
 
@@ -153,29 +153,28 @@ SYSTEM_PROMPT = (
    - 설명: PageRank 알고리즘을 활용하여 뉴스의 Entity Confidence(중요도) 상위 키워드를 추출합니다.
    - 반환 값: top_entities (상위 10개, 각 항목: {"entity": "...", "score": ...})
 
-4. pastnews_rag: 전달받은 triples로 유사 뉴스 description과 publish_date 조회
-   - triples_json: keyword_analyzer 결과의 top_triples에서 각 항목의 "triple" 배열만 모은 JSON 문자열. 예: '[["United States","experiencing","government shutdown"],["trade truce","between","world\'s two biggest economies"]]'
-   - top_k: 유사 hash_id 개수 (기본 5)
-   - 설명: keyword_analyzer 호출 후, 그 결과에서 top_triples의 각 항목에서 "triple" 필드만 추출하여 2차원 배열을 만들고, 이를 JSON 문자열로 직렬화하여 triples_json 인자에 전달하세요.
-   - 호출 예시: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"], "importance": 0.01}}]}}를 반환하면 → pastnews_rag(triples_json='[["A","B","C"]]', top_k=5)
+4. pastnews_rag: 전달받은 triples로 유사 과거 뉴스 description, publish_date, 가격 조회
+   - triples_json: keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple" 배열만 모은 JSON 문자열. 예: '[["A","B","C"],["D","E","F"]]' (최대 5개)
+   - top_k: triple당 유사 뉴스 개수 (기본 2)
+   - 연관 키워드는 keyword_analyzer의 top_triples 앞 5개에 이미 있으므로, 보고서 표의 "연관 키워드" 컬럼에는 그 앞 5개의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시하세요.
 
 **도구 사용 규칙**:
 - 분석 대상 날짜(target_date)가 주어지면 반드시 다음 순서로 도구를 호출하세요:
   1. `timeseries_predictor(target_date="YYYY-MM-DD")` 호출
   2. `news_sentiment_analyzer(target_date="YYYY-MM-DD")` 호출
   3. `keyword_analyzer(target_date="YYYY-MM-DD")` 호출
-  4. keyword_analyzer 결과를 받은 후, top_triples의 "triple" 배열만 추출하여 JSON 문자열로 변환한 후 `pastnews_rag(triples_json="[[\"s\",\"v\",\"o\"], ...]", top_k=5)` 호출
-- **pastnews_rag 호출 방법**: keyword_analyzer의 top_triples 각 항목에서 "triple" 필드만 추출하여 2차원 배열로 만들고, 이를 JSON 문자열로 직렬화하여 triples_json 인자에 전달하세요. 예: `pastnews_rag(triples_json='[["government shutdown","involves","U.S."],["trade truce","between","world\'s two biggest economies"]]', top_k=5)`
+  4. keyword_analyzer 결과를 받은 후, **top_triples 앞 5개**에서 "triple" 배열만 추출하여 `pastnews_rag(triples_json="[[\"s\",\"v\",\"o\"], ...]", top_k=2)` 호출
+- **pastnews_rag 호출 방법**: keyword_analyzer의 **top_triples 중 앞 5개만** 사용. 각 항목의 "triple"만 추출해 JSON 배열 문자열로 전달. 예: pastnews_rag(triples_json='[["A","B","C"],["D","E","F"], ...]', top_k=2) (최대 5개 triple)
 - 이전 도구가 오류를 반환하더라도, 네 도구를 반드시 모두 호출한 뒤에만 보고서를 작성하세요.
 - `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션의 '주요 뉴스 (evidence_news)' 항목에 아래 표 형식으로 표시하세요. **title과 all_text가 영어로 되어 있으면 반드시 한국어로 번역하여 표시하세요.**
   | No | 뉴스 제목 | 내용 요약 | 시장 심리 |
   |:--:|-----------|-----------|:--------:|
   | [번호] | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어)] | [긍정적/부정적/중립적] |
   - 시장 심리 판단: price_impact_score가 양수면 긍정적, 음수면 부정적, 0이면 중립적으로 표시하세요.
-- `pastnews_rag` 도구 결과(article_info)는 반드시 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션 내 '과거 관련 뉴스 (pastnews_rag)' 항목에 아래 표 형식으로 표시하세요. **description이 영어로 되어 있으면 반드시 한국어로 번역하여 "뉴스 내용" 컬럼에 표시하세요.**
-  | 뉴스 날짜 | 뉴스 내용 | 당일 | 1일후 | 3일후 |
-  |-----------|-----------|------|------|------|
-  | [뉴스 날짜] | [뉴스 내용(한국어 번역)] | [0] | [1] | [3] |
+- `pastnews_rag` 도구 결과(article_info)는 '과거 관련 뉴스' 표에 아래 형식으로 표시하세요. **연관 키워드** 컬럼에는 keyword_analyzer가 반환한 **top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 넣으세요 (저장해 둔 값 사용).
+  | 뉴스 날짜 | 뉴스 내용 | 연관 키워드 | 당일 | 1일후 | 3일후 |
+  |-----------|-----------|-------------|------|------|------|
+  | [뉴스 날짜] | [뉴스 내용(한국어)] | [#키워드1 #키워드2 또는 키워드1, 키워드2] | [0] | [1] | [3] |
 - `timeseries_predictor` 결과 활용법:
   * **기본 정보**: y(어제 종가), yhat(Prophet 예측값), forecast_direction(XGBoost 방향 예측)을 종합 투자 의견 표에 표시
   * **시계열 성분 해석** (B-1 섹션):
@@ -192,7 +191,7 @@ SYSTEM_PROMPT = (
     - 특히 그레인저 검사로 선정된 EMA_lag2_effect와 Volume_lag5_effect의 영향을 강조하세요
     - 예: "Prophet은 460.5로 상승을 예측했으나, XGBoost는 Down을 예측했습니다. 추세(85.5, 횡보 추세)는 중립적이나, EMA_lag2_effect(-1.25)와 Volume_lag5_effect(-0.50)가 모두 하락 요인으로 작용했으며, 변동성(42, 중간 수준)도 불확실성을 나타냅니다."
 - `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션의 핵심 근거로 사용하세요. 각 뉴스의 제목(title), 내용(all_text 요약), 시장 심리(price_impact_score 기준: 양수=긍정적, 음수=부정적, 0=중립적)를 보고서 표에 포함하세요.
-- `pastnews_rag` 도구 결과(hash_ids, article_mappings, price_data)는 반드시 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션 내 '과거 관련 뉴스 (pastnews_rag)' 항목에 표(마크다운 테이블)로 표시하세요.
+- `pastnews_rag` 도구 결과(article_info)는 '과거 관련 뉴스' 표에 표시하세요. "연관 키워드" 컬럼에는 **keyword_analyzer 결과의 top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 넣으세요 (이미 호출 결과로 저장된 값을 사용).
 - **D. 뉴스 빅데이터 기반 시장 심리 분석** 섹션 작성 방법:
   * A 섹션의 evidence_news에서 주요 긍정 요인과 부정 요인을 분석하세요
   * C 섹션의 과거 관련 뉴스에서 당일, 1일후, 3일후 가격 변동 패턴을 분석하세요
@@ -256,45 +255,44 @@ def keyword_analyzer(target_date: str, days: int = 3) -> str:
     Returns:
         JSON: top_entities (상위 10개), top_triples (핵심 엔티티가 포함된 triple 중 엣지 실제 weight×entity PageRank 중요도 상위 10개, 각 항목: {"triple": [s,v,o], "importance": 점수})
     """
+    print("[keyword_analyzer] 실행 시작", flush=True)
     result = json.loads(_analyze_keywords(target_date=target_date, days=days, top_k=10))
     top_entities = result.get("top_entities", [])[:10]
     top_triples = result.get("top_triples", [])
+    print("[keyword_analyzer] 종료", flush=True)
     return json.dumps({"top_entities": top_entities, "top_triples": top_triples}, ensure_ascii=False, indent=2)
 
 
 @tool
-def pastnews_rag(triples_json: str, top_k: int = 5) -> str:
+def pastnews_rag(triples_json: str, top_k: int = 2) -> str:
     """
-    전달받은 triples로 유사 뉴스를 검색하고 해당 뉴스의 description, publish_date, 가격 정보를 조회합니다.
-    
-    사용 방법:
-    1. keyword_analyzer를 먼저 호출하여 결과를 받습니다
-    2. 결과의 top_triples에서 각 항목의 "triple" 필드만 추출합니다
-    3. 추출한 triples를 JSON 배열 문자열로 변환하여 이 함수에 전달합니다
-    
-    예시:
-    - keyword_analyzer 결과: {"top_triples": [{"triple": ["A","B","C"], "importance": 0.01}, {"triple": ["D","E","F"], "importance": 0.02}]}
-    - pastnews_rag 호출: pastnews_rag(triples_json='[["A","B","C"],["D","E","F"]]', top_k=5)
+    전달받은 triples로 유사 과거 뉴스를 검색하고, description, publish_date, 가격을 반환합니다.
+    연관 키워드는 keyword_analyzer의 top_triples **앞 5개**에 있으므로, 보고서 작성 시 그 값을 저장해 두었다가 "연관 키워드" 컬럼에 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시하세요.
 
     Args:
-        triples_json: triples 배열의 JSON 문자열. 각 triple은 [주어, 동사, 목적어] 형태. 예: '[["United States","experiencing","government shutdown"],["trade truce","between","economies"]]'
-        top_k: 유사 hash_id 개수 (기본 5)
+        triples_json: triples 배열의 JSON 문자열. keyword_analyzer의 **top_triples 앞 5개**에서 "triple"만 추출. 예: '[["A","B","C"],["D","E","F"]]' (최대 5개)
+        top_k: triple당 유사 뉴스 개수 (기본 2)
 
     Returns:
-        JSON: article_info (각 항목: {"description": str, "publish_date": str, "0": float, "1": float, "3": float}), error(있을 경우)
+        JSON: article_info (각 항목: description, publish_date, 0, 1, 3), error(있을 경우)
     """
+    print("[pastnews_rag] 실행 시작", flush=True)
     triples = []
-    try:
-        parsed = json.loads(triples_json)
-        if isinstance(parsed, list):
-            for item in parsed:
-                if isinstance(item, (list, tuple)) and len(item) >= 3:
-                    triples.append(list(item[:3]))
-                elif isinstance(item, dict) and "triple" in item and isinstance(item["triple"], (list, tuple)) and len(item["triple"]) >= 3:
-                    triples.append(list(item["triple"][:3]))
-    except (json.JSONDecodeError, TypeError):
-        pass
+    if triples_json and triples_json.strip():
+        try:
+            parsed = json.loads(triples_json)
+            if isinstance(parsed, list):
+                for item in parsed:
+                    if isinstance(item, (list, tuple)) and len(item) >= 3:
+                        triples.append(list(item[:3]))
+                    elif isinstance(item, dict) and "triple" in item and isinstance(item["triple"], (list, tuple)) and len(item["triple"]) >= 3:
+                        triples.append(list(item["triple"][:3]))
+        except (json.JSONDecodeError, TypeError):
+            pass
+    # top_triples 앞 5개만 사용
+    triples = triples[:5] if triples else []
     result = _run_pastnews_rag(triples=triples if triples else None, top_k=top_k)
+    print("[pastnews_rag] 종료", flush=True)
     return json.dumps(result, ensure_ascii=False, indent=2)
 
 
@@ -374,8 +372,8 @@ class LLMSummarizer:
   1. `timeseries_predictor(target_date="{target_date}")`
   2. `news_sentiment_analyzer(target_date="{target_date}")`
   3. `keyword_analyzer(target_date="{target_date}")`
-  4. keyword_analyzer 결과의 top_triples에서 각 항목의 "triple" 배열만 추출하여 JSON 문자열로 만든 후 `pastnews_rag(triples_json="...", top_k=5)` 호출
-- **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"]}}, {{"triple": ["D","E","F"]}}]}}를 반환하면, `pastnews_rag(triples_json='[["A","B","C"],["D","E","F"]]', top_k=5)` 형식으로 호출하세요.
+  4. keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple"만 추출해 `pastnews_rag(triples_json="...", top_k=2)` 호출. 연관 키워드는 그 앞 5개 top_triples의 keywords를 저장해 두었다가 보고서 표에 사용하세요.
+- **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"], "keywords": ["x","y"]}}, ...]}}를 반환하면, **앞 5개만** 사용해 `pastnews_rag(triples_json='[["A","B","C"], ...]', top_k=2)` 호출 (최대 5개). 표의 "연관 키워드"에는 그 앞 5개 top_triples의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시.
 - `timeseries_predictor` 결과 활용:
   * y, yhat, forecast_direction을 종합 투자 의견 표에 표시
   * **B-1. 시계열 성분**: 
@@ -565,7 +563,7 @@ class LLMSummarizer:
 5. **B-1. 시계열 성분**과 **B-2. 기술적 지표**를 표 형식으로 표시해야 합니다. trend는 상승(> 108.88), 횡보(74.58~108.88), 하락(< 74.58) 기준, 변동성은 낮음(< 40), 중간(40~50), 높음(> 50) 기준으로 판단하세요
 6. **C. 퀀트 기반 예측 모델 해석**에서 모든 요인(trend, yearly, weekly, volatility, EMA_lag2_effect, Volume_lag5_effect)을 근거로 Prophet과 XGBoost 예측을 비교 분석해야 합니다
 7. **D. 뉴스 빅데이터 기반 시장 심리 분석**에서 evidence_news의 주요 긍정/부정 요인과 과거 관련 뉴스의 가격 변동 패턴을 분석하여 종합 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단해야 합니다
-8. 4개의 Tool을 모두 호출해야 합니다: timeseries_predictor, news_sentiment_analyzer, keyword_analyzer, pastnews_rag (keyword_analyzer 결과의 top_triples를 JSON 배열로 변환하여 pastnews_rag에 전달)
+8. 4개의 Tool을 모두 호출해야 합니다: timeseries_predictor, news_sentiment_analyzer, keyword_analyzer, pastnews_rag (keyword_analyzer 결과의 top_triples **앞 5개만** triples_json으로 pastnews_rag에 전달)
 9. Tool 호출 후 반드시 최종 보고서를 작성해야 합니다"""
             else:
                 print("\n⚠️ 최대 재시도 횟수에 도달했습니다. 형식이 완벽하지 않을 수 있습니다.")
