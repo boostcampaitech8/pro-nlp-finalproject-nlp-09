@@ -10,7 +10,7 @@ if root_dir not in sys.path:
     sys.path.append(root_dir)
 
 try:
-    from model.timeseries_model.run_xg import TimeSeriesXGBoostInference
+    from model.timeseries_model.xg_inference import TimeSeriesXGBoostInference
 except ImportError as e:
     print(f"경고: TimeSeriesXGBoostInference를 임포트할 수 없습니다. 오류: {e}")
     TimeSeriesXGBoostInference = None
@@ -76,7 +76,7 @@ def predict_market_trend(target_date: str) -> str:
         # 과거 데이터 조회 (타겟 날짜 + 문맥 정보 + 학습 데이터)
         # XGBoost Walk-Forward 학습을 위해 충분한 데이터가 필요합니다 (config.yaml의 window_size 참조)
         # 1500일(약 4년) 정도의 데이터를 조회합니다. 모든 필요 컬럼(yhat, direction 등)은 BQ에 있다고 가정합니다.
-        history_df = bq_client.get_prophet_features(target_date=target_date, lookback_days=1500)
+        history_df = bq_client.get_prophet_features(target_date=target_date, lookback_days=3000)
         
         if history_df.empty:
             return json.dumps({
