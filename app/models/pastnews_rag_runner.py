@@ -22,27 +22,43 @@ def fetch_embedding_by_triple_text(client, triple_text: str) -> Optional[List[fl
     """BigQuery tilda.news_article_triples에서 triple_text로 행을 찾아 embedding 반환."""
     if not triple_text or not client:
         return None
+    result = fetch_embeddings_by_triple_texts(client, [triple_text])
+    return result.get(triple_text)
+
+
+def fetch_embeddings_by_triple_texts(
+    client, triple_texts: List[str]
+) -> Dict[str, List[float]]:
+    """
+    BigQuery tilda.news_article_triples에서 triple_text 목록으로 행을 찾아
+    triple_text -> embedding 매핑을 반환. (동일 triple_text 복수 행 시 첫 행만 사용)
+    """
+    out: Dict[str, List[float]] = {}
+    if not client or not triple_texts:
+        return out
+    unique_texts = list(dict.fromkeys(t for t in triple_texts if t))
+    if not unique_texts:
+        return out
     dataset = os.getenv("BIGQUERY_DATASET_ID", "tilda")
     table = os.getenv("TRIPLES_TABLE", "news_article_triples")
     full_table = f"{client.project}.{dataset}.{table}"
     query = f"""
-    SELECT embedding
+    SELECT triple_text, embedding
     FROM `{full_table}`
-    WHERE triple_text = @triple_text
-    LIMIT 1
+    WHERE triple_text IN UNNEST(@triple_texts)
     """
     job = client.query(
         query,
         job_config=bigquery.QueryJobConfig(
             query_parameters=[
-                bigquery.ScalarQueryParameter("triple_text", "STRING", triple_text)
+                bigquery.ArrayQueryParameter("triple_texts", "STRING", unique_texts)
             ]
         ),
     )
-    rows = list(job.result())
-    if not rows or not rows[0].embedding:
-        return None
-    return list(rows[0].embedding)
+    for row in job.result():
+        if row.triple_text not in out and row.embedding:
+            out[row.triple_text] = list(row.embedding)
+    return out
 
 
 def vector_search_similar_hash_ids(client, triple_embedding: List[float], top_k: int = 5) -> List[str]:
