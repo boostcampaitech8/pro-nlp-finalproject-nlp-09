@@ -484,7 +484,8 @@ class BigQueryService(GCPServiceBase):
         table_full_id = f"{self.project_id}.{dataset}.{table_id}"
         logger.info(f"Attempting to insert {len(rows)} rows into {table_full_id}")
 
-        errors = self.client.insert_rows_json(table_full_id, rows)
+        # ignore_unknown_values=True: 테이블 스키마에 없는 필드는 무시하고 적재
+        errors = self.client.insert_rows_json(table_full_id, rows, ignore_unknown_values=True)
 
         if not errors:
             logger.info(f"Successfully inserted {len(rows)} rows into {table_full_id}")
