@@ -250,8 +250,9 @@ class KeywordAnalyzer:
     def analyze_keywords(
         self,
         target_date: str,
+        commodity: str = "corn",
         days: int = 3,
-        keyword_filter: str = "corn and (price or demand or supply or inventory) OR united states department of agriculture",
+        keyword_filter: Optional[str] = None,
         top_k: int = 20
     ) -> Dict[str, Any]:
         """
@@ -259,8 +260,9 @@ class KeywordAnalyzer:
         
         Args:
             target_date: 분석 기준 날짜 (형식: "YYYY-MM-DD")
+            commodity: 상품명 (corn, soybean, wheat)
             days: 분석할 일수 (기본 3일)
-            keyword_filter: BigQuery key_word 필터. " OR "로 구분하면 여러 값 OR 검색 (기본: corn 관련 + united states department of agriculture)
+            keyword_filter: BigQuery key_word 필터 (None이면 commodity 기반 자동 생성)
             top_k: 반환할 상위 키워드 수
         
         Returns:
@@ -271,6 +273,10 @@ class KeywordAnalyzer:
                 - graph_stats: 그래프 통계 (노드 수, 엣지 수)
                 - triples_count: 분석된 triples 수
         """
+        if keyword_filter is None:
+            # 통합 테이블(news_article)을 사용하되 품목별로 필터링
+            keyword_filter = f"{commodity} and (price or demand or supply or inventory) OR united states department of agriculture"
+
         # key_word 조건: " OR "로 구분하면 여러 값 OR 검색
         parts = [p.strip() for p in keyword_filter.split(" OR ") if p.strip()]
         if not parts:
@@ -279,7 +285,7 @@ class KeywordAnalyzer:
             f"key_word = '{k.replace(chr(39), chr(39) + chr(39))}'" for k in parts
         )
         where_clause = f"filter_status = 'T' AND ({key_conditions})"
-        # 1. BigQuery에서 데이터 가져오기
+        # 1. BigQuery에서 데이터 가져오기 (통합 테이블 news_article 유지)
         news_data = self.client.get_timeseries_data(
             table_id="news_article",
             value_column=["triples"],
@@ -597,12 +603,13 @@ class KeywordAnalyzer:
         return pagerank, verb_avg_final, G
 
 
-def analyze_keywords(target_date: str, days: int = 3, top_k: int = 20) -> str:
+def analyze_keywords(target_date: str, commodity: str = "corn", days: int = 3, top_k: int = 20) -> str:
     """
     키워드 분석 결과를 JSON 문자열로 반환하는 함수 (LLM Tool용)
     
     Args:
         target_date: 분석 기준 날짜 (형식: "YYYY-MM-DD")
+        commodity: 상품명 (corn, soybean, wheat)
         days: 분석할 일수 (기본 3일)
         top_k: 반환할 상위 키워드 수
     
@@ -612,6 +619,7 @@ def analyze_keywords(target_date: str, days: int = 3, top_k: int = 20) -> str:
     analyzer = KeywordAnalyzer()
     result = analyzer.analyze_keywords(
         target_date=target_date,
+        commodity=commodity,
         days=days,
         top_k=top_k
     )
