@@ -374,20 +374,22 @@ class LLMSummarizer:
         self,
         context: str,
         target_date: str,
+        commodity: str,
     ) -> str:
         """Agent에게 전달할 사용자 입력 메시지 생성"""
 
         user_input = f"""다음 정보를 바탕으로 전문적인 금융 시장 분석 보고서를 작성해주세요.
 
-**분석 맥락**: {context or "최근 시장 상황 분석"}
+**분석 대상 품목**: {commodity}
+**분석 맥락**: {context or f"최근 {commodity} 시장 상황 분석"}
 **분석 기준 일자**: {target_date}
 
-- 다음 순서로 도구를 호출하세요:
-  1. `timeseries_predictor(target_date="{target_date}")`
-  2. `news_sentiment_analyzer(target_date="{target_date}")`
-  3. `keyword_analyzer(target_date="{target_date}")`
-  4. keyword_analyzer 결과의 top_triples에서 각 항목의 "triple" 배열만 추출하여 JSON 문자열로 만든 후 `pastnews_rag(triples_json="...", top_k=5)` 호출
-- **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"]}}, {{"triple": ["D","E","F"]}}]}}를 반환하면, `pastnews_rag(triples_json='[["A","B","C"],["D","E","F"]]', top_k=5)` 형식으로 호출하세요.
+- 다음 순서로 도구를 호출하되, **모든 도구 호출 시 `commodity='{commodity}'` 인자를 반드시 전달**하세요:
+  1. `timeseries_predictor(target_date="{target_date}", commodity="{commodity}")`
+  2. `news_sentiment_analyzer(target_date="{target_date}", commodity="{commodity}")`
+  3. `keyword_analyzer(target_date="{target_date}", commodity="{commodity}")`
+  4. keyword_analyzer 결과의 top_triples에서 각 항목의 "triple" 배열만 추출하여 JSON 문자열로 만든 후 `pastnews_rag(triples_json="...", commodity="{commodity}", top_k=5)` 호출
+- **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"]}}, {{"triple": ["D","E","F"]}}]}}를 반환하면, `pastnews_rag(triples_json='[["A","B","C"],["D","E","F"]]', commodity='{commodity}', top_k=5)` 형식으로 호출하세요.
 - `timeseries_predictor` 결과 활용:
   * y, yhat, forecast_direction을 종합 투자 의견 표에 표시
   * **B-1. 시계열 성분**: 
@@ -500,6 +502,7 @@ class LLMSummarizer:
         self,
         context: str = "",
         target_date: Optional[str] = None,
+        commodity: str = "corn",
         max_retries: int = 2,
     ) -> dict:
         """LangChain Agent를 이용한 LLM 요약 생성
@@ -507,6 +510,7 @@ class LLMSummarizer:
         Args:
             context: 분석 맥락
             target_date: 분석 기준 날짜 (YYYY-MM-DD)
+            commodity: 분석 대상 품목 (corn, soybean, wheat)
             max_retries: 재시도 횟수
         """
         # 날짜 기본값 (오늘)
@@ -515,7 +519,7 @@ class LLMSummarizer:
 
             target_date = datetime.now().strftime("%Y-%m-%d")
 
-        user_input = self._build_user_input(context=context, target_date=target_date)
+        user_input = self._build_user_input(context=context, target_date=target_date, commodity=commodity)
 
         for attempt in range(max_retries + 1):
             # Agent 실행 (LangChain이 자동으로 tool call을 처리함)
