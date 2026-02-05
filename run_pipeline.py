@@ -22,31 +22,33 @@ from routes.orchestrator import orchestrate_analysis
 def main():
     """메인 파이프라인 실행"""
     
-    # 분석 기준 날짜 설정 (기본값: 오늘, 또는 테스트용 특정 날짜)
-    # 실제 운영시에는 datetime.now().strftime('%Y-%m-%d') 사용
+    # 분석 기준 설정 (테스트 시 여기서 날짜와 품목을 변경하세요)
     target_date = "2025-11-14"
+    commodity = "corn"  # 테스트할 품목: corn, soybean, wheat
     
     print("=" * 70)
     print("금융 분석 파이프라인 시작 (Vertex AI + LangChain Agent)")
     print(f"실행 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"분석 대상: {commodity.upper()}")
     print(f"분석 기준일: {target_date}")
     print("=" * 70)
     
     try:
         # 1. Orchestrator를 통한 분석 실행
-        print(f"\n[단계 1] Orchestrator 분석 실행 중 ({target_date})...")
+        print(f"\n[단계 1] Orchestrator 분석 실행 중 ({target_date} - {commodity})...")
         print("   Orchestrator가 다음 작업을 수행합니다:")
-        print("   1. LangChain Agent 초기화")
-        print("   2. Agent가 날짜를 기반으로 도구(Tool) 호출")
-        print("      - timeseries_predictor: BigQuery 피처 조회 -> XGBoost 예측")
-        print("      - news_sentiment_analyzer: BigQuery 뉴스 조회 -> 시장 영향력 예측")
+        print(f"   1. {commodity} 관련 LangChain Agent 초기화")
+        print("   2. Agent가 날짜 및 품목을 기반으로 도구(Tool) 호출")
+        print("      - timeseries_predictor: 품목별 시계열 예측")
+        print("      - news_sentiment_analyzer: 품목별 뉴스 영향력 예측")
         print("   3. 결과를 바탕으로 통합 요약 생성")
         print("-" * 70)
         
-        # Orchestrator 함수 직접 호출
+        # Orchestrator 함수 호출 (commodity 인자 추가)
         result, agent_result = orchestrate_analysis(
             target_date=target_date,
-            context=f"일일 금융 시장 분석 ({target_date})",
+            commodity=commodity,
+            context=f"일일 금융 시장 분석 ({target_date} - {commodity})",
             return_agent_result=True
         )
         
@@ -62,11 +64,9 @@ def main():
             print(f"  - 시계열 예측: {result.timeseries_prediction.prediction:.2f} (신뢰도: {result.timeseries_prediction.confidence:.2%})")
         if result.sentiment_analysis:
             print(f"  - 근거 뉴스: {len(result.sentiment_analysis)}건 추출됨")
-            for i, news in enumerate(result.sentiment_analysis[:3], 1):
-                print(f"    {i}. [{news.sentiment}] {news.text[:50]}...")
         
-        # 3. 결과 저장
-        save_results_from_orchestrator(result, agent_result)
+        # 3. 결과 저장 (commodity 인자 추가)
+        save_results_from_orchestrator(result, agent_result, commodity)
         
         print("\n✅ 파이프라인 완료!")
         print(f"완료 시간: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -81,33 +81,25 @@ def main():
         return 1
 
 
-def save_results_from_orchestrator(result, agent_result: dict):
+def save_results_from_orchestrator(result, agent_result: dict, commodity: str):
     """
     Orchestrator 결과를 별도 파일로 저장
-    - summary: LLM 요약만 저장
-    - agent_result: Agent 실행 결과 전체 저장
-    
-    Args:
-        result: OrchestratorOutput 객체
-        agent_result: Agent 실행 결과 전체 (Tool 메시지 포함)
     """
     try:
-        # 결과 저장 디렉토리 생성
         output_dir = os.path.join(project_root, 'outputs')
         os.makedirs(output_dir, exist_ok=True)
         
         timestamp = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         
-        # 1. Summary 파일 저장
-        summary_file = os.path.join(output_dir, f'summary_{timestamp}.txt')
+        # 1. Summary 파일 저장 (파일명에 commodity 추가)
+        summary_file = os.path.join(output_dir, f'summary_{commodity}_{timestamp}.txt')
         with open(summary_file, 'w', encoding='utf-8') as f:
             f.write(result.llm_summary)
         
         print(f"\n💾 Summary 저장: {summary_file}")
-        print(f"   - 길이: {len(result.llm_summary)}자")
         
-        # 2. Agent 결과 전체 파일 저장
-        agent_file = os.path.join(output_dir, f'agent_result_{timestamp}.txt')
+        # 2. Agent 결과 전체 파일 저장 (파일명에 commodity 추가)
+        agent_file = os.path.join(output_dir, f'agent_result_{commodity}_{timestamp}.txt')
         with open(agent_file, 'w', encoding='utf-8') as f:
             f.write("=" * 70 + "\n\n")
             f.write("Agent 실행 결과 전체\n")
