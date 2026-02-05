@@ -35,12 +35,13 @@ class SentimentAnalyzer:
         except Exception as e:
             print(f"모델 초기화 중 오류 발생: {e}")
 
-    def predict_market_impact(self, target_date: str) -> Dict[str, Any]:
+    def predict_market_impact(self, target_date: str, commodity: str = "corn") -> Dict[str, Any]:
         """
         특정 날짜의 뉴스 기반 시장 예측 (근거 뉴스 포함)
 
         Args:
             target_date: 분석할 날짜 (YYYY-MM-DD)
+            commodity: 상품명 (corn, soybean, wheat)
 
         Returns:
             Dict: 예측 결과 및 근거 뉴스 리스트
@@ -54,14 +55,14 @@ class SentimentAnalyzer:
         try:
             bq = BigQueryClient()
 
-            # 1. 데이터 가져오기 (뉴스 7일치, 가격 30일치)
-            news_df = bq.get_news_for_prediction(target_date, lookback_days=7)
-            price_df = bq.get_price_history(target_date, lookback_days=30)
+            # 1. 데이터 가져오기 (품목별 필터링 적용)
+            news_df = bq.get_news_for_prediction(target_date, lookback_days=7, commodity=commodity)
+            price_df = bq.get_price_history(target_date, lookback_days=30, commodity=commodity)
 
             if news_df.empty:
-                return {"error": f"{target_date} 기준 최근 뉴스 데이터가 없습니다."}
+                return {"error": f"{commodity} - {target_date} 기준 최근 뉴스 데이터가 없습니다."}
             if price_df.empty:
-                return {"error": f"{target_date} 기준 최근 가격 데이터가 없습니다."}
+                return {"error": f"{commodity} - {target_date} 기준 최근 가격 데이터가 없습니다."}
 
             # 2. 전처리 (문자열 임베딩 -> 배열 변환 등)
             processed_news = preprocess_news_data(news_df)
