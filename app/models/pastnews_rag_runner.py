@@ -108,6 +108,7 @@ def vector_search_similar_hash_ids(client, triple_embedding: List[float], top_k:
 
 def run_pastnews_rag(
     triples: Optional[List[List[str]]] = None,
+    commodity: str = "corn",
     top_k: int = 2,
     dimensions: int = 1024,
 ) -> Dict[str, Any]:
@@ -117,11 +118,12 @@ def run_pastnews_rag(
 
     Args:
         triples: [[s, v, o], ...]. None이면 extract_triples_from_today() 사용.
+        commodity: 상품명 (corn, soybean, wheat)
         top_k: triple당 가져올 유사 hash_id 개수 (기본 2)
         dimensions: (미사용, 호환용)
 
     Returns:
-        dict: article_info (각 항목: all_text, publish_date, 0, 1, 3), error(있을 경우)
+        dict: article_info (가격 데이터 포함)
     """
     result = {"article_info": []}
     # triple 개수: 호출부(triples 인자)에서 결정. triple당 기사 수: 에이전트 top_k와 무관하게 항상 2개로 제한.
@@ -186,7 +188,7 @@ def run_pastnews_rag(
 
     prices_by_date = {}
     if dates:
-        prices = fetch_prices_for_dates(client, dates)
+        prices = fetch_prices_for_dates(client, dates, commodity=commodity)
         for price_row in prices:
             base_date_str = str(price_row.base_date)
             if base_date_str not in prices_by_date:
