@@ -421,8 +421,8 @@ class PredictionReportGenerator:
             else:
                 counter.append(article_info)
             
-            # 각각 최대 5개까지만
-            if len(evidence) >= 5 and len(counter) >= 3:
+            # 각각 최대 3개까지만
+            if len(evidence) >= 3 and len(counter) >= 3:
                 break
         
         # 감성 요약
@@ -476,7 +476,7 @@ class PredictionReportGenerator:
                 'model_details': ensemble_result['model_details']
             },
             'evidence': {
-                'supporting_news': evidence[:5],
+                'supporting_news': evidence[:3],
                 'opposing_news': counter[:3]
             },
             'market_analysis': {
