@@ -403,7 +403,7 @@ class LLMSummarizer:
 - 다음 순서로 도구를 호출하세요:
   1. `timeseries_predictor(target_date="{target_date}", commodity="{commodity}")`
   2. `news_sentiment_analyzer(target_date="{target_date}", commodity="{commodity}")`
-  3. `keyword_analyzer(target_date="{target_date}", commodit    y="{commodity}")`
+  3. `keyword_analyzer(target_date="{target_date}", commodity    y="{commodity}")`
   4. keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple"만 추출해 `pastnews_rag(triples_json="...", commodity="{commodity}", top_k=2)` 호출. 연관 키워드는 그 앞 5개 top_triples의 keywords를 저장해 두었다가 보고서 표에 사용하세요.
 - **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"], "keywords": ["x","y"]}}, ...]}}를 반환하면, **앞 5개만** 사용해 `pastnews_rag(triples_json='[["A","B","C"], ...]', top_k=2)` 호출 (최대 5개). 표의 "연관 키워드"에는 그 앞 5개 top_triples의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시.
 - `timeseries_predictor` 결과 활용:
