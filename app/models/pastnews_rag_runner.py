@@ -108,7 +108,7 @@ def run_pastnews_rag(
     """
     result = {"article_info": []}
     # triple 개수: 호출부(triples 인자)에서 결정. triple당 기사 수: 에이전트 top_k와 무관하게 항상 2개로 제한.
-    max_per_triple = 2
+    max_per_triple = 1
 
     if triples is None or len(triples) == 0:
         triples = extract_triples_from_today()
