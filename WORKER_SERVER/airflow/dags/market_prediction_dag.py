@@ -1,5 +1,5 @@
 from airflow import DAG
-from airflow.providers.standard.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator
 from airflow.models import Variable
 from datetime import datetime, timedelta
 import sys
@@ -39,8 +39,12 @@ with DAG(
     'market_prediction_loader_v1',
     default_args=default_args,
     description='시장 예측 분석 및 시계열 데이터 적재 파이프라인 (Tilda Dataset)',
-    schedule_interval='@daily',
-    catchup=False,
+    # 월~금요일 자정(UTC 00:00, KST 09:00)에 실행
+    schedule_interval='0 0 * * 1-5', 
+    # 한 번에 하나의 DAG 실행 건수만 활성화 (순차 처리 보장)
+    max_active_runs=1,
+    # start_date 이후의 누락된 실행 건수를 모두 소급하여 실행
+    catchup=True, 
     tags=['market', 'prediction', 'bigquery', 'tilda']
 ) as dag:
 
@@ -49,12 +53,14 @@ with DAG(
         if not run_market_analysis:
             raise ImportError("run_market_analysis 함수를 불러오지 못했습니다. PROJECT_ROOT를 확인하세요.")
             
-        execution_date = context['ds'] 
-        # [테스트 공지] 현재 데이터 부재 방지를 위해 2025-11-10로 고정하여 실행합니다.
-        target_date = "2025-11-10" 
+        # Airflow 실행 날짜 (YYYY-MM-DD)를 타겟 날짜로 설정
+        target_date = context['ds'] 
         
-        print(f"🚀 [Task 1] 시장 분석 시작 (Target: {target_date}, RunDate: {execution_date})")
+        print(f"🚀 [Task 1] 시장 분석 시작 (Target: {target_date})")
+        
+        # 동적 날짜로 분석 실행
         result = run_market_analysis(target_date=target_date)
+        
         return result
 
     def load_timeseries_task(**context):

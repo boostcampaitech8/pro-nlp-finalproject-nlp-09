@@ -177,12 +177,17 @@ class TimeSeriesXGBoostInference:
         
         # 예측 수행
         print(f"\n🎯 예측 수행 중...")
+        prediction_prob = xgb_model.predict_proba(X_test)[0]  # [하락확률, 상승확률]
         prediction = xgb_model.predict(X_test)[0]  # 0 또는 1
+        
+        # 예측 방향에 따른 신뢰도(확률) 추출
+        confidence = prediction_prob[1] if prediction == 1 else prediction_prob[0]
         
         # BigQuery에서 가져온 Prophet features를 반환할 딕셔너리 준비
         result = {
             "target_date": target_date,
             "forecast_direction": "Up" if prediction == 1 else "Down",
+            "confidence_score": float(confidence) * 100  # 신뢰도 (%) 추가
         }
         
         # Prophet feature들을 결과에 추가
