@@ -20,7 +20,7 @@ from models.keyword_analyzer import analyze_keywords as _analyze_keywords
 from models.pastnews_rag_runner import run_pastnews_rag as _run_pastnews_rag
 
 
-REPORT_FORMAT = f"""# [Daily Market Report] Corn
+REPORT_FORMAT = f"""
 **날짜**: (YYYY-MM-DD) | **종목**: 옥수수 
 
 | 어제 종가 | Prophet 예측 | XGBoost 방향 | 뉴스 심리 | 종합 의견 |
@@ -63,8 +63,8 @@ REPORT_FORMAT = f"""# [Daily Market Report] Corn
 
 * **핵심 근거 분석**:
   - **시계열 성분**: 추세([trend], [상승/횡보/하락] 추세), 연간주기([yearly]), 주간주기([weekly]), 변동성([volatility], [높음/중간/낮음] 수준)을 종합하면 [분석 내용]
-  - **기술적 지표**: EMA([EMA_lag2_effect])와 거래량([Volume_lag5_effect])은 [상승/하락] 요인으로 작용
-  - **종합 판단**: [위 요인들을 바탕으로 왜 XGBoost가 해당 방향을 예측했는지 서술]
+  - **기술적 지표**: 지수이동평균(EMA_lag2_effect: [값])과 거래량(Volume_lag5_effect: [값])은 [상승/하락] 요인으로 작용
+  - **종합 판단**: Prophet이 [yhat]로 예측하고 XGBoost가 [forecast_direction]을 예측한 이유를 위 요인들을 바탕으로 서술. 단, 변수명(EMA_lag2_effect 등)은 사용하지 말고 "지수이동평균", "거래량" 등 자연스러운 표현 사용
 ---
 ### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석
 
@@ -121,9 +121,10 @@ REPORT_FORMAT = f"""# [Daily Market Report] Corn
 * **최종 투자 의견**:
   - **단기 전망** : [퀀트 + 뉴스 분석 종합]
   - **핵심 근거**: [퀀트 모델과 뉴스 심리가 일치/불일치하는지, 어떤 신호가 더 강한지]
-  - **투자자 조언**: [BUY/SELL/HOLD 근거와 함께 리스크 요인 명시]
-
-**결론**: [날짜] 기준, 시장은 **[전망]**을 유지할 것으로 전망되며, **[주요 성장 동력]**이 주요 성장 동력입니다. 그러나 **[주요 리스크]**에 따른 리스크를 주의 깊게 모니터링해야 합니다.
+  - **투자자 조언**: 
+    * **투자 의견**: [BUY/SELL/HOLD]
+    * **의견 근거**: [섹션 1의 퀀트 분석과 섹션 2의 뉴스 심리 분석을 구체적으로 인용하며 종합. 예: "XGBoost가 Down을 예측했고(EMA -1.25, Volume -0.50), 뉴스 심리도 부정적(가뭄 우려 5건)이므로 SELL"]
+    * **주요 리스크**: [예상되는 리스크 요인을 구체적으로 명시. 예: "변동성이 높아(55) 단기 급등 가능성 존재", "정부 정책 변화 시 반등 가능"]
 
 **중요**: 
 - 반드시 위 형식을 정확히 따라야 합니다.
@@ -141,7 +142,7 @@ SYSTEM_PROMPT = (
 1. timeseries_predictor: Prophet + XGBoost 하이브리드 시계열 예측
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
    - 설명: Prophet 모델의 가격 예측(yhat)과 XGBoost의 방향 예측(forecast_direction)을 반환합니다.
-   - 반환 값: target_date, y(어제 종가), yhat(Prophet 예측값), forecast_direction(Up/Down), trend, EMA_lag1, Volume_lag1 등 Prophet features 전체
+   - 반환 값: target_date, y(어제 종가), yhat(Prophet 예측값), forecast_direction(Up/Down), trend, EMA_lag2_effect, Volume_lag5_effect, volatility 등 Prophet features 전체
 
 2. news_sentiment_analyzer: 뉴스 기반 시장 영향력 분석 및 근거 추출
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
@@ -184,13 +185,13 @@ SYSTEM_PROMPT = (
     - weekly: 주간 주기 성분. 예: "+0.12 (긍정적 영향)" 또는 "-0.08 (부정적 영향)"
     - volatility: 변동성 지표. 기준 - 낮음(< 40), 중간(40~50), 높음(> 50). 예: "42 (중간 수준)" 또는 "55 (높음 수준)" 또는 "35 (낮음 수준)"
   * **기술적 지표 해석** (B-2 섹션, 그레인저 검사로 선정된 Lag Features):
-    - EMA_lag2_effect: 지수이동평균. 예: "+1.25 (상승 요인)" 또는 "-1.25 (하락 요인)"
-    - Volume_lag5_effect: 거래량. 예: "+0.85 (상승 요인)" 또는 "-0.50 (하락 요인)"
+    - EMA (지수이동평균): EMA_lag2_effect 값을 사용하되, "지수이동평균" 또는 "EMA"로 표현. 예: "지수이동평균 +1.25 (상승 요인)" 또는 "EMA -1.25 (하락 요인)"
+    - Volume (거래량): Volume_lag5_effect 값을 사용하되, "거래량"으로 표현. 예: "거래량 +0.85 (상승 요인)" 또는 "거래량 -0.50 (하락 요인)"
   * **종합 해석** (C 섹션):
     - Prophet 예측(yhat)과 XGBoost 방향(forecast_direction)의 일치/불일치를 명확히 밝히세요
     - 위의 시계열 성분(trend, yearly, weekly, volatility)과 기술적 지표(EMA, Volume)를 **모두 근거로 제시**하여 XGBoost가 해당 방향을 예측한 이유를 상세히 설명하세요
-    - 특히 그레인저 검사로 선정된 EMA_lag2_effect와 Volume_lag5_effect의 영향을 강조하세요
-    - 예: "Prophet은 460.5로 상승을 예측했으나, XGBoost는 Down을 예측했습니다. 추세(85.5, 횡보 추세)는 중립적이나, EMA_lag2_effect(-1.25)와 Volume_lag5_effect(-0.50)가 모두 하락 요인으로 작용했으며, 변동성(42, 중간 수준)도 불확실성을 나타냅니다."
+    - 기술적 변수명(_lag2_effect 등)은 절대 사용하지 말고 자연스러운 용어만 사용하세요
+    - 예: "Prophet은 460.5로 상승을 예측했으나, XGBoost는 Down을 예측했습니다. 추세(85.5, 횡보 추세)는 중립적이나, 지수이동평균(-1.25)과 거래량(-0.50)이 모두 하락 요인으로 작용했으며, 변동성(42, 중간 수준)도 불확실성을 나타냅니다."
 - `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션의 핵심 근거로 사용하세요. 각 뉴스의 제목(title), 내용(all_text 요약), 시장 심리(price_impact_score 기준: 양수=긍정적, 음수=부정적, 0=중립적)를 보고서 표에 포함하세요.
 - `pastnews_rag` 도구 결과(hash_ids, article_mappings, price_data)는 반드시 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션 내 '과거 관련 뉴스 (pastnews_rag)' 항목에 표(마크다운 테이블)로 표시하세요.
 - **D. 뉴스 빅데이터 기반 시장 심리 분석** 섹션 작성 방법:
@@ -202,9 +203,13 @@ SYSTEM_PROMPT = (
   * 섹션 1의 퀀트 분석 결과(Prophet, XGBoost, 시계열 성분, 기술적 지표)를 요약하세요
   * 섹션 2의 뉴스 심리 분석 결과(시장 심리 판단, 주요 테마)를 요약하세요
   * 퀀트 모델과 뉴스 심리가 일치하는지 불일치하는지 분석하고, 어떤 신호가 더 강한지 판단하세요
-  * 최종적으로 BUY/SELL/HOLD 의견을 제시하고, 주요 리스크 요인을 명시하세요
+  * **투자자 조언 작성 시 특히 주의**: 
+    - 새로운 정보를 만들지 말고, 섹션 1과 2에서 이미 분석한 내용을 구체적으로 인용하세요
+    - BUY/SELL/HOLD 의견과 함께 반드시 구체적인 근거를 제시하세요 (예: "XGBoost Down 예측(EMA -1.25), 뉴스 부정적(가뭄 5건)")
+    - 주요 리스크를 구체적으로 명시하세요 (예: "변동성 높음(55), 정책 변화 시 반등 가능")
 - 네 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요. 시계열 지표(Prophet + XGBoost), 뉴스 감성 분석, 키워드 분석 결과가 서로 보완되도록 서술하세요.
 - target_date는 반드시 다음 문자열 리터럴을 그대로 복사해서 사용하세요. (YYYY-MM-DD)
+- **투자자 조언이 보고서의 핵심입니다**: 섹션 1과 2의 분석 내용을 충실히 인용하며, 투자자가 실제로 활용할 수 있는 구체적이고 실행 가능한 조언을 작성하세요. 막연한 표현 대신 구체적인 근거와 수치를 제시하세요.
 **보고서 작성 형식 (반드시 이 형식을 따라야 합니다)**:
 
 """
@@ -382,15 +387,21 @@ class LLMSummarizer:
     - trend: 상승 추세(> 108.88), 횡보 추세(74.58~108.88), 하락 추세(< 74.58) 기준으로 판단. 예: "94.34 (상승 추세)" 또는 "80.00 (횡보 추세)"
     - yearly, weekly: "+0.12 (긍정적 영향)" 또는 "-0.08 (부정적 영향)" 형태로 표현
     - volatility: 값과 함께 낮음(< 40), 중간(40~50), 높음(> 50) 기준으로 판단. 예: "42 (중간 수준)"
-  * **B-2. 기술적 지표**: EMA_lag2_effect, Volume_lag5_effect를 "+1.25 (상승 요인)" 형태로 표현
-  * **C. 종합 해석**: 위의 모든 요인(시계열 성분 + 기술적 지표)을 근거로 Prophet과 XGBoost 예측을 비교 분석
+  * **B-2. 기술적 지표**: 변수명 대신 자연스러운 표현 사용. "지수이동평균 +1.25 (상승 요인)" 또는 "거래량 -0.50 (하락 요인)" 형태로 표현. 절대 _lag2_effect 같은 변수명 사용 금지
+  * **C. 종합 해석**: 위의 모든 요인(시계열 성분 + 기술적 지표)을 근거로 Prophet과 XGBoost 예측을 비교 분석. 기술적 변수명 사용 금지
 - `news_sentiment_analyzer` 및 `pastnews_rag` 결과 활용:
   * **D. 뉴스 빅데이터 기반 시장 심리 분석**: 
     - evidence_news에서 주요 긍정 요인과 부정 요인 분석
     - 과거 관련 뉴스의 당일/1일후/3일후 가격 변동 패턴 분석
     - 위 두 가지를 종합하여 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단하고 근거 제시
 - `keyword_analyzer`의 결과(top_entities)를 활용하여 B 섹션에 주요 키워드를 한국어로 번역 후 #키워드1 #키워드2 형식으로 표기하세요. score는 사용하지 마세요.
-- **### 3. 종합 의견**: 퀀트 분석(섹션 1)과 뉴스 심리 분석(섹션 2)을 종합하여 최종 투자 의견(BUY/SELL/HOLD)을 제시하고, 주요 근거와 리스크를 명시하세요.
+- **### 3. 종합 의견 - 투자자 조언 작성 시 특별 지침**:
+  * 투자자 조언이 가장 중요한 부분입니다. 다음 사항을 반드시 지켜주세요:
+  * **새로운 정보를 만들지 마세요**: 섹션 1(퀀트)과 섹션 2(뉴스)에서 이미 분석한 내용만 사용하세요
+  * **구체적인 근거 제시**: BUY/SELL/HOLD 의견을 낼 때 구체적인 수치와 분석 결과를 인용하세요. 단, 변수명은 사용하지 말고 자연스러운 표현 사용
+    - 예: "XGBoost가 Down 예측(지수이동평균 -1.25, 거래량 -0.50)하고, 뉴스 심리도 부정적(가뭄 우려 뉴스 5건)"
+  * **리스크 구체화**: 단순히 "리스크 존재"가 아니라 구체적으로 어떤 리스크인지 명시하세요
+    - 예: "변동성이 높아(55) 단기 급등 가능성", "정부 정책 변화 시 반등 가능"
 """
         return user_input
 
@@ -563,10 +574,14 @@ class LLMSummarizer:
 3. 마크다운 테이블 형식(|)을 사용해야 합니다
 4. timeseries_predictor 결과의 y, yhat, forecast_direction을 표에 정확히 표시해야 합니다
 5. **B-1. 시계열 성분**과 **B-2. 기술적 지표**를 표 형식으로 표시해야 합니다. trend는 상승(> 108.88), 횡보(74.58~108.88), 하락(< 74.58) 기준, 변동성은 낮음(< 40), 중간(40~50), 높음(> 50) 기준으로 판단하세요
-6. **C. 퀀트 기반 예측 모델 해석**에서 모든 요인(trend, yearly, weekly, volatility, EMA_lag2_effect, Volume_lag5_effect)을 근거로 Prophet과 XGBoost 예측을 비교 분석해야 합니다
+6. **C. 퀀트 기반 예측 모델 해석**에서 모든 요인(추세, 연간주기, 주간주기, 변동성, 지수이동평균, 거래량)을 근거로 Prophet과 XGBoost 예측을 비교 분석해야 합니다. 변수명(_lag2_effect 등)은 절대 사용 금지
 7. **D. 뉴스 빅데이터 기반 시장 심리 분석**에서 evidence_news의 주요 긍정/부정 요인과 과거 관련 뉴스의 가격 변동 패턴을 분석하여 종합 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단해야 합니다
 8. 4개의 Tool을 모두 호출해야 합니다: timeseries_predictor, news_sentiment_analyzer, keyword_analyzer, pastnews_rag (keyword_analyzer 결과의 top_triples를 JSON 배열로 변환하여 pastnews_rag에 전달)
-9. Tool 호출 후 반드시 최종 보고서를 작성해야 합니다"""
+9. Tool 호출 후 반드시 최종 보고서를 작성해야 합니다
+10. **투자자 조언 작성 시 특별히 주의**: 
+    - 섹션 1과 2에서 이미 분석한 내용만 사용 (새로운 정보 만들지 말 것)
+    - BUY/SELL/HOLD 의견과 함께 구체적인 수치 인용하되, 변수명 사용 금지 (예: "지수이동평균 -1.25, 거래량 -0.50")
+    - 리스크를 구체적으로 명시 (예: "변동성 55로 높음, 정책 변화 시 반등 가능")"""
             else:
                 print("\n⚠️ 최대 재시도 횟수에 도달했습니다. 형식이 완벽하지 않을 수 있습니다.")
                 print(f"최종 요약 길이: {len(summary)}자")
