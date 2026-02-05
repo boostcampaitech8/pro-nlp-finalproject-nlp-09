@@ -103,6 +103,7 @@ class BigQueryClient:
         self,
         target_date: str,
         lookback_days: int = 60,
+        commodity: str = "corn",
         dataset_id: Optional[str] = None,
         table_id: Optional[str] = None,
         date_column: str = "ds",
@@ -114,18 +115,21 @@ class BigQueryClient:
         Args:
             target_date: 기준 날짜 (YYYY-MM-DD)
             lookback_days: 과거 조회 기간 (일 단위, 기본값 60)
+            commodity: 상품명 (corn, soybean, wheat) - 테이블명 결정에 사용
             dataset_id: 데이터셋 ID (옵션)
-            table_id: 테이블 ID (옵션)
+            table_id: 테이블 ID (옵션, 지정 시 commodity 무시하고 사용)
             date_column: 날짜 컬럼명 (기본값 'ds')
 
         Returns:
             pd.DataFrame: 피처 데이터프레임 (날짜 오름차순 정렬됨)
         """
         dataset = dataset_id or self.dataset_id
-        table = table_id or self.table_id
+        # 테이블명 동적 생성 (예: prophet_corn)
+        if not table_id:
+            table_id = f"prophet_{commodity}"
 
-        if not dataset or not table:
-            raise ValueError("dataset_id와 table_id가 설정되지 않았습니다.")
+        if not dataset:
+            raise ValueError("dataset_id가 설정되지 않았습니다.")
 
         # 날짜 계산
         try:
@@ -138,7 +142,7 @@ class BigQueryClient:
 
         query = f"""
             SELECT *
-            FROM `{self.project_id}.{dataset}.{table}`
+            FROM `{self.project_id}.{dataset}.{table_id}`
             WHERE {date_column} >= '{start_date_str}'
               AND {date_column} <= '{target_date}'
             ORDER BY {date_column} ASC
@@ -196,7 +200,7 @@ class BigQueryClient:
         return self.client.query(query).to_dataframe()
 
     def get_price_history(
-        self, target_date: str, lookback_days: int = 30, dataset_id: Optional[str] = None, table_id: str = "corn_price"
+        self, target_date: str, lookback_days: int = 30, commodity: str = "corn", dataset_id: Optional[str] = None, table_id: Optional[str] = None
     ) -> pd.DataFrame:
         """
         뉴스 감성 모델 예측용 가격 데이터를 가져옵니다.
@@ -204,13 +208,18 @@ class BigQueryClient:
         Args:
             target_date: 기준 날짜
             lookback_days: 조회할 과거 일수 (기본 30일)
+            commodity: 상품명 (corn, soybean, wheat)
             dataset_id: 데이터셋 ID
-            table_id: 가격 테이블 ID
+            table_id: 가격 테이블 ID (옵션)
 
         Returns:
             pd.DataFrame: 가격 데이터 (date, close, ret_1d)
         """
         dataset = dataset_id or self.dataset_id or BIGQUERY_DATASET_ID
+        
+        # 테이블명 동적 생성 (예: corn_price)
+        if not table_id:
+            table_id = f"{commodity}_price"
 
         try:
             target_dt = datetime.strptime(target_date, "%Y-%m-%d")
