@@ -3797,5 +3797,111 @@
             -0.04891761764883995,
             -0.010633190162479877
         ]
+    },
+    {
+        "id": "42f738cc3a0f095acca883584db90f80",
+        "title": "Wheat futures post modest gain on US Plains dryness, global supply weighs",
+        "doc_url": "https://www.marketscreener.com/news/wheat-futures-post-modest-gain-on-us-plains-dryness-global-supply-weighs-ce7e59ded18bf72c",
+        "all_text": "Trader\nThis super rating is the result of a weighted average of the rankings based on the following ratings: Global Valuation (Composite), EPS Revisions (4 months), and Visibility (Composite). We recommend that you carefully review the associated descriptions.\nInvestor\nThis super composite rating is the result of a weighted average of the rankings based on the following ratings: Fundamentals (Composite), Global Valuation (Composite), EPS Revisions (1 year), and Visibility (Composite). We recommend that you carefully review the associated descriptions.\nGlobal\nThis composite rating is the result of an average of the rankings based on the following ratings: Fundamentals (Composite), Valuation (Composite), Financial Estimates Revisions (Composite), Consensus (Composite), and Visibility (Composite). The company must be covered by at least 4 of these 5 ratings for the calculation to be performed. We recommend that you carefully review the associated descriptions.\nQuality\nThis composite rating is the result of an average of the rankings based on the following ratings: Capital Efficiency (Composite), Quality of Financial Reporting (Composite), and Financial Health (Composite). The company must be covered by at least 2 of these 3 ratings for the calculation to be performed. We recommend that you carefully review the associated descriptions.",
+        "authors": "None",
+        "publish_date": "2026-01-06 04:41:18",
+        "published_at_raw": "2026-01-06T04:41:18Z",
+        "meta_site_name": "MarketScreener",
+        "description": "Chicago wheat futures edged\nhigher on Tuesday as dry conditions in the U.S. Plains and\nrising tensions in the Black Sea export region supported prices\nunder pressure from ample global supplies.\n...",
+        "key_word": "wheat AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:39:06",
+        "filter_status": "T",
+        "named_entities": [
+            "US",
+            "Wheat",
+            "Plains",
+            "Global Supply"
+        ],
+        "triples": [
+            [
+                "US Plains",
+                "experiencing",
+                "dryness"
+            ],
+            [
+                "dryness",
+                "affecting",
+                "wheat futures prices"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "24ba1b6e2dc1763dfa28662cf6cdb625",
+        "title": "What Farmers Need to Know About the New Farmer Bridge Assistance Program Payment Rates",
+        "doc_url": "https://www.agriculture.com/partners-farmer-bridge-assistance-program-payment-rates-11880090",
+        "all_text": "By Nick Paulson, Gary Schnitkey, Jonathan Coppess, and Carl Zulauf\nThe USDA recently announced payment rates for row crops eligible for the Farmer Bridge Assistance (FBA) program. Acres planted to corn, soybeans, wheat), and 16 other eligible commodities should expect to receive FBA payments by the end of February. The average 1,500-acre grain farm in Illinois — with acres planted to corn and soybeans on owned and cash-rented farmland — should expect to receive nearly $38 per planted acre or just over $56,000 in total FBA support.\nFBA Program Information\nOn Dec. 31, 2025 the USDA released payment rates for row crops eligible for $11 billion of the $12 billion provided through FBA. Producers of eligible crops will receive a flat payment rate per acre planted to an eligible crop, with payments expected by Feb. 28, 2026. Information from the USDA indicates that producers will be provided with pre-filled FBA application forms through the Farm Service Agency (FSA). The payment rates for all eligible row crops are provided below in Figure 1.\nCorn will receive $44.36 per acre, soybeans will receive $30.88 per acre, and wheat will receive $39.35 per planted acre. The largest payment rates were set for rice ($132.89), cotton ($117.35), oats ($81.75), peanuts ($55.65), and sorghum ($48.11). Payment rates for chickpeas, safflower, lentils, canola, mustard, barley, and peas are the in the $20-30 per acre range. Sunflower ($17.32), sesame ($13.68), and flax ($8.05) have the lowest payment",
+        "authors": "None",
+        "publish_date": "2026-01-06 17:57:52",
+        "published_at_raw": "2026-01-06T17:57:52Z",
+        "meta_site_name": "Successful Farming",
+        "description": "The USDA recently announced payment rates for row crops eligible for the Farmer Bridge Assistance program. Acres planted to corn, soybeans, wheat, and 16 other eligible commodities should expect to receive FBA payments by the end of February.",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:05",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Illinois",
+            "corn",
+            "soybeans",
+            "wheat",
+            "Farmer Bridge Assistance Program"
+        ],
+        "triples": [
+            [
+                "USDA",
+                "announced",
+                "payment rates for eligible crops"
+            ],
+            [
+                "corn",
+                "receives",
+                "$44.36 per acre"
+            ],
+            [
+                "soybeans",
+                "receives",
+                "$30.88 per acre"
+            ],
+            [
+                "wheat",
+                "receives",
+                "$39.35 per acre"
+            ],
+            [
+                "Farm Service Agency",
+                "provides",
+                "pre-filled FBA application forms"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "c6c51ba182e9872aafff908f6d6b589a",
+        "title": "Hogs Close Mixed on Tuesday",
+        "doc_url": "https://www.barchart.com/story/news/36916408/hogs-close-mixed-on-tuesday",
+        "all_text": "Lean hog futures closed with nearby February down 47 cents on Tuesday, with other contracts steady to a dime higher. USDA’s national base hog price was reported at $76.36 on Tuesday afternoon, up $10 from the day prior. The CME Lean Hog Index was back down 23 cents on Jan 2 at $81.62.\nUSDA’s pork carcass cutout value from the Tuesday AM report was $2.59 lower at $91.25 per cwt. All primals were reported lower. USDA estimated federal inspected hog slaughter for Tuesday at 495,000 head, taking the total to 993,000 head. That is 51,000 head above a week ago, and 57,696 head above the same week last year.\nFeb 26 Hogs closed at $85.675, down $0.475,\nApr 26 Hogs closed at $91.575, up $0.075\nMay 26 Hogs closed at $95.625, up $0.050,",
+        "authors": "None",
+        "publish_date": "2026-01-06 23:02:03",
+        "published_at_raw": "2026-01-06T23:02:03Z",
+        "meta_site_name": "Barchart",
+        "description": "Lean hog futures closed with nearby February down 47 cents on Tuesday, with other contracts steady to a dime higher. USDA’s national base hog price was reported at $76.36 on Tuesday afternoon, up $10 from the day prior. The CME Lean Hog Index was bac...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:05",
+        "filter_status": "T",
+        "named_entities": [],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

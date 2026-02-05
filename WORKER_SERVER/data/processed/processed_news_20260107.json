@@ -2707,5 +2707,73 @@
             -0.00058352155610919,
             -0.04192090779542923
         ]
+    },
+    {
+        "id": "8b718b3975b0e0d8a62c1ac23389511c",
+        "title": "Corn Showing Slight Gains on Wednesday Morning",
+        "doc_url": "https://www.barchart.com/story/news/36925979/corn-showing-slight-gains-on-wednesday-morning",
+        "all_text": "Corn price action is up 1 to 2 cents across most contracts on Wednesday morning. Futures failed to hold onto the midday gains on Tuesday, with contracts fractionally to 2 cents in the red. Preliminary open interest was down 17,277 contracts on the day. The CmdtyView national average Cash Corn price is up 1 3/4 cents at $4.08 ½.\nEIA data will be out later this morning, with some looking for steady to slightly lower ethanol output in the week ending last Friday.\nTotal export sales commitments are now at 50.538 MMT, which is now 30% larger than the same period last year. That is 62% of USDA’s estimate for the full marketing year and is ahead of the 60% average pace.\nBrazil’s trade ministry showed corn exports during December at 6.128 MMT, which was a 43.6% increase from the last year and up 21.75% from November.\nMar 26 Corn closed at $4.44, down 1/2 cent, currently up 1 1/4 cents\nNearby Cash was $4.05 1/4, down 1/2 cent,\nMay 26 Corn closed at $4.51 1/4, down 3/4 cent, currently up 1 1/2 cents\nJul 26 Corn closed at $4.57, down 1 1/4 cents, currently up 1 cent",
+        "authors": "None",
+        "publish_date": "2026-01-07 13:25:32",
+        "published_at_raw": "2026-01-07T13:25:32Z",
+        "meta_site_name": "Barchart",
+        "description": "Corn price action is up 1 to 2 cents across most contracts on Wednesday morning. Futures failed to hold onto the midday gains on Tuesday, with contracts fractionally to 2 cents in the red. Preliminary open interest was down 17,277 contracts on the da...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:38:11",
+        "filter_status": "T",
+        "named_entities": [
+            "Corn",
+            "Brazil",
+            "USDA"
+        ],
+        "triples": [
+            [
+                "Corn price",
+                "increased",
+                "$4.08 ½"
+            ],
+            [
+                "Total export sales commitments",
+                "are at",
+                "50.538 MMT"
+            ],
+            [
+                "Total export sales commitments",
+                "compared to last year",
+                "30% larger"
+            ],
+            [
+                "Brazil's corn exports",
+                "increased from last year",
+                "43.6%"
+            ],
+            [
+                "Brazil's corn exports",
+                "increased from November",
+                "21.75%"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "754f48b65dd3283b6246c8e43a9a1337",
+        "title": "Hogs Close with Weakness on Wednesday",
+        "doc_url": "https://www.barchart.com/story/news/36937453/hogs-close-with-weakness-on-wednesday",
+        "all_text": "Lean hog futures posted Wednesday losses of 87 cents to $1.30. USDA’s national base hog price was reported at $72.61 on Wednesday afternoon, down $3.75 from the day prior. The CME Lean Hog Index was back down 8 cents on Jan 5 at $81.54.\nUSDA’s pork carcass cutout value from the Wednesday PM report was $1.04 higher at $92.29 per cwt. The belly, rib, and ham were the primals reported higher. USDA estimated federal inspected hog slaughter for Wednesday at 496,000 head, taking the total to 1.489 million head. That is 129,000 head above a week ago, and 69,079 head above the same week last year.\nFeb 26 Hogs closed at $84.800, down $0.875,\nApr 26 Hogs closed at $90.275, down $1.300\nMay 26 Hogs closed at $94.600, down $1.025,",
+        "authors": "None",
+        "publish_date": "2026-01-07 23:08:50",
+        "published_at_raw": "2026-01-07T23:08:50Z",
+        "meta_site_name": "Barchart",
+        "description": "Lean hog futures posted Wednesday losses of 87 cents to $1.30. USDA’s national base hog price was reported at $72.61 on Wednesday afternoon, down $3.75 from the day prior. The CME Lean Hog Index was back down 8 cents on Jan 5 at $81.54. USDA’s pork...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:05",
+        "filter_status": "T",
+        "named_entities": [],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

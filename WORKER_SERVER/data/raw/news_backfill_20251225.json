@@ -1,0 +1,36 @@
+[
+    {
+        "id": "8e3c05c68e22dffbdc829e2a59aa7b76",
+        "title": "Farmers Demand Support Price Hike Amid Financial Crisis",
+        "doc_url": "https://www.devdiscourse.com/article/headlines/3741693-farmers-demand-support-price-hike-amid-financial-crisis",
+        "all_text": "Hundreds of farmers rallied in Beed on Thursday, demanding a significant increase in minimum support prices (MSP) for cotton, soybean, and tur. The protest, organized under the Farmers' Rights Movement, called for MSPs of Rs 12,000 per quintal for cotton and tur, and Rs 7,000 for soybean.\nProtesters urged the removal of procurement restrictions by the Cotton Corporation of India and demanded strict action against market committees and traders undermining price assurances. They also sought compensation for losses from distress sales.\nHighlighting stagnant crop prices and rising input costs over the past decade, farmers warned of growing debts making it harder to cover household and educational expenses. A memorandum was submitted to key government figures, including Chief Minister Devendra Fadnavis.",
+        "authors": "None",
+        "publish_date": "2025-12-25 13:13:03",
+        "published_at_raw": "2025-12-25T13:13:03Z",
+        "meta_site_name": "Devdiscourse",
+        "description": "Farmers in Beed protested for increased minimum support prices for crops like cotton, soybean, and tur, demanding Rs 12,000 per quintal for cotton and tur, and Rs 7,000 for soybean. They highlighted stagnant crop prices, rising input costs, and mounting debts as key issues, submitting demands to government officials.",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:38:45",
+        "filter_status": "F",
+        "named_entities": [],
+        "triples": [],
+        "article_embedding": null
+    },
+    {
+        "id": "90fcc1962ce65ab80b082e23ac235936",
+        "title": "Flour millers protest Sindh's wheat policy, allege subsidy favouring traders",
+        "doc_url": "https://www.tribuneindia.com/news/world/flour-millers-protest-sindhs-wheat-policy-allege-subsidy-favouring-traders/",
+        "all_text": "Karachi [Pakistan], December 25 (ANI): Flour mill operators have expressed their dissatisfaction with the Sindh government's inconsistent approach of providing a restricted wheat quota to millers under the Wheat Food Policy for FY25-26, while offering an unrestricted supply to traders, as reported by Dawn.\n\"It seems that the Sindh government's consumer subsidy will ultimately benefit traders, as the provincial administration sells wheat at Pakistani Rupees (PKR) 8,000 per 100kg bag, while traders then sell it to millers for PKR 9,500,\" stated Abdul Junaid Aziz, the Sindh zone chairman of the Pakistan Flour Mills Association (PFMA), during a press conference at the Karachi Press Club on Wednesday, accompanied by other association leaders.\nHe mentioned that it remains uncertain whether the PKR 1,500 per 100kg bag subsidy was intended for consumers, traders, or end users. He noted that the government had allocated PKR 85 billion for the subsidy fund. Over the last 10 days, traders have received wheat from the Pipri godown, while flour mills have been denied supplies, according to the Dawn report.\nAziz further pointed out that mills in Karachi and rural Sindh were assigned only 8,000 to 15,000 wheat bags per mill from Landhi godowns No. 1, 2, and 3, and nearly half of the available grain at these godowns is of inferior quality. He stated that the government had indicated that flour millers would receive wheat on a proportional basis, split evenly between Pipri and Landhi godowns.",
+        "authors": "None",
+        "publish_date": "2025-12-25 10:50:13",
+        "published_at_raw": "2025-12-25T10:50:13Z",
+        "meta_site_name": "The Tribune",
+        "description": "Flour mill operators have expressed their dissatisfaction with the Sindh government's inconsistent approach of providing a restricted wheat quota to millers under the Wheat Food Policy for FY25-26, while offering an unrestricted supply to traders, as reported by Dawn.",
+        "key_word": "wheat AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:39:06",
+        "filter_status": "F",
+        "named_entities": [],
+        "triples": [],
+        "article_embedding": null
+    }
+]

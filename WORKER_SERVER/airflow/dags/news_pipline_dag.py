@@ -14,8 +14,8 @@ sys.path.append('/data/ephemeral/home/pro-nlp-finalproject-nlp-09/WORKER_SERVER'
 from crawler.main_crawler import fetch_and_standardize
 from processor.news_processor import NewsProcessor
 from processor.embedder import TitanEmbedder
-from processor.bigquery.uploader import upload_processed_news
-from processor.bigquery.entity_triple_uploader import upload_entities_and_triples
+from processor.bigquery.uploader import upload_processed_news_rows
+from processor.bigquery.entity_triple_uploader import upload_entities_and_triples_rows
 # 환경 설정 (Airflow Variables 우선, 없으면 환경변수)
 OPENAI_API_KEY = Variable.get("OPENAI_API_KEY", default_var=None) or os.getenv("OPENAI_API_KEY")
 DATA_DIR = "/data/ephemeral/home/pro-nlp-finalproject-nlp-09/WORKER_SERVER/data" # 로컬 볼륨과 연결된 경로
@@ -174,7 +174,11 @@ with DAG(
             print(f"✅ {len(new_triples)}개의 트리플 임베딩 완료!")
 
 
-        return newly_embedded_articles
+        return {
+            "newly_embedded_articles": newly_embedded_articles,
+            "new_entities": new_entities,
+            "new_triples": new_triples,
+        }
 
     # 1. 크롤링 태스크
     crawl_news = PythonOperator(
@@ -199,11 +203,21 @@ with DAG(
         os.environ["BIGQUERY_TABLE_ID"] = "news_article"
         os.environ["ENTITIES_TABLE"] = "news_article_entities"
         os.environ["TRIPLES_TABLE"] = "news_article_triples"
-        upload_processed_news()
-        upload_entities_and_triples(
+        payload = context['ti'].xcom_pull(task_ids='embed_news') or {}
+        newly_embedded_articles = payload.get("newly_embedded_articles") or []
+        new_entities = payload.get("new_entities") or []
+        new_triples = payload.get("new_triples") or []
+
+        print(f"[XCom] new_articles={len(newly_embedded_articles)} new_entities={len(new_entities)} new_triples={len(new_triples)}")
+
+        uploaded_articles = upload_processed_news_rows(newly_embedded_articles)
+        uploaded_entities, uploaded_triples = upload_entities_and_triples_rows(
+            new_entities,
+            new_triples,
             entities_table="news_article_entities",
             triples_table="news_article_triples",
         )
+        print(f"[BQ] uploaded_articles={uploaded_articles} uploaded_entities={uploaded_entities} uploaded_triples={uploaded_triples}")
 
     upload_bigquery = PythonOperator(
         task_id='upload_bigquery',

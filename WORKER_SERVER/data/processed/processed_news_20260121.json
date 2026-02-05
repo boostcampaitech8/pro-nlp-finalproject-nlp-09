@@ -2744,5 +2744,323 @@
             0.024503221735358238,
             -0.002518934663385153
         ]
+    },
+    {
+        "id": "2c266a920706acb44a2c9fbec0b6713f",
+        "title": "Corn Posting Wednesday AM Gains",
+        "doc_url": "https://www.barchart.com/story/news/37149025/corn-posting-wednesday-am-gains",
+        "all_text": "Corn price action is up 2 to 3 ½ cents in the front months on Wednesday. Futures posted fractional to penny losses in the nearbys on Tuesday, with other contracts fractionally to 1 ¾ cents higher. Preliminary open interest was down 1,533 contracts on Tuesday. The CmdtyView national average Cash Corn price was down 1 ¼ cents at $3.86.\nExport Inspections data showed corn shipments at 1.484 MMT (58.4 mbu) shipped in the week that ended on January 15. That was down 1.35% from the week prior, and 3.81% below the same week last year. Mexico was the top destination of 401,809 MT, with 252,324 MT to Colombia and 243,588 MT to Japan. Marketing year shipments have totaled 29.92 MMT (1.178 bbu), which is up 55.46% yr/yr.\nA Taiwan importer purchased a total of 65,000 MT of US con in a tender overnight.\nANEC estimates the Brazilian corn export total for January at 3.45 MMT, a 0.18 MMT increase from last week.\nMar 26 Corn closed at $4.23 3/4, down 1 cent, currently up 3 1/2 cents\nNearby Cash was $3.86, down 1 1/4 cents,\nMay 26 Corn closed at $4.31 1/4, down 3/4 cent, currently up 3 1/2 cents\nJul 26 Corn closed at $4.37 3/4, down 1/4 cent, currently up 3 1/4 cents",
+        "authors": "None",
+        "publish_date": "2026-01-21 13:25:28",
+        "published_at_raw": "2026-01-21T13:25:28Z",
+        "meta_site_name": "Barchart",
+        "description": "Corn price action is up 2 to 3 ½ cents in the front months on Wednesday. Futures posted fractional to penny losses in the nearbys on Tuesday, with other contracts fractionally to 1 ¾ cents higher. Preliminary open interest was down 1,533 contracts on...",
+        "key_word": "corn AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:38:08",
+        "filter_status": "T",
+        "named_entities": [
+            "United States",
+            "Mexico",
+            "Colombia",
+            "Japan",
+            "Taiwan",
+            "ANEC",
+            "Corn"
+        ],
+        "triples": [
+            [
+                "Corn price",
+                "increased",
+                "up 2 to 3 ½ cents"
+            ],
+            [
+                "Corn shipments",
+                "were down",
+                "1.35% from the week prior"
+            ],
+            [
+                "Corn shipments",
+                "were down",
+                "3.81% below the same week last year"
+            ],
+            [
+                "Mexico",
+                "was the top destination",
+                "401,809 MT"
+            ],
+            [
+                "Marketing year shipments",
+                "totaled",
+                "29.92 MMT"
+            ],
+            [
+                "Marketing year shipments",
+                "increase",
+                "55.46% yr/yr"
+            ],
+            [
+                "Taiwan importer",
+                "purchased",
+                "65,000 MT of US corn"
+            ],
+            [
+                "ANEC",
+                "estimated Brazil corn export total",
+                "3.45 MMT for January"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "cf88506b0eaaa61b6e2ab2a37686f16e",
+        "title": "Punjab announces Rs45b subsidy to ensure uninterrupted flour supply",
+        "doc_url": "https://www.nation.com.pk/22-Jan-2026/punjab-announces-rs45b-subsidy-ensure-uninterrupted-flour-supply",
+        "all_text": "LAHORE - The Punjab government has launched a Rs45 billion subsidy on 1.2 million metric tons of wheat to ensure the uninterrupted availability of affordable wheat and flour across the province, Director General Food Punjab Amjad Hafeez said on Wednesday. The DG Food stated that the daily supply of subsidised wheat to operational flour mills has been increased from 15,000 to 20,000 metric tons, a quantity sufficient to meet 100 per cent of Punjab’s daily flour requirements. Briefing on supply arrangements, the DG Food said that under the initiative, the Pakistan Agricultural Storage and Services Corporation (PASSCO) has already delivered the first tranche of 300,000 metric tons of wheat to Punjab, while a further 400,000 metric tons has also been handed over to the provincial government. He said wheat was being released into the market in a phased and well-coordinated manner under a clear strategy aimed at maintaining an uninterrupted supply chain.\n“As a result of these timely measures, wheat and flour supplies have remained stable, market pressure has eased, and prices are expected to decline in the coming days,” he added, noting that the steps would directly benefit consumers.\nAmjad Hafeez further said that, alongside consumer relief, the government was also taking measures to safeguard farmers’ interests and strengthen the agricultural economy. In the upcoming season, wheat procurement through the private sector will be increased from 2.5 million metric tons to 3 million m",
+        "authors": "None",
+        "publish_date": "2026-01-21 19:00:00",
+        "published_at_raw": "2026-01-21T19:00:00Z",
+        "meta_site_name": "The Nation",
+        "description": "LAHORE   -   The Punjab government has launched a Rs45 billion subsidy on 1.2 million metric tons of wheat to ensure the uninterrupted availability",
+        "key_word": "wheat AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:39:04",
+        "filter_status": "T",
+        "named_entities": [
+            "Punjab",
+            "Pakistan Agricultural Storage and Services Corporation",
+            "wheat",
+            "flour"
+        ],
+        "triples": [
+            [
+                "Punjab government",
+                "launched subsidy",
+                "Rs45 billion for wheat"
+            ],
+            [
+                "daily supply of subsidised wheat",
+                "increased",
+                "from 15,000 to 20,000 metric tons"
+            ],
+            [
+                "Punjab’s daily flour requirements",
+                "met",
+                "100 percent"
+            ],
+            [
+                "PASSCO",
+                "delivered",
+                "300,000 metric tons of wheat to Punjab"
+            ],
+            [
+                "government measures",
+                "expected to benefit",
+                "consumers"
+            ],
+            [
+                "wheat procurement",
+                "to be increased",
+                "from 2.5 million metric tons to 3 million metric tons"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "f0733be0b33825afb971fcb00ede8a39",
+        "title": "KP CM directs to ensure smooth supply of wheat to masses",
+        "doc_url": "https://www.nation.com.pk/22-Jan-2026/kp-cm-directs-ensure-smooth-supply-wheat-masses",
+        "all_text": "PESHAWAR - Following imposition of re­strictions by the Punjab gov­ernment on inter-provin­cial movement of wheat, Chief Minister Khyber Pakh­tunkhwa Sohail Afridi has ini­tiated immediate measures to safeguard public interest and stabilize wheat prices in the province.\nThe Chief Minister directed the Provincial Food Depart­ment to commence the re­lease of 136,000 metric tons of wheat from strategic reserves to shield consumers from es­calating price pressures in the open market and ensure unin­terrupted availability of essen­tial food items to the public.\nFollowing the restriactions imposed by the Punjab govern­ment, wheat prices in the pro­vincial open market surged to Rs13,650 per 100 kilograms.\nTo counter this pressure and ensure affordability, the pro­vincial government has decid­ed to supply wheat at a sub­sidized rate of Rs10,414 per 100 kilograms. As a result, a 20-kilogram bag of flour will be available to the public at a subsidized price of Rs2,220 in­stead of Rs3,020.\nThe Chief Minister empha­sized that Article 151 of the Constitution of Paki­stan guarantees the free movement of essential commodities across the country, and that the Khyber Pakhtunkhwa government will not al­low food availability to become hostage to pro­vincial barriers or ad­ministrative restrictions. He said that safeguard­ing the fundamental rights of the people is a constitutional obligation of the government, and no compromise will be made in this regard.\nThe Chief Minister stressed that the w",
+        "authors": "None",
+        "publish_date": "2026-01-21 19:00:00",
+        "published_at_raw": "2026-01-21T19:00:00Z",
+        "meta_site_name": "The Nation",
+        "description": "PESHAWAR  -  Following imposition of re­strictions by the Punjab gov­ernment on inter-provin­cial movement of wheat, Chief Minister Khyber",
+        "key_word": "wheat AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:39:04",
+        "filter_status": "T",
+        "named_entities": [
+            "Pakistan",
+            "Punjab government",
+            "Khyber Pakhtunkhwa",
+            "Sohail Afridi",
+            "Provincial Food Department",
+            "Article 151"
+        ],
+        "triples": [
+            [
+                "Punjab government",
+                "imposed restrictions",
+                "inter-provincial movement of wheat"
+            ],
+            [
+                "Sohail Afridi",
+                "initiated measures",
+                "safeguard public interest and stabilize wheat prices"
+            ],
+            [
+                "Provincial Food Department",
+                "released",
+                "136,000 metric tons of wheat from strategic reserves"
+            ],
+            [
+                "wheat prices",
+                "surged",
+                "Rs13,650 per 100 kilograms"
+            ],
+            [
+                "provincial government",
+                "decided to supply wheat",
+                "at a subsidized rate of Rs10,414 per 100 kilograms"
+            ],
+            [
+                "20-kilogram bag of flour",
+                "available at subsidized price",
+                "Rs2,220 instead of Rs3,020"
+            ],
+            [
+                "Constitution of Pakistan",
+                "guarantees",
+                "free movement of essential commodities across the country"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "a18464ae20993a972afc958fac7e87d5",
+        "title": "Corn Gives into Weakness on Wednesday",
+        "doc_url": "https://www.barchart.com/story/news/37162143/corn-gives-into-weakness-on-wednesday",
+        "all_text": "Corn futures posted weaker trade heading into Wednesday, with contracts fractionally to 2 cents lower on the session. The CmdtyView national average Cash Corn price was down 1 1/2 cents at $3.84 1/2.\nUSDA reported a couple private export sales of 150,000 MT of corn to Colombia and 195,000 MT to unknown destinations this morning.\nWeekly EIA data will be pushed back to Thursday morning due to the Monday holiday, with most looking for ethanol production to pull back from last week’s surge to a new all time record.\nA Taiwan importer purchased a total of 65,000 MT of US con in a tender overnight.\nMar 26 Corn closed at $4.21 3/4, down 2 cents,\nNearby Cash was $3.84 1/2, down 1 1/2 cents,\nMay 26 Corn closed at $4.29 3/4, down 1 1/2 cents,\nJul 26 Corn closed at $4.36 1/4, down 1 1/2 cents,",
+        "authors": "None",
+        "publish_date": "2026-01-21 23:01:12",
+        "published_at_raw": "2026-01-21T23:01:12Z",
+        "meta_site_name": "Barchart",
+        "description": "Corn futures posted weaker trade heading into Wednesday, with contracts fractionally to 2 cents lower on the session. The CmdtyView national average Cash Corn price was down 1 1/2 cents at $3.84 1/2. USDA reported a couple private export sales of 1...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:38:08",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Colombia",
+            "Taiwan"
+        ],
+        "triples": [
+            [
+                "Corn futures",
+                "posted",
+                "weaker trade"
+            ],
+            [
+                "Cash Corn price",
+                "was down",
+                "$3.84 1/2"
+            ],
+            [
+                "USDA",
+                "reported",
+                "150,000 MT of corn to Colombia"
+            ],
+            [
+                "USDA",
+                "reported",
+                "195,000 MT of corn to unknown destinations"
+            ],
+            [
+                "Taiwan importer",
+                "purchased",
+                "65,000 MT of US corn"
+            ],
+            [
+                "Mar 26 Corn",
+                "closed at",
+                "$4.21 3/4"
+            ],
+            [
+                "Nearby Cash",
+                "was",
+                "$3.84 1/2"
+            ],
+            [
+                "May 26 Corn",
+                "closed at",
+                "$4.29 3/4"
+            ],
+            [
+                "Jul 26 Corn",
+                "closed at",
+                "$4.36 1/4"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "657482c3b5906a9444bec15fc5bd7dbf",
+        "title": "Soybean Futures Rise on Biofuel Hopes -- Daily Grain Highlights",
+        "doc_url": "https://www.marketscreener.com/news/soybean-futures-rise-on-biofuel-hopes-daily-grain-highlights-ce7e58d2da88f325",
+        "all_text": "By Kirk Maltais\n--Soybeans for March delivery rose 1.1% to $10.65 a bushel on the Chicago Board of Trade Wednesday, in anticipation of new regulations coming from the EPA to solidify demand for soybean oil for use in biofuel.\n--Corn for March delivery fell 0.5% to $4.22 a bushel.\n--Wheat for March delivery fell 0.4% to $5.08 3/4 a bushel.\nHIGHLIGHTS\nFueling the Fire: Soybean oil futures jumped by nearly 3% in Wednesday's trading, which helped lift underlying soybean futures. Behind the uptick was hopes that the EPA will soon release its final regulations around biofuels, including the status of small refinery exemptions. \"There's a cautious optimism that those final regulations will be positive for demand for feedstocks going into the production of biomass diesel, including soybean oil,\" says Arlan Suderman of StoneX in a note.\nBack to the Table: Indications that U.S. officials have met with their Chinese counterparts while attending the World Economic Forum in Davos, Switzerland boosted soybeans in early trade. Treasury Secretary Scott Bessent is reported to have met with Chinese Vice Premier He Lifeng in Davos, and U.S. Trade Representative Jamieson Greer floated the possibility of the two sides meeting again before a scheduled sit down between President Trump and Chinese President Xi in April.\nCooling Off: Financial markets across the board breathed a sigh of relief in the U.S.-Greenland situation Wednesday, after President Trump ruled out a military takeover in remarks at",
+        "authors": "None",
+        "publish_date": "2026-01-21 20:16:23",
+        "published_at_raw": "2026-01-21T20:16:23Z",
+        "meta_site_name": "MarketScreener",
+        "description": "By Kirk Maltais\n--Soybeans for March delivery rose 1.1% to $10.65 a bushel on the Chicago Board of Trade Wednesday, in anticipation of new regulations coming from the EPA to solidify demand for...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:38:43",
+        "filter_status": "T",
+        "named_entities": [
+            "United States",
+            "China",
+            "Environmental Protection Agency",
+            "Davos",
+            "Scott Bessent",
+            "He Lifeng",
+            "Jamieson Greer",
+            "Trump",
+            "Xi",
+            "soybean",
+            "corn",
+            "wheat",
+            "biofuel"
+        ],
+        "triples": [
+            [
+                "Soybean futures",
+                "rose",
+                "$10.65 a bushel"
+            ],
+            [
+                "Corn futures",
+                "fell",
+                "$4.22 a bushel"
+            ],
+            [
+                "Wheat futures",
+                "fell",
+                "$5.08 3/4 a bushel"
+            ],
+            [
+                "EPA",
+                "expected to release",
+                "final regulations for biofuels"
+            ],
+            [
+                "Scott Bessent",
+                "met with",
+                "He Lifeng"
+            ],
+            [
+                "U.S. and China officials",
+                "discussed",
+                "trade relations at Davos"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

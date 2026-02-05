@@ -4,7 +4,7 @@ TARGET_QUERIES = [
     "corn AND (price OR demand OR supply OR inventory)",
     "soybean AND (price OR demand OR supply OR inventory)",
     "wheat AND (price OR demand OR supply OR inventory)",
-    '"United States Department of Agriculture" OR USDA'
+    "\"United States Department of Agriculture\" OR USDA",
 ]
 
 COMMODITY_MAP = {

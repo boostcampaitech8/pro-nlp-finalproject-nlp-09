@@ -537,5 +537,62 @@
             0.00508438004180789,
             0.003887822851538658
         ]
+    },
+    {
+        "id": "c1b2d7a08cfbcc89fde5ad2a53905760",
+        "title": "Letter: New school milk law a win for cows",
+        "doc_url": "https://www.bangordailynews.com/2026/01/19/opinion/letters/letter-new-school-milk-law-a-win-for-cows/",
+        "all_text": "Letters submitted by BDN readers are verified by BDN Opinion Page staff. Send your letters to letters@bangordailynews.com\nFollowing a concerted, multi-year campaign to end federal rules forcing schools to place milk on student’s trays, even when they could not safely consume it, the recent passage of legislation (S.222, Whole Milk for Healthy Kids Act) in Congress has ended the 80-year-old federal school “milk mandate.”\nBoth Maine senators served as co-sponsors. As approved, S.222 expands the availability of plant-based milk in the National School Lunch program, such as soy, oat, or almond milk, as part of their regular cafeteria offerings, and requires schools to provide a nutritionally sound non-dairy beverage to lactose-intolerant students with a note from a parent, guardian, or licensed physician. Schools may also offer whole and 2% milk, 1% or no-fat milk.\nWith an estimated 40% of children in the school lunch program with some degree of lactose intolerance, mandatory distribution of milk in school lunches meant daily discomfort, wasted food or exclusion from full participation in school meals. Rates are much higher in Latino, Black and Native American children. According to USDA data, nearly 30% of milk cartons are discarded unopened each year, resulting in massive waste of milk, taxpayer dollars and disregard for the labor cows endure in production.\nOur team’s work in Congress represents a huge win for the welfare of dairy cows, ending a decades-long government policy s",
+        "authors": "None",
+        "publish_date": "2026-01-19 06:00:00",
+        "published_at_raw": "2026-01-19T06:00:00Z",
+        "meta_site_name": "Bangor Daily News",
+        "description": "\"According to USDA data, nearly 30% of milk cartons are discarded unopened each year, resulting in massive waste.\"",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:39:59",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "S.222",
+            "Whole Milk for Healthy Kids Act",
+            "Maine"
+        ],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "fcedc4d84f455a582beaaf9edc6a4ac0",
+        "title": "Red Meat, Beef Tallow In New Dietary Guidelines. What You Need To Know",
+        "doc_url": "https://www.forbes.com/sites/brucelee/2026/01/19/red-meat-beef-tallow-in-new-dietary-guidelines-what-you-need-to-know/",
+        "all_text": "You could say that a lot of nutrition experts have a beef with the 2025-2030 Dietary Guidelines for Americans issued recently. The report from the U.S. Department of Agriculture and U.S. Department of Health and Human Services featured beef and beef tallow quite prominently. This included a new pyramid scheme so to speak that flipped the longstanding traditional food upside down, point downwards seemingly to make a new point. On its upper left corner was “Protein, Dairy & Healthy Fats” along with a picture of raw beef where it might the first thing you see in the diagram.\nNew Dietary Guidelines Mention The Importance Of Protein And Essential Fatty Acids\nIf you actually read the report, you’d find multiple mentions of red meat. One of the headings within the guidelines is “Prioritize Protein Foods at Every Meal,” under which was the following pro-protein statement: \"Consume a variety of protein foods from animal sources, including eggs, poultry, seafood, and red meat, as well as a variety of plant-sourced protein foods, including beans, peas, lentils, legumes, nuts, seeds, and soy.\" It is indeed important to have protein in your diet since the amino acids comprising such protein serve as key building blocks for various parts of your body, ranging from the cells in your blood and immune system to all your enzymes to your muscles, bones and skin.\nThere’s also the “Incorporate Healthy Fats” heading with the following fatty wrap under it: \"When cooking with or adding fats to meals",
+        "authors": "None",
+        "publish_date": "2026-01-19 14:28:16",
+        "published_at_raw": "2026-01-19T14:28:16Z",
+        "meta_site_name": "Forbes",
+        "description": "The new 2025-2030 Dietary Guidelines for Americans issued by the USDA/HHS features red meat and beef tallow quite prominently. Here's the lowdown on how to view them.",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:39:59",
+        "filter_status": "T",
+        "named_entities": [
+            "U.S. Department of Agriculture",
+            "U.S. Department of Health and Human Services",
+            "Protein",
+            "Dairy",
+            "Healthy Fats",
+            "red meat",
+            "beans",
+            "peas",
+            "lentils",
+            "legumes",
+            "nuts",
+            "seeds",
+            "soy"
+        ],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

@@ -1,0 +1,81 @@
+[
+    {
+        "id": "e0055e38a7761244248061e0eeb33fed",
+        "title": "Former US Rep. Yvette Herrell confirmed for USDA role despite home state senators' opposition",
+        "doc_url": "https://www.abqjournal.com/news/senate-votes-to-confirm-yvette-herrells-nomination-to-trump-administration-post/2945390",
+        "all_text": "SANTA FE — Former New Mexico congresswoman Yvette Herrell's nomination to a Trump administration post was confirmed this week by the U.S. Senate, despite both of her home state senators casting \"no\" votes.\nHerrell was appointed by the president in June to be an assistant secretary for congressional relations in the U.S. Department of Agriculture, and her nomination was bundled together with about 100 other nominees for a final confirmation vote.\nOn a party-line vote, the U.S. Senate voted 53-43 late Thursday to confirm the nominees. New Mexico's two U.S. senators — Ben Ray Luján and Martin Heinrich — joined other Senate Democrats in voting against the nomination package.\nA Luján spokesperson said Friday the second-term senator voted for Herrell's nomination in the U.S. Senate Committee on Agriculture, Nutrition and Forestry after Herrell expressed a willingness to work with him on issues affecting New Mexicans, but could not support her on the Senate floor due to how the nominations were bundled together.\n\"As a member of the Senate Agriculture Committee, Senator Luján will work with anyone to deliver for New Mexico farmers, ranchers, producers, and families,\" said Luján spokesperson Seiichiro Nakai. \"At the same time, he will hold the Trump administration accountable for breaking the law, ignoring Congressional communications, and making life more expensive for working families.\"\nIn her new Trump administration job based in Washington, D.C., Herrell will hold a key post in a ",
+        "authors": "None",
+        "publish_date": "2025-12-20 01:53:35",
+        "published_at_raw": "2025-12-20T01:53:35Z",
+        "meta_site_name": "Albuquerque Journal",
+        "description": "The Senate confirmed former New Mexico congresswoman Yvette Herrell to a key USDA position on a party-line vote, with both NM senators voting against the bundled nomination package that included her appointment.",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:12",
+        "filter_status": "T",
+        "named_entities": [
+            "Yvette Herrell",
+            "U.S. Senate",
+            "New Mexico",
+            "USDA",
+            "Ben Ray Luján",
+            "Martin Heinrich",
+            "Trump administration"
+        ],
+        "triples": [
+            [
+                "Yvette Herrell",
+                "confirmed",
+                "USDA assistant secretary for congressional relations"
+            ],
+            [
+                "U.S. Senate",
+                "voted",
+                "53-43 in favor of nomination package"
+            ],
+            [
+                "Ben Ray Luján",
+                "voted",
+                "against Herrell's nomination on the Senate floor"
+            ],
+            [
+                "Luján",
+                "expressed willingness",
+                "to work on issues affecting New Mexican farmers"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "4e399efddf4785e2f523df53ac3fc807",
+        "title": "Avian Flu Outbreak: Wisconsin Dairy Herd Faces New Virus Spillover",
+        "doc_url": "https://www.devdiscourse.com/article/health/3736758-avian-flu-outbreak-wisconsin-dairy-herd-faces-new-virus-spillover",
+        "all_text": "In a significant development, the United States Department of Agriculture (USDA) confirmed a highly pathogenic avian influenza case in a Wisconsin dairy herd, signaling a novel spillover incident from wildlife to cattle. The virus, identified as the H5N1 strain, was confirmed through whole genome sequencing conducted by the National Veterinary Services Laboratories.\nThis marks a distinct shift from previous outbreaks primarily traced back to an initial spillover in Texas, characterized by the B3.13 strain. Previous isolated incidents in Nevada and Arizona involved the D1.1 variant, but the Wisconsin incident presents a new challenge. The National Milk Testing Strategy detected it, with no subsequent herd infections reported.\nHealth officials assure consumers that there's no threat to public safety or the milk supply, as pasteurization effectively neutralizes the virus. The USDA emphasizes maintaining strict biosecurity measures while Congress urges the Trump administration to expedite bird flu vaccine development for livestock, underscoring the public health priority.\n(With inputs from agencies.)",
+        "authors": "None",
+        "publish_date": "2025-12-20 01:00:45",
+        "published_at_raw": "2025-12-20T01:00:45Z",
+        "meta_site_name": "Devdiscourse",
+        "description": "The USDA has confirmed a case of highly pathogenic avian influenza in a Wisconsin dairy herd, marking a new spillover event from wildlife to cattle. Identified as the H5N1 strain, this outbreak doesn't pose a threat to consumer health. Milk pasteurization kills the virus, ensuring safety. USDA continues to monitor the situation closely.",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:12",
+        "filter_status": "T",
+        "named_entities": [
+            "United States",
+            "USDA",
+            "Wisconsin",
+            "Texas",
+            "Nevada",
+            "Arizona",
+            "H5N1",
+            "B3.13",
+            "D1.1",
+            "National Milk Testing Strategy",
+            "Trump administration"
+        ],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    }
+]

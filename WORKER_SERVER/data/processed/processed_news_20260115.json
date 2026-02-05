@@ -1630,5 +1630,165 @@
             -0.011365080252289772,
             -0.026294419541954994
         ]
+    },
+    {
+        "id": "a66f7e672521d1cb3bd06cc380537236",
+        "title": "Rising costs eat into FY25 profit of Mondelez & Parle",
+        "doc_url": "https://economictimes.indiatimes.com/industry/cons-products/fmcg/rising-costs-eat-into-fy25-profit-of-mondelez-parle/articleshow/126551583.cms",
+        "all_text": "New Delhi: Two of India's top packaged food companies in their segments, Parle Biscuits and Mondelez India, reported a sharp drop in net profit in financial year 2024-25 despite resilient consumer demand, as increased raw material costs weighed on margins.\nMondelez India, the maker of Cadbury chocolates and Oreo biscuits, posted a 9% decline in revenue to ₹12,602 crore for FY25, while net profit fell to ₹11 crore from ₹2,021 crore the previous fiscal year, according to financial data accessed through business intelligence platform Tofler.\nSales dropped 1.9% to ₹12,503 crore from ₹12,747 crore in FY24, while expenses rose to ₹12,549 crore from ₹11,082.4 crore.\nA surge in the cost of raw materials, particularly cocoa and dairy inputs, combined with higher employee expenses and a sharp rise in depreciation weighed heavily on the profitability for Mondelez India. Interest cost jumped multiple times from the previous year, reflecting higher borrowings and tighter financial conditions for Mondelez India.\nEven though Parle Biscuits reported a 7% increase in revenue to ₹16,191 crore, its net profit dropped 39% to ₹980 crore from FY24. Sales rose to ₹15,568.5 crore from ₹14,349.4 in FY24.\nLive Events\nParle saw its profit margin hurt by rising cost on inputs such as wheat, sugar and edible oil. Higher packaging, fuel and logistics expenses also added to the pressure.\nUnlike premium food companies, Parle operates in an extremely price-sensitive segment, limiting its ability to pass on c",
+        "authors": "None",
+        "publish_date": "2026-01-15 18:23:00",
+        "published_at_raw": "2026-01-15T18:23:00Z",
+        "meta_site_name": "The Economic Times",
+        "description": "India's top packaged food firms, Parle Biscuits and Mondelez India, experienced significant profit declines in FY25 despite steady consumer demand. Soaring raw material costs, particularly for cocoa, dairy, wheat, and sugar, along with increased operational expenses, squeezed profit margins for both companies. Mondelez India saw its net profit plummet to ₹11 crore, while Parle Biscuits' net profit dropped by 39%.",
+        "key_word": "wheat AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:39:04",
+        "filter_status": "T",
+        "named_entities": [
+            "India",
+            "Mondelez India",
+            "Parle Biscuits",
+            "Tofler"
+        ],
+        "triples": [
+            [
+                "Mondelez India",
+                "reported",
+                "9% decline in revenue to ₹12,602 crore for FY25"
+            ],
+            [
+                "Mondelez India",
+                "net profit fell",
+                "to ₹11 crore from ₹2,021 crore"
+            ],
+            [
+                "Parle Biscuits",
+                "reported",
+                "7% increase in revenue to ₹16,191 crore"
+            ],
+            [
+                "Parle Biscuits",
+                "net profit dropped",
+                "39% to ₹980 crore from FY24"
+            ],
+            [
+                "Rising costs",
+                "hurt",
+                "profit margin for Parle"
+            ],
+            [
+                "Costs on inputs",
+                "included",
+                "wheat, sugar and edible oil"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "776e9f4f876360f0c198690f469e2923",
+        "title": "Corn Closes with Losses Despite Export Business",
+        "doc_url": "https://www.barchart.com/story/news/37072326/corn-closes-with-losses-despite-export-business",
+        "all_text": "Corn futures closed the Thursday session with contracts down 1 to 2 cents in the front months. The CmdtyView national average Cash Corn price was down 1 ½ cents at $3.82 1/2.\nUSDA reported a couple private export sales of 500,302 MT of corn during the reporting period to unknown destinations, with 260,000 MT during the reporting period for Japan.\nUSDA Export Sales data from this morning showed a total of 1.14 MMT of 2025/26 corn sold in the ending on January 8. That was more than triple the sales from the week prior, a 3-week higher, and 11.3% above the same week last year. Mexico was the top buyer of 265,800 MT, with 210,800 MT sold to Japan and 133,400 MT to Taiwan. Another 1,270 MT was sold for 2026/27.\nCONAB released their January report this morning, showing projected 2025/26 Brazilian corn production at 138.87 MMT, steady compared to the 138.88 MMT in December.\nMar 26 Corn closed at $4.20 1/4, down 1 3/4 cents,\nNearby Cash was $3.82 1/2, down 1 1/2 cents,\nMay 26 Corn closed at $4.27 3/4, down 2 cents,\nJul 26 Corn closed at $4.34, down 2 cents,",
+        "authors": "None",
+        "publish_date": "2026-01-15 23:02:37",
+        "published_at_raw": "2026-01-15T23:02:37Z",
+        "meta_site_name": "Barchart",
+        "description": "Corn futures closed the Thursday session with contracts down 1 to 2 cents in the front months. The CmdtyView national average Cash Corn price was down 1 ½ cents at $3.82 1/2. USDA reported a couple private export sales of 500,302 MT of corn during t...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:38:08",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Brazil",
+            "Japan",
+            "Mexico",
+            "Taiwan",
+            "corn"
+        ],
+        "triples": [
+            [
+                "USDA",
+                "reported",
+                "private export sales of 500,302 MT of corn"
+            ],
+            [
+                "USDA",
+                "showed",
+                "total of 1.14 MMT of 2025/26 corn sold"
+            ],
+            [
+                "Mexico",
+                "was the top buyer of",
+                "265,800 MT of corn"
+            ],
+            [
+                "Brazil",
+                "projected corn production",
+                "138.87 MMT for 2025/26"
+            ],
+            [
+                "corn price",
+                "closed",
+                "$3.82 1/2"
+            ],
+            [
+                "corn price",
+                "decreased",
+                "1 ½ cents"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "97738a1d047a5941f3a92f514256014f",
+        "title": "Chart of the Day - March Corn",
+        "doc_url": "https://www.barchart.com/story/news/37070972/chart-of-the-day-march-corn",
+        "all_text": "The information and opinions expressed below are based on my analysis of price behavior and chart activity\nSign Up to receive Walsh Trading’s 1st Half of 2026 Market Outlook First Half of 2026 Outlook for the Livestock and Grain markets.\nThursday, January 15, 2026\nCorn broke out of a 3-month trading range this week on surprising USDA data...now what?\nMarch Corn (Daily)\nToday, March Corn settled at 4.20 ¼, dropping another 1 ¾ from Wednesday’s close. Today’s high at 4.25 matched yesterday’s, which some folks might call a tweezer or a double top. I would normally look for that type of formation at the top of a trend move, but it is worth mentioning, I think.\nFollowing Monday’s very bearish report (surprise!! The USDA found acres that they didn’t know existed earlier in the crop year) market participants have been struggling to get a reasonable explanation. I’m not writing a justification here, but there are many analysts that have posted theirs this week, you can find them around the internet if you feel the need to look. We all knew it was going to be a record crop, but no one was looking for the crop to get to 17 billion bushels. I think the better question is “ok, what now?”\nTechnically speaking, the daily chart looks very weak. We didn’t even get a bounce on “Turnaround Tuesday” this week. The moves to 4.25, yesterday and today, appeared to get hit with a bit of selling pressure, as the long wicks in those price bars indicate. Those highs failed to get price back to the Oct",
+        "authors": "None",
+        "publish_date": "2026-01-15 21:42:56",
+        "published_at_raw": "2026-01-15T21:42:56Z",
+        "meta_site_name": "Barchart",
+        "description": "Corn broke out of a 3-month trading range this week on surprising USDA data...now what?",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:00",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Corn"
+        ],
+        "triples": [
+            [
+                "Corn",
+                "broke out of",
+                "3-month trading range"
+            ],
+            [
+                "USDA",
+                "found",
+                "acres that they didn’t know existed"
+            ],
+            [
+                "USDA",
+                "expected crop",
+                "to reach 17 billion bushels"
+            ],
+            [
+                "March Corn",
+                "settled at",
+                "4.20 ¼"
+            ],
+            [
+                "March Corn",
+                "dropped",
+                "1 ¾ from Wednesday’s close"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

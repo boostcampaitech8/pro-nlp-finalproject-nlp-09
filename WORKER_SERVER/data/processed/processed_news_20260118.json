@@ -552,5 +552,32 @@
             0.024845222011208534,
             0.02377541922032833
         ]
+    },
+    {
+        "id": "9b5b4bbb6611bfc6d4746fa82c5b538b",
+        "title": "USDA Secretary Brooke Rollins' claims about SNAP funding under Biden don't add up",
+        "doc_url": "https://www.snopes.com/news/2026/01/18/usda-snap-benefits-biden/",
+        "all_text": "In late 2025, U.S. Agriculture Secretary Brooke Rollins made repeated claims about costs for the Supplemental Nutrition Assistance Program — colloquially known as food stamp assistance — increasing drastically under former President Joe Biden's administration.\nOn Oct. 31, 2025, she presented a graph that went \"back to October of 2023,\" which purportedly showed \"an almost 30% increase in the cost of the SNAP program over the four years that President Biden and the USDA was overseeing it\" (see 24:40).\nJust a few days later, she claimed in an appearance on Fox News that SNAP increased \"almost 40%\" in \"just a couple of years under the Biden administration.\" She did not specify whether she meant enrollment, average monthly benefits or total spending.\nIn December 2025, she repeated the 40% figure in reference to an increase in \"food stamp funding\" while \"Joe Biden was working to buy an election.\"\nRollins' inconsistent claims led Snopes to dig into the numbers — with substantial help from experts at The Hamilton Project (the economic policy initiative of the Brookings Institution think tank) as well as the nonpartisan Pew Research Center — to see if what she said was true.\nIt wasn't.\nTotal federal spending on SNAP actually decreased under the Biden administration; adjusted for inflation, costs increased slightly, but nowhere near 30% or 40%. Substantial increases to SNAP spending did, however, happen under the first Trump administration as part of an emergency relief package during ",
+        "authors": "None",
+        "publish_date": "2026-01-18 06:00:07",
+        "published_at_raw": "2026-01-18T06:00:07Z",
+        "meta_site_name": "Snopes.com",
+        "description": "Rollins has claimed that SNAP spending increased by 30% or 40% during Biden's four years in office. That's simply not true.",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:39:59",
+        "filter_status": "T",
+        "named_entities": [
+            "United States",
+            "USDA",
+            "Joe Biden",
+            "Brooke Rollins",
+            "Hamilton Project",
+            "Brookings Institution",
+            "Pew Research Center"
+        ],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

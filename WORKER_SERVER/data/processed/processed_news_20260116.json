@@ -1640,5 +1640,115 @@
             0.017574915662407875,
             0.005334673915058374
         ]
+    },
+    {
+        "id": "24a0bd220854ddf903c1f0bd940e82ec",
+        "title": "Corn heads for biggest weekly loss since July on abundant supply",
+        "doc_url": "https://www.marketscreener.com/news/corn-heads-for-biggest-weekly-loss-since-july-on-abundant-supply-ce7e58deda88ff2c",
+        "all_text": "Trader\nThis super rating is the result of a weighted average of the rankings based on the following ratings: Global Valuation (Composite), EPS Revisions (4 months), and Visibility (Composite). We recommend that you carefully review the associated descriptions.\nInvestor\nThis super composite rating is the result of a weighted average of the rankings based on the following ratings: Fundamentals (Composite), Global Valuation (Composite), EPS Revisions (1 year), and Visibility (Composite). We recommend that you carefully review the associated descriptions.\nGlobal\nThis composite rating is the result of an average of the rankings based on the following ratings: Fundamentals (Composite), Valuation (Composite), Financial Estimates Revisions (Composite), Consensus (Composite), and Visibility (Composite). The company must be covered by at least 4 of these 5 ratings for the calculation to be performed. We recommend that you carefully review the associated descriptions.\nQuality\nThis composite rating is the result of an average of the rankings based on the following ratings: Capital Efficiency (Composite), Quality of Financial Reporting (Composite), and Financial Health (Composite). The company must be covered by at least 2 of these 3 ratings for the calculation to be performed. We recommend that you carefully review the associated descriptions.",
+        "authors": "None",
+        "publish_date": "2026-01-16 02:00:20",
+        "published_at_raw": "2026-01-16T02:00:20Z",
+        "meta_site_name": "MarketScreener",
+        "description": "Chicago corn futures edged\nhigher on Friday but were still set for a weekly loss of more\nthan 5%, their steepest drop since July, after upward revisions\nto production estimates underscored abundant...",
+        "key_word": "corn AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:38:08",
+        "filter_status": "T",
+        "named_entities": [
+            "Corn"
+        ],
+        "triples": [
+            [
+                "Corn",
+                "head for biggest weekly loss",
+                "due to abundant supply"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "e5a3596a389bfef549c7534168896d8d",
+        "title": "Paraguay and the EU’s Deforestation Law: Indirect Trade Risks and Supply Chain Pressures",
+        "doc_url": "https://www.devdiscourse.com/article/science-environment/3768790-paraguay-and-the-eus-deforestation-law-indirect-trade-risks-and-supply-chain-pressures",
+        "all_text": "A study, produced by the World Bank’s Prosperity and Planet Verticals with support from institutions such as the European Commission’s Joint Research Centre, Paraguay’s National Forestry Institute (INFONA), MapBiomas Paraguay, and the Global Land Analysis and Discovery (GLAD) program, examines how Paraguay could be affected by the European Union’s Regulation on Deforestation-Free Products (EUDR). Adopted in 2023, the EUDR aims to prevent products linked to deforestation or forest degradation after December 31, 2020, from entering the EU market. Although designed to reduce global environmental damage, the regulation is expected to affect exporting countries very differently depending on how they trade, how their supply chains work, and how strong their monitoring systems are. Paraguay, a major exporter of soy and beef, offers an important test case.\nLimited Direct Exposure, Bigger Indirect Risks\nAt first glance, Paraguay seems only lightly exposed to the EUDR. Over the past decade, the EU has become a relatively small export destination for the country. By 2023, just 4.3 percent of Paraguay’s total exports went to the EU, and only 1.6 percent of exports of EUDR-covered products ended up there. This is far lower than in neighboring countries such as Brazil, Argentina, and Uruguay. On paper, this suggests that the regulation would have only a limited direct impact on Paraguay’s trade.\nHowever, this view changes once indirect trade links are considered. Paraguay is landlocked and",
+        "authors": "None",
+        "publish_date": "2026-01-16 03:53:05",
+        "published_at_raw": "2026-01-16T03:53:05Z",
+        "meta_site_name": "Devdiscourse",
+        "description": "Paraguay’s direct exposure to the EU’s deforestation-free regulation is limited, but its strong dependence on soy exports processed through Argentina means up to 13% of its soy trade could be indirectly affected. The main risks lie with small, fragmented timber exporters and weak traceability systems, even though only a very small share of soybean land appears linked to recent deforestation.",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:38:43",
+        "filter_status": "T",
+        "named_entities": [
+            "Paraguay",
+            "European Union",
+            "World Bank",
+            "European Commission",
+            "Joint Research Centre",
+            "National Forestry Institute",
+            "INFONA",
+            "MapBiomas Paraguay",
+            "Global Land Analysis and Discovery",
+            "EUDR"
+        ],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "e7f4a8d897589079e303fa6205f610db",
+        "title": "USDA grain market shocker: Any chance for a bull market based on weather?",
+        "doc_url": "https://www.barchart.com/story/news/37091741/usda-grain-market-shocker-any-chance-for-a-bull-market-based-on-weather",
+        "all_text": "by Jim Roemer\nMeteorologist - Commodity Trading Advisor - Principal, Best Weather Inc. & Climate Predict - Publisher, Weather Wealth Newsletter\nScott Mathews Editor-in-Chief\nJanuary 16, 2026\nFeel free to download this latest free issue of WeatherWealth:\nhttps://www.bestweatherinc.com/weather-wealth-sample/\nHere are excerpts from one of our recent issues:\n“… Even though corn and soybean yields dropped slightly due to the dryness in late summer, I preached (last April and May) for another big US crop and a generally bearish attitude. Is it possible that all of this could change?\nEventually, there will be a bull market in grains. It all depends on the weather and if La Niña will hold on a bit longer into spring or early summer. For the most part, during three consecutive years, I have not been getting caught up in all the hype about Midwest droughts, hot weather, what China may do (or may not do), trade tariffs, etc.\nI have stuck to the weather, which, on a global basis, has been bearish for corn, soybeans, and wheat …”\n“… Unbelievable shocker in corn acreage: This goes to show you that trading USDA crop reports is futile and a waste of your money …”\n\"… The first potential weather problems I’m seeing for grains are a possible Russian freeze next week with sub-zero temperatures and a lack of snow cover. This, and the lack of moisture in the southern Plains wheat-growing regions, will be closely watched by the trade, once the crop comes out of dormancy later in March.\nIn addition,",
+        "authors": "None",
+        "publish_date": "2026-01-16 23:03:57",
+        "published_at_raw": "2026-01-16T23:03:57Z",
+        "meta_site_name": "Barchart",
+        "description": "Jim offers his current opinions on the prospects for wheat prices down the road",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:00",
+        "filter_status": "T",
+        "named_entities": [
+            "USA",
+            "USDA",
+            "corn",
+            "soybeans",
+            "wheat",
+            "La Niña",
+            "Russia"
+        ],
+        "triples": [
+            [
+                "corn and soybean yields",
+                "dropped",
+                "due to dryness in late summer"
+            ],
+            [
+                "weather",
+                "will affect",
+                "future grain market"
+            ],
+            [
+                "La Niña",
+                "may hold on",
+                "into spring or early summer"
+            ],
+            [
+                "Russian freeze",
+                "expected",
+                "with sub-zero temperatures"
+            ],
+            [
+                "lack of moisture",
+                "in southern Plains",
+                "wheat-growing regions"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

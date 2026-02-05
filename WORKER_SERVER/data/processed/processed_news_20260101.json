@@ -1092,5 +1092,86 @@
             0.005357233341783285,
             -0.02514015883207321
         ]
+    },
+    {
+        "id": "6ffa90306fbe3ab0abf3034e13288d2b",
+        "title": "USDA details aid to farmers from package",
+        "doc_url": "https://www.arkansasonline.com/news/2026/jan/01/usda-details-aid-to-farmers-from-package/",
+        "all_text": "The U.S. Department of Agriculture on Wednesday detailed how much aid per acre farmers can expect for each row crop from the $12 billion package that President Donald Trump announced in December.\nThe details arrived after most farmers have already met with their bankers to arrange financing for 2026 crops and placed orders for the seed and fertilizer they will need. But officials have promised that the payments should arrive by the end of February.\nSoybean farmers have been hit especially hard by Trump's trade war with China, which stopped buying any American crops after Trump announced his tariffs this spring. China is the world's largest buyer of soybeans. This aid package is expected to help farmers weather the trade disruptions until China buys more soybeans under an agreement announced in October and until provisions of Trump's huge budget bill take effect later this year.\nSoybean farmers will get $30.88 per acre while corn farmers will receive $44.36. Another crop hit hard when China stopped buying was sorghum, and those farmers will get $48.11 per acre. The amounts are based on a USDA formula on the cost of production.\nThe aid payments will be capped at $155,000 per farmer or entity, and only farms that make less than $900,000 in adjusted gross income will be eligible. During the first Trump administration, a number of large farms found ways around payment limits and collected millions of dollars.\nThe USDA said it would use a formula that estimates production costs to ",
+        "authors": "None",
+        "publish_date": "2026-01-01 09:16:00",
+        "published_at_raw": "2026-01-01T09:16:00Z",
+        "meta_site_name": "Arkansas Online",
+        "description": "The U.S. Department of Agriculture on Wednesday detailed how much aid per acre farmers can expect for each row crop from the $12 billion package that President Donald Trump announced in December.",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:06",
+        "filter_status": "T",
+        "named_entities": [
+            "U.S. Department of Agriculture",
+            "Donald Trump",
+            "China",
+            "soybeans",
+            "corn",
+            "sorghum"
+        ],
+        "triples": [
+            [
+                "U.S. Department of Agriculture",
+                "detailed aid per acre for",
+                "soybean farmers: $30.88, corn farmers: $44.36, sorghum farmers: $48.11"
+            ],
+            [
+                "Trump's trade war",
+                "caused",
+                "China to stop buying American crops"
+            ],
+            [
+                "China",
+                "is",
+                "the world's largest buyer of soybeans"
+            ],
+            [
+                "aid package",
+                "is expected to help",
+                "farmers weather trade disruptions"
+            ],
+            [
+                "aid payments",
+                "are capped at",
+                "$155,000 per farmer"
+            ],
+            [
+                "farms with less than",
+                "$900,000 in adjusted gross income",
+                "are eligible for aid"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "a758da6b3701000d4ea49baed62cb3f6",
+        "title": "The Number and Composition of Legal Entities Engaged in Farming: Initial Evidence from FSA Payment Files",
+        "doc_url": "https://www.agriculture.com/partners-the-number-and-composition-of-legal-entities-engaged-in-farming-initial-evidence-from-fsa-payment-files-11878272",
+        "all_text": "By J.R. Glenn and Joe Janzen\nNote: This article was written by University of Illinois Agricultural and Consumer Economics M.S. student J.R. Glenn and edited by Joe Janzen. It is one of several excellent articles written by graduate students in Prof. Janzen’s ACE 527 class in advanced agricultural price analysis this fall.\nFarm payments are intended to aid farmers by supporting incomes, reducing risk, and achieving conservation goals. However, payments may change farmer behavior in ways that are market distorting (Zulauf 2013). Such changes may include the choice of an individual to farm and the choice of the business structure or legal entity by which that individual engages in farming.\nFarm program payments made by USDA’s Farm Service Agency (FSA) are paid to individuals and other legal entities engaged in farming. These may include partnerships, corporations, and trusts. However, farm program payments have generally included payment limits that cap the amount paid to individuals (not legal entities, but the individuals who own them) under each program in each year. These caps may incentivize individuals to create legal entities to become “producers” to evade payment limits. FSA regulations specifically prohibit the adoption of entity ownership schemes to avoid payment limitations to individuals under federal farm subsidy payment programs (Farm Service Agency, 2021), but there have been instances where farming operations have been alleged to use a multiple entity farm struct",
+        "authors": "None",
+        "publish_date": "2026-01-01 22:53:56",
+        "published_at_raw": "2026-01-01T22:53:56Z",
+        "meta_site_name": "Successful Farming",
+        "description": "This article seeks to demystify the complex connections between farms, farmers, legal entities, and farm payments using data from the USDA’s Farm Service Agency Payment Files.",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:06",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Farm Service Agency",
+            "J.R. Glenn",
+            "Joe Janzen"
+        ],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

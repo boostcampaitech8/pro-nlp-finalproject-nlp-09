@@ -547,5 +547,51 @@
             0.05178024247288704,
             0.05382324010133743
         ]
+    },
+    {
+        "id": "aa54b33ae255720140d8b456478f4952",
+        "title": "USDA releases winter food safety tips",
+        "doc_url": "https://www.live5news.com/2026/01/24/usda-releases-winter-food-safety-tips/",
+        "all_text": "WASHINGTON (Gray DC) - As Winter Storm Fern sweeps across much of the country, dropping inches of snow in some regions, the U.S. Department of Agriculture is making sure both producers and consumers of food are ready for the freeze.\nHours before the storm’s arrival, they released food safety guidelines in case of a power outage; guaranteeing families know how to make their perishable goods last until the lights come back on.\nEven without power, department experts say your refrigerator should keep your food below 40 degrees for up to 4 hours. For a fully-stocked freezer, it can stay cold for up to 48 hours.\nFreezing any cold items you wont need ahead of time, like extra milk or leftovers, extends their storage life - and packing them together in the fridge or freezer can also help keep things cool. Just remember to limit how much you open and close the refrigerator doors to limit the chill escaping.\nThe USDA says perishable food shouldn’t be placed out in the snow as the weather is unpredictable and could quickly change. Plus, it opens the door for unsanitary conditions and even animals to get into food items, making them unsafe to eat.\nAnother tip: stock up on several days’ worth of meals that don’t require cooking or cooling in case of a power outage.\nFor those that produce those meals, including farmers and livestock owners, the USDA is prepared to offer disaster assistance and resources for those affected by Winter Storm Fern.",
+        "authors": "None",
+        "publish_date": "2026-01-24 01:06:24",
+        "published_at_raw": "2026-01-24T01:06:24Z",
+        "meta_site_name": "Live 5 News WCSC",
+        "description": "As Winter Storm Fern sweeps across much of the country, dropping inches of snow in some regions, the U.S. Department of Agriculture is making sure both producers and consumers of food are ready for the freeze.",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:39:57",
+        "filter_status": "T",
+        "named_entities": [
+            "United States",
+            "USDA",
+            "Winter Storm Fern"
+        ],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "9971ab02eb30bc93267f663923749ebd",
+        "title": "USDA releases winter food safety tips",
+        "doc_url": "https://www.weau.com/2026/01/24/usda-releases-winter-food-safety-tips/",
+        "all_text": "WASHINGTON (Gray DC) - As Winter Storm Fern sweeps across much of the country, dropping inches of snow in some regions, the U.S. Department of Agriculture is making sure both producers and consumers of food are ready for the freeze.\nHours before the storm’s arrival, they released food safety guidelines in case of a power outage; guaranteeing families know how to make their perishable goods last until the lights come back on.\nEven without power, department experts say your refrigerator should keep your food below 40 degrees for up to 4 hours. For a fully-stocked freezer, it can stay cold for up to 48 hours.\nFreezing any cold items you wont need ahead of time, like extra milk or leftovers, extends their storage life - and packing them together in the fridge or freezer can also help keep things cool. Just remember to limit how much you open and close the refrigerator doors to limit the chill escaping.\nThe USDA says perishable food shouldn’t be placed out in the snow as the weather is unpredictable and could quickly change. Plus, it opens the door for unsanitary conditions and even animals to get into food items, making them unsafe to eat.\nAnother tip: stock up on several days’ worth of meals that don’t require cooking or cooling in case of a power outage.\nFor those that produce those meals, including farmers and livestock owners, the USDA is prepared to offer disaster assistance and resources for those affected by Winter Storm Fern.",
+        "authors": "None",
+        "publish_date": "2026-01-24 01:06:24",
+        "published_at_raw": "2026-01-24T01:06:24Z",
+        "meta_site_name": "WEAU",
+        "description": "As Winter Storm Fern sweeps across much of the country, dropping inches of snow in some regions, the U.S. Department of Agriculture is making sure both producers and consumers of food are ready for the freeze.",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:39:57",
+        "filter_status": "T",
+        "named_entities": [
+            "United States",
+            "USDA",
+            "Winter Storm Fern"
+        ],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

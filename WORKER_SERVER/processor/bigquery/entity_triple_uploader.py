@@ -39,34 +39,17 @@ def _upload_rows(client, dataset_id, table_id, rows, schema):
     location = os.getenv("BIGQUERY_LOCATION", "US")
     full_table_id = f"{client.project}.{dataset_id}.{table_id}"
     print(f"[BQ] project={client.project} dataset={dataset_id} table={table_id} location={location}")
-    temp_table_id = f"{dataset_id}.temp_{table_id}_{int(__import__('time').time())}"
-    temp_full_table_id = f"{client.project}.{temp_table_id}"
     job_config = bigquery.LoadJobConfig(
         schema=schema,
-        write_disposition="WRITE_TRUNCATE",
+        write_disposition="WRITE_APPEND",
         ignore_unknown_values=True,
     )
     load_job = client.load_table_from_json(
-        rows, temp_full_table_id, job_config=job_config, location=location
+        rows, full_table_id, job_config=job_config, location=location
     )
     load_job.result()
 
-    columns = [field.name for field in schema]
-    if "hash_id" not in columns:
-        raise ValueError("Target table must have 'hash_id' column for deduplication.")
-    cols_csv = ", ".join([f"`{c}`" for c in columns])
-    cols_values = ", ".join([f"S.`{c}`" for c in columns])
-    merge_sql = f"""
-    MERGE `{full_table_id}` T
-    USING `{temp_full_table_id}` S
-    ON T.hash_id = S.hash_id
-    WHEN NOT MATCHED THEN
-      INSERT ({cols_csv}) VALUES ({cols_values})
-    """
-    client.query(merge_sql, location=location).result()
-    client.delete_table(temp_full_table_id, not_found_ok=True)
-
-    print(f"Uploaded {len(rows)} rows to {full_table_id} (dedup by hash_id)")
+    print(f"Uploaded {len(rows)} rows to {full_table_id} (append)")
     return len(rows)
 
 
@@ -122,6 +105,61 @@ def upload_entities_and_triples(
                 "embedding": _coerce_embedding(row),
             }
         )
+
+    uploaded_entities = _upload_rows(
+        client, dataset_id, entities_table, entities_rows, entities_schema
+    )
+    uploaded_triples = _upload_rows(
+        client, dataset_id, triples_table, triples_rows, triples_schema
+    )
+    return uploaded_entities, uploaded_triples
+
+
+def upload_entities_and_triples_rows(
+    entities_rows,
+    triples_rows,
+    dataset_id=None,
+    entities_table=None,
+    triples_table=None,
+):
+    dataset_id = dataset_id or os.getenv("BIGQUERY_DATASET_ID", "tilda")
+    if not dataset_id:
+        raise ValueError("BIGQUERY_DATASET_ID must be set")
+    entities_table = entities_table or os.getenv("ENTITIES_TABLE", "news_article_entities")
+    triples_table = triples_table or os.getenv("TRIPLES_TABLE", "news_article_triples")
+
+    client = _get_bq_client()
+
+    entities_schema = [
+        bigquery.SchemaField("hash_id", "STRING"),
+        bigquery.SchemaField("entity_text", "STRING"),
+        bigquery.SchemaField("embedding", "FLOAT", mode="REPEATED"),
+    ]
+    triples_schema = [
+        bigquery.SchemaField("hash_id", "STRING"),
+        bigquery.SchemaField("triple_text", "STRING"),
+        bigquery.SchemaField("embedding", "FLOAT", mode="REPEATED"),
+    ]
+
+    entities_rows = [
+        {
+            "hash_id": row.get("hash_id"),
+            "entity_text": row.get("entity_text"),
+            "embedding": _coerce_embedding(row),
+        }
+        for row in (entities_rows or [])
+    ]
+
+    triples_rows = [
+        {
+            "hash_id": row.get("hash_id"),
+            "triple_text": row.get("triple_text"),
+            "embedding": _coerce_embedding(row),
+        }
+        for row in (triples_rows or [])
+    ]
+
+    print(f"Preparing to upload {len(entities_rows)} entity rows and {len(triples_rows)} triple rows (XCom payload).")
 
     uploaded_entities = _upload_rows(
         client, dataset_id, entities_table, entities_rows, entities_schema

@@ -33,9 +33,9 @@ class NewsProcessor:
 
         [분석 지침]
         1. Relevance (filter_status): 옥수수, 대두, 밀의 가격/수급/정책/기상과 관련 있으면 "T", 아니면 "F".
-        2. Named Entities: 국가, 기관(USDA 등), 작물명, 사건명 리스트.
-        3. Triples: [주체, 동작, 결과] 뿐만 아니라, 사건의 원인이나 영향을 수치화할 수 있는 정보가 있다면 포함하세요.
-        (예: ["러시아", "수출 중단", "밀 가격 상승 예상"])
+        2. Named Entities: 국가, 기관(USDA 등), 작물명, 사건명 리스트. **영어로만 작성**하세요.
+        3. Triples: [주체, 동작, 결과] 뿐만 아니라, 사건의 원인이나 영향을 수치화할 수 있는 정보가 있다면 포함하세요. **영어로만 작성**하세요.
+        (예: ["Russia", "export ban", "wheat price expected to rise"])
         
         기사 제목: {article['title']}
         기사 내용: {article['all_text']}
@@ -109,7 +109,11 @@ class NewsProcessor:
                 llm_data = self.call_llm_extractor(art)
                 
                 # 핵심 로직: LLM 결과가 'T'인 경우에만 최종 결과물에 추가
-                if llm_data.get('filter_status') == 'T':
+                # 단, 점수 5 이상은 아주 소폭 완화(휴리스틱 강한 신호일 때만 통과)
+                if llm_data.get('filter_status') == 'T' or score >= 5:
+                    if llm_data.get('filter_status') != 'T':
+                        print(f"⚠️ [Heuristic Override] 점수 {score}점으로 LLM F 상향 처리")
+                        llm_data['filter_status'] = 'T'
                     art.update(llm_data)
                     final_results.append(art)
                     processed_ids.add(art['id']) # 이번 배치 내 중복 방지

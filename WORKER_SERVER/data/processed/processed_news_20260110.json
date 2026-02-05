@@ -543,5 +543,73 @@
             0.018481694161891937,
             0.043951671570539474
         ]
+    },
+    {
+        "id": "58196fbf6697884dd6987048c6a0e3b3",
+        "title": "Why Trump administration cancelled SNAP funding in Minnesota? Impact explained",
+        "doc_url": "https://www.financialexpress.com/world-news/us-news/why-trump-administration-cancelled-snap-funding-in-minnesota-impact-explained/4103369/",
+        "all_text": "Trump administration has stopped federal funding for SNAP and other US Department of Agriculture programs in Minnesota after what officials describe as serious and repeated failures to stop fraud.\nUS Agriculture Secretary Brooke Rollins informed Minnesota Governor Tim Walz that all active and future USDA awards to the state and the City of Minneapolis are being suspended. The total amount affected is more than $129 million.\n“I am notifying you that, effective immediately, I am suspending payments on all active awards and any future awards from USDA to the State of Minnesota and the City of Minneapolis, currently totaling over $129.18 million,” Rollins wrote in the letter.\nThe fraud cases behind the decision\nFederal investigators first released large-scale welfare fraud in Minnesota in 2022 through the Feeding Our Future case, a scheme estimated to have taken about $250 million in taxpayer money. Rollins said 78 people have been charged so far.\nMore concerns followed. In mid-December, First Assistant US Attorney Joe Thompson said that $9 billion or more in federal funds given to 14 state-run programs since 2018 may have been stolen. According to Rollins, Minnesota failed to take basic steps to prevent fraud even after these revelations.\n“Despite a staggering, wide-reaching fraud scandal, your Administrations refuse to provide basic information or take common sense measures to stop fraud,” she wrote.\nDispute over SNAP checks and recertification\nThe blocked funding includes the ",
+        "authors": "None",
+        "publish_date": "2026-01-10 17:32:06",
+        "published_at_raw": "2026-01-10T17:32:06Z",
+        "meta_site_name": "The Financial Express",
+        "description": "Trump administration suspends SNAP funding in Minnesota after major fraud allegations, impacting thousands of beneficiaries, as USDA demands accountability and tighter oversight from state leaders.",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:02",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Minnesota",
+            "Trump administration",
+            "Feeding Our Future"
+        ],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "886b86af8617c0e2ad0ce9f8b00822ca",
+        "title": "USDA Suspends All Payments To Minnesota's Food Programs Over Suspected Fraud",
+        "doc_url": "https://www.zerohedge.com/political/usda-suspends-all-payments-minnesotas-food-programs-over-suspected-fraud",
+        "all_text": "Authored by Jill McLaughlin via The Epoch Times,\nThe U.S. Department of Agriculture (USDA) suspended payments for all federal food programs in Minnesota and Minneapolis Friday over alleged fraud and abuse of federal funds statewide.\n“Enough is enough!” USDA Secretary Brooke Rollins posted on X, announcing the suspension. “The Trump administration has uncovered massive fraud in Minnesota and Minneapolis—billions siphoned off by fraudsters. And those in charge have zero plan to fix it.”\nThe agency plans to suspend all payments of federal financial awards to the state and city—totalling about $130 million—until state and local officials provide documentation detailing expenditures and transactions for the past year, Rollins said.\nMore than 440,000 people—about one in 13 residents—receive monthly assistance from the federally funded Supplemental Nutrition Assistance Program (SNAP), according to the Minnesota Department of Children, Youth, and Families.\nSNAP uses around three-fourths of the federal funding for food-related programs and about 7 percent of all federal funding for the state, the agency reported.\nIn all, Minnesota received an estimated $2.05 billion in federal funds for 52 food-related programs in 2025, according to the state. The top five programs were SNAP; Women, Infants, and Children Supplemental Nutrition Program (WIC); school lunches; school breakfasts; and the child and adult care food program.\nAccording to Rollins, Gov. Tim Walz’s administration did not provid",
+        "authors": "None",
+        "publish_date": "2026-01-10 19:00:00",
+        "published_at_raw": "2026-01-10T19:00:00Z",
+        "meta_site_name": "ZeroHedge",
+        "description": "ZeroHedge - On a long enough timeline, the survival rate for everyone drops to zero",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:02",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Minnesota",
+            "Minneapolis",
+            "Brooke Rollins",
+            "Trump administration",
+            "SNAP",
+            "Women, Infants, and Children Supplemental Nutrition Program",
+            "WIC"
+        ],
+        "triples": [
+            [
+                "USDA",
+                "suspended payments",
+                "$130 million"
+            ],
+            [
+                "Minnesota",
+                "received federal funds",
+                "$2.05 billion"
+            ],
+            [
+                "440,000 people",
+                "receive assistance",
+                "SNAP"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

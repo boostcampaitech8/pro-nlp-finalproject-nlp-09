@@ -1,1 +1,279 @@
-[]
+[
+    {
+        "id": "dcb93195fe3c9e43507e390a74895600",
+        "title": "Corn Closes with Tuesday Weakness",
+        "doc_url": "https://www.barchart.com/story/news/37038734/corn-closes-with-tuesday-weakness",
+        "all_text": "Corn price action is showing 2 to 4 ½ cent gains so far on Wednesday morning, taking back some of the losses from the start of the week. Futures closed the Tuesday session with contracts down 1 to 3 ½ cents across the front months, following sharp Monday losses. Open interest was up another 36,635 contracts on Tuesday. The two day OI increase for this week is 81,218 contracts. The CmdtyView national average Cash Corn price was down 1 3/4 cents at $3.81 1/2.\nEIA data will be released this morning, with traders looking for ethanol production to be steady following last week’s ballooning stocks total and drop in refiner inputs.\nSeveral South Korean importers had tenders overnight, purchasing a total of 402,000 MT of corn.\nBrazil’s January corn exports are projected at 3.27 MMT according to ANEC, up 0.42 MMT from the previous number.\nMar 26 Corn closed at $4.19 3/4, down 1 3/4 cents, currently up 4 1/2 cents\nNearby Cash was $3.81 1/2, down 1 3/4 cents,\nMay 26 Corn closed at $4.27 3/4, down 2 3/4 cents, currently up 4 1/4 cents\nJul 26 Corn closed at $4.34 1/2, down 3 1/2 cents, currently up 4 cents",
+        "authors": "None",
+        "publish_date": "2026-01-14 13:30:42",
+        "published_at_raw": "2026-01-14T13:30:42Z",
+        "meta_site_name": "Barchart",
+        "description": "Corn price action is showing 2 to 4 ½ cent gains so far on Wednesday morning, taking back some of the losses from the start of the week. Futures closed the Tuesday session with contracts down 1 to 3 ½ cents across the front months, following sharp Mo...",
+        "key_word": "corn AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:38:09",
+        "filter_status": "T",
+        "named_entities": [
+            "South Korea",
+            "Brazil",
+            "EIA",
+            "ANEC",
+            "Corn"
+        ],
+        "triples": [
+            [
+                "Corn price",
+                "gained",
+                "2 to 4 ½ cents"
+            ],
+            [
+                "Futures",
+                "closed",
+                "down 1 to 3 ½ cents"
+            ],
+            [
+                "Open interest",
+                "increased",
+                "36,635 contracts"
+            ],
+            [
+                "Total corn purchases",
+                "by South Korean importers",
+                "402,000 MT"
+            ],
+            [
+                "Brazil's January corn exports",
+                "projected",
+                "3.27 MMT"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "1d367997fe8626459211c9982def2e23",
+        "title": "China’s 2025 Soybean Imports Hit Record, Fueled by S. American Purchases",
+        "doc_url": "https://www.agriculture.com/partners-china-s-2025-soybean-imports-hit-record-fueled-by-s-american-purchases-11885117",
+        "all_text": "By Ella Cao and Lewis Jackson\nBEIJING, Jan. 14 (Reuters) - China imported a record volume of soybeans in 2025, as buyers sharply increased purchases from South America amid fears of supply shortfalls if a trade war with Washington persisted.\nThe world's biggest buyer of the oilseed imported 111.83 million metric tons in 2025, an increase of 6.5% from a year earlier, according to customs data released on Wednesday.\n\"Concentrated shipments from major producers, including Brazil and Argentina, drove a sharp rise in imports in the first half, helping lift annual totals to a record high,\" said Liu Jinlu, an agricultural researcher at Guoyuan Futures.\nThat resulted from heightened uncertainty over imports after the China-U.S. trade war escalated in the second and third quarters, prompting Chinese buyers to bring forward large-scale purchases of South American soybeans, she added.\nDecember arrivals rose 1.3% from a year earlier to 8.04 million tons, Reuters calculations based on customs data show. CNC-SOY-IMP\nDecember Number in Line With Market Expectations\nChina's December imports of soybeans were broadly in line with market expectations, said Wang Wenshen, an analyst at Sublime China Information.\n\"Delays in customs clearance have slowed the flow of imported soybeans, prompting some crushing plants to suspend operations or curb deliveries amid supply shortages,\" he added.\nWang expects total soybean arrivals of 7.48 million tons in January and 5.2 million tons in February, as the su",
+        "authors": "None",
+        "publish_date": "2026-01-14 12:45:51",
+        "published_at_raw": "2026-01-14T12:45:51Z",
+        "meta_site_name": "Successful Farming",
+        "description": "China imported a record volume of soybeans in 2025, as buyers sharply increased purchases from South America amid fears of supply shortfalls if a trade war with Washington persisted.",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:38:43",
+        "filter_status": "T",
+        "named_entities": [
+            "China",
+            "Guoyuan Futures",
+            "Brazil",
+            "Argentina",
+            "Wang Wenshen",
+            "Sublime China Information"
+        ],
+        "triples": [
+            [
+                "China",
+                "imported",
+                "111.83 million metric tons of soybeans"
+            ],
+            [
+                "China",
+                "increased purchases",
+                "from South America"
+            ],
+            [
+                "China-U.S. trade war",
+                "escalated",
+                "heightened uncertainty over imports"
+            ],
+            [
+                "delays in customs clearance",
+                "slowed",
+                "flow of imported soybeans"
+            ],
+            [
+                "supply shortages",
+                "prompted",
+                "crushing plants to suspend operations"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "aa2f853e3e0e980a48bd705ea478e461",
+        "title": "China's 2025 soybean imports hit record, fuelled by S. American purchases",
+        "doc_url": "https://www.reuters.com/world/asia-pacific/chinas-2025-soybean-imports-hit-record-fuelled-by-s-american-purchases-2026-01-14/",
+        "all_text": "BEIJING, Jan 14 (Reuters) - China imported a record volume of soybeans in 2025, as buyers sharply increased purchases from South America amid fears of supply shortfalls if a trade war with Washington persisted.\nThe world's biggest buyer of the oilseed imported 111.83 million metric tons in 2025, an increase of 6.5% from a year earlier, according to customs data released on Wednesday.\nSign up here.\n\"Concentrated shipments from major producers, including Brazil and Argentina, drove a sharp rise in imports in the first half, helping lift annual totals to a record high,\" said Liu Jinlu, an agricultural researcher at Guoyuan Futures.\nThat resulted from heightened uncertainty over imports after the China-U.S. trade war escalated in the second and third quarters, prompting Chinese buyers to bring forward large-scale purchases of South American soybeans, she added.\nDecember arrivals rose 1.3% from a year earlier to 8.04 million tons, Reuters calculations based on customs data show.\nDECEMBER NUMBER IN LINE WITH MARKET EXPECTATIONS\nChina's December imports of soybeans were broadly in line with market expectations, said Wang Wenshen, an analyst at Sublime China Information.\n\"Delays in customs clearance have slowed the flow of imported soybeans, prompting some crushing plants to suspend operations or curb deliveries amid supply shortages,\" he added.\nWang expects total soybean arrivals of 7.48 million tons in January and 5.2 million tons in February, as the supply outlook tightens.\nOn a m",
+        "authors": "None",
+        "publish_date": "2026-01-14 04:27:54",
+        "published_at_raw": "2026-01-14T04:27:54Z",
+        "meta_site_name": "Reuters",
+        "description": "China imported a record volume of soybeans in 2025, as buyers sharply increased purchases from South America amid fears of supply shortfalls if a trade war with Washington persisted.",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:38:43",
+        "filter_status": "T",
+        "named_entities": [
+            "China",
+            "South America",
+            "Brazil",
+            "Argentina",
+            "Guoyuan Futures",
+            "Reuters",
+            "Sublime China Information"
+        ],
+        "triples": [
+            [
+                "China",
+                "imported",
+                "111.83 million metric tons of soybeans"
+            ],
+            [
+                "China",
+                "increased purchases from",
+                "South America"
+            ],
+            [
+                "China-U.S. trade war",
+                "escalated",
+                "heightened uncertainty over imports"
+            ],
+            [
+                "Wang Wenshen",
+                "expects total soybean arrivals of",
+                "7.48 million tons in January"
+            ],
+            [
+                "Wang Wenshen",
+                "expects total soybean arrivals of",
+                "5.2 million tons in February"
+            ],
+            [
+                "Delays in customs clearance",
+                "slowed",
+                "flow of imported soybeans"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "30ca7f8cb9d7d14e824a004056bf4c48",
+        "title": "Corn Gets a Midweek Bounce as Ethanol Output Booms to Record",
+        "doc_url": "https://www.barchart.com/story/news/37050046/corn-gets-a-midweek-bounce-as-ethanol-output-booms-to-record",
+        "all_text": "Corn futures saw a slight recovery on Wednesday, with contracts up 1 to 2 ¼ cents at the close. EIA reported a robust ethanol figure to give the bulls some steam. The CmdtyView national average Cash Corn price was up 2 1/2 cents at $3.85.\nEIA data from this morning showed ethanol production exploding 98,000 barrels per day week/week or 8.92% to a record (5.75% above the previous record) 1.196 million barrels per day. Ethanol stocks did seen a build of 821,000 barrels to 24.473 million barrels, mainly in the Gulf (+423,000 barrels) and the East Coast (+616,000 barrels), possibly gearing up for exports. Exports were up 6,000 bpd to 119,000 bpd, as refiner inputs for ethanol were 70,000 bpd higher to 841,000 bpd.\nSeveral South Korean importers had tenders overnight, purchasing a total of 402,000 MT of corn. USDA confirmed some of that was from the US, with a private export sale announcement of 136,000 MT to South Korea.\nUSDA Export Sales data will be released on Thursday morning, with traders looking for 0.6 to 1.4 MMT of corn sold in the week of January 8.\nThe Rosario Grains Exchange estimates the Argentina corn crop at 62 MMT, a 1 MMT increase from their previous estimate.\nMar 26 Corn closed at $4.22, up 2 1/4 cents,\nNearby Cash was $3.84, up 2 1/2 cents,\nMay 26 Corn closed at $4.29 3/4, up 2 cents,\nJul 26 Corn closed at $4.36, up 1 1/2 cents,",
+        "authors": "None",
+        "publish_date": "2026-01-14 23:06:30",
+        "published_at_raw": "2026-01-14T23:06:30Z",
+        "meta_site_name": "Barchart",
+        "description": "Corn futures saw a slight recovery on Wednesday, with contracts up 1 to 2 ¼ cents at the close. EIA reported a robust ethanol figure to give the bulls some steam. The CmdtyView national average Cash Corn price was up 2 1/2 cents at $3.85. EIA data f...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:38:08",
+        "filter_status": "T",
+        "named_entities": [
+            "EIA",
+            "South Korea",
+            "USDA",
+            "Argentina",
+            "corn"
+        ],
+        "triples": [
+            [
+                "EIA",
+                "reported",
+                "ethanol production up 8.92% to 1.196 million barrels per day"
+            ],
+            [
+                "corn futures",
+                "saw",
+                "slight recovery of 1 to 2 ¼ cents"
+            ],
+            [
+                "CmdtyView",
+                "reported",
+                "Cash Corn price at $3.85"
+            ],
+            [
+                "South Korean importers",
+                "purchased",
+                "402,000 MT of corn"
+            ],
+            [
+                "USDA",
+                "confirmed",
+                "136,000 MT corn export sale to South Korea"
+            ],
+            [
+                "Rosario Grains Exchange",
+                "estimates",
+                "Argentina corn crop at 62 MMT"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "b3f25bc381e5f806d48ece0384cf1308",
+        "title": "Corn Showing Gains as Ethanol Production Explodes to New Record",
+        "doc_url": "https://www.barchart.com/story/news/37045485/corn-showing-gains-as-ethanol-production-explodes-to-new-record",
+        "all_text": "Corn futures are trading with 1 to 2 ½ cent gains so far on Wednesday, as EIA reported a robust ethanol figure. The CmdtyView national averageCash Corn price is up 2 1/2 cents at $3.84 3/4.\nEIA data from this morning showed ethanol production exploding 98,000 barrels per day week/week or 8.92% to a record (5.75% above the previous record) 1.196 million barrels per day. Ethnaol stocks did seen a build of 821,000 barrels to 24.473 million barrels, mainly in the Gulf (+423,000 barrels) and the East Coast (+616,000 barrels), possibly gearing up for exports. Exports were up 6,000 bpd to 119,000 bpd, as refiner inputs for ethanol were 70,000 bpd higher to 841,000 bpd.\nSeveral South Korean importers had tenders overnight, purchasing a total of 402,000 MT of corn. USDA confirmed some of that was from the US, with a private export sale announcement of 136,000 MT to South Korea.\nUSDA Export Sales data will be released on Thursday morning, with traders looking for 0.6 to 1.4 MMT of corn sold in the week of January 8.\nMar 26 Corn is at $4.22, up 2 1/4 cents,\nNearby Cash is at $3.84 3/4, up 2 1/2 cents,\nMay 26 Corn is at $4.29 3/4, up 2 cents,\nJul 26 Corn is at $4.35 3/4, up 1 1/4 cents,",
+        "authors": "None",
+        "publish_date": "2026-01-14 18:21:07",
+        "published_at_raw": "2026-01-14T18:21:07Z",
+        "meta_site_name": "Barchart",
+        "description": "Corn futures are trading with 1 to 2 ½ cent gains so far on Wednesday, as EIA reported a robust ethanol figure. The CmdtyView national averageCash Corn price is up 2 1/2 cents at $3.84 3/4. EIA data from this morning showed ethanol production explod...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:38:08",
+        "filter_status": "T",
+        "named_entities": [
+            "EIA",
+            "USDA",
+            "South Korea",
+            "Corn"
+        ],
+        "triples": [
+            [
+                "EIA",
+                "reported",
+                "ethanol production increased by 98,000 barrels per day"
+            ],
+            [
+                "Corn price",
+                "up",
+                "$3.84 3/4"
+            ],
+            [
+                "USDA",
+                "confirmed",
+                "136,000 MT of corn sold to South Korea"
+            ],
+            [
+                "Ethanol stocks",
+                "increased",
+                "821,000 barrels"
+            ],
+            [
+                "South Korean importers",
+                "purchased",
+                "402,000 MT of corn"
+            ],
+            [
+                "Ethanol production",
+                "reached",
+                "1.196 million barrels per day"
+            ],
+            [
+                "Exports",
+                "up",
+                "6,000 bpd to 119,000 bpd"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    }
+]

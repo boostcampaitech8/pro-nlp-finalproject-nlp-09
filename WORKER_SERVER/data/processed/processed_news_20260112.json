@@ -3786,5 +3786,59 @@
             -0.0012636890169233084,
             -0.08737976849079132
         ]
+    },
+    {
+        "id": "763510a519fa1e398830c62f6a84a7be",
+        "title": "Rabi Season Boost: Wheat Sowing Surges by 2%",
+        "doc_url": "https://www.devdiscourse.com/article/headlines/3766746-rabi-season-boost-wheat-sowing-surges-by-2",
+        "all_text": "As of January 9, the area under wheat cultivation has seen a 2% increase to 334.17 lakh hectares, marking a positive start to the current rabi season, according to government data.\nThis surge, compared to 328.04 lakh hectares during the same period last year, is largely attributed to favorable monsoon rains and an increase in the minimum support price set by the government, encouraging farmers to expand their sowing areas.\nThe Union agriculture ministry reported progress in rabi crop acreage with significant growth in various sectors, including paddy, pulses, and oilseeds, contributing to an overall rabi crop coverage of 644.29 lakh hectares this season.",
+        "authors": "None",
+        "publish_date": "2026-01-12 12:27:17",
+        "published_at_raw": "2026-01-12T12:27:17Z",
+        "meta_site_name": "Devdiscourse",
+        "description": "Wheat area increased by 2% to 334.17 lakh hectares by January 9 in the current rabi season, as per government data. This growth is attributed to better monsoon rains and an increased minimum support price. The total rabi crop coverage has reached 644.29 lakh hectares this season.",
+        "key_word": "wheat AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:39:04",
+        "filter_status": "T",
+        "named_entities": [
+            "India",
+            "Union Ministry of Agriculture",
+            "Wheat"
+        ],
+        "triples": [
+            [
+                "Wheat cultivation area",
+                "increased by",
+                "2%"
+            ],
+            [
+                "Wheat cultivation area",
+                "reached",
+                "334.17 lakh hectares"
+            ],
+            [
+                "Last year's wheat cultivation area",
+                "was",
+                "328.04 lakh hectares"
+            ],
+            [
+                "Favorable monsoon rains",
+                "contributed to",
+                "increase in sowing area"
+            ],
+            [
+                "Minimum support price increase",
+                "encouraged",
+                "farmers to expand sowing areas"
+            ],
+            [
+                "Overall rabi crop coverage",
+                "is",
+                "644.29 lakh hectares"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

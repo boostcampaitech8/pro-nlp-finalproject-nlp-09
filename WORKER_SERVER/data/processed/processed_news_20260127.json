@@ -546,5 +546,247 @@
             -0.0030386399012058973,
             -0.08063175529241562
         ]
+    },
+    {
+        "id": "087ce8ab0628bfc61f26c5a396e1fe77",
+        "title": "Gujarat: Wheat to be procured at MSP of Rs 2,585 per quintal for Rabi marketing season",
+        "doc_url": "https://www.lokmattimes.com/business/gujarat-wheat-to-be-procured-at-msp-of-rs-2585-per-quintal-for-rabi-marketing-season-1/",
+        "all_text": "Ahmedabad, Jan 27 The Central government has fixed the Minimum Support Price (MSP) for wheat at Rs 2,585 per quintal for the Rabi Marketing Season 2026-27.\nIn line with this decision, wheat will be procured at MSP across Gujarat through the Gujarat State Civil Supplies Corporation Ltd., as part of efforts to ensure remunerative prices for farmers.\nFarmers willing to sell wheat at MSP will be required to complete online registration at the village level through VCEs between February 1 and March 1, 2026. Registration will be carried out through biometric authentication of farmer account holders. The procurement of wheat at MSP will be undertaken from March 4 to May 15, 2026.\nFor registration, farmers must keep ready documents including a copy of the Aadhaar card, updated village records, 7/12 and 8-A land records, and proof of crop sowing. In cases where crop sowing details are not reflected in the land records, a certificate signed and stamped by the Talati will be required.\nAdditionally, farmers must provide bank account details, along with a copy of the bank passbook or a cancelled cheque. Registered farmers will be informed about procurement schedules through SMS alerts.\nAt the time of procurement, farmers must carry their Aadhaar card or a valid identity proof, and wheat will be purchased only after biometric authentication.\nAuthorities have warned that if any discrepancies or false documents are detected during verification, the registration will be cancelled and the farm",
+        "authors": "None",
+        "publish_date": "2026-01-27 12:46:06",
+        "published_at_raw": "2026-01-27T12:46:06Z",
+        "meta_site_name": "Lokmat Times",
+        "description": "Gujarat: Wheat to be procured at MSP of Rs 2,585 per quintal for Rabi marketing season - Ahmedabad, Jan 27 The Central government has fixed the Minimum Support Price (MSP) for wheat at Rs 2,585 ... Get Latest News on Business only on lokmattimes.com",
+        "key_word": "wheat AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:39:04",
+        "filter_status": "T",
+        "named_entities": [
+            "India",
+            "Gujarat State Civil Supplies Corporation Ltd.",
+            "Wheat"
+        ],
+        "triples": [
+            [
+                "Central government",
+                "fixed",
+                "Minimum Support Price for wheat at Rs 2,585 per quintal"
+            ],
+            [
+                "Gujarat State Civil Supplies Corporation Ltd.",
+                "will procure",
+                "wheat at MSP"
+            ],
+            [
+                "Farmers",
+                "must register",
+                "online between February 1 and March 1, 2026"
+            ],
+            [
+                "Procurement",
+                "will occur",
+                "from March 4 to May 15, 2026"
+            ],
+            [
+                "Farmers",
+                "must provide",
+                "Aadhaar card or valid identity proof for procurement"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "a87a5574ea4bcf627a39bd1356c0797e",
+        "title": "Gujarat: Wheat to be procured at MSP of Rs 2,585 per quintal for Rabi marketing season",
+        "doc_url": "https://www.lokmattimes.com/national/gujarat-wheat-to-be-procured-at-msp-of-rs-2585-per-quintal-for-rabi-marketing-season/",
+        "all_text": "Ahmedabad, Jan 27 The Central government has fixed the Minimum Support Price (MSP) for wheat at Rs 2,585 per quintal for the Rabi Marketing Season 2026-27.\nIn line with this decision, wheat will be procured at MSP across Gujarat through the Gujarat State Civil Supplies Corporation Ltd., as part of efforts to ensure remunerative prices for farmers.\nFarmers willing to sell wheat at MSP will be required to complete online registration at the village level through VCEs between February 1 and March 1, 2026. Registration will be carried out through biometric authentication of farmer account holders. The procurement of wheat at MSP will be undertaken from March 4 to May 15, 2026.\nFor registration, farmers must keep ready documents including a copy of the Aadhaar card, updated village records, 7/12 and 8-A land records, and proof of crop sowing. In cases where crop sowing details are not reflected in the land records, a certificate signed and stamped by the Talati will be required.\nAdditionally, farmers must provide bank account details, along with a copy of the bank passbook or a cancelled cheque. Registered farmers will be informed about procurement schedules through SMS alerts.\nAt the time of procurement, farmers must carry their Aadhaar card or a valid identity proof, and wheat will be purchased only after biometric authentication.\nAuthorities have warned that if any discrepancies or false documents are detected during verification, the registration will be cancelled and the farm",
+        "authors": "None",
+        "publish_date": "2026-01-27 12:46:06",
+        "published_at_raw": "2026-01-27T12:46:06Z",
+        "meta_site_name": "Lokmat Times",
+        "description": "Gujarat: Wheat to be procured at MSP of Rs 2,585 per quintal for Rabi marketing season - Ahmedabad, Jan 27 The Central government has fixed the Minimum Support Price (MSP) for wheat at Rs 2,585 ... Get Latest News on National only on lokmattimes.com",
+        "key_word": "wheat AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:39:04",
+        "filter_status": "T",
+        "named_entities": [
+            "India",
+            "Gujarat",
+            "Gujarat State Civil Supplies Corporation Ltd.",
+            "Wheat",
+            "Minimum Support Price",
+            "Rabi Marketing Season 2026-27"
+        ],
+        "triples": [
+            [
+                "Central government",
+                "fixed",
+                "Minimum Support Price for wheat at Rs 2,585 per quintal"
+            ],
+            [
+                "Farmers",
+                "required to complete",
+                "online registration for MSP"
+            ],
+            [
+                "Wheat procurement",
+                "to be undertaken",
+                "from March 4 to May 15, 2026"
+            ],
+            [
+                "Authorities",
+                "warned",
+                "registration may be cancelled if discrepancies found"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "33bf74ba8cf8627af66e0cf8483125aa",
+        "title": "Corn Eases Back Lower on Tuesday",
+        "doc_url": "https://www.barchart.com/story/news/37261175/corn-eases-back-lower-on-tuesday",
+        "all_text": "Corn futures closed the Tuesday session with contracts down 1 to 2 cents in the front months. The CmdtyView national average Cash Corn price was down a 1 ½ cents at $3.90 3/4.\nUSDA reported a private export sale of 110,000 MT of corn to unknown destinations this morning. Another sale of 306,000 MT of sorghum was reported as sold to unknown.\nEIA data will be released on Wednesday, with some looking for a pullback in ethanol output for the week ending last Friday.\nANEC estimates the January export total from Brazil at 3.39 MMT, down 0.06 MMT from last week. That would be shy of the 3.59 MMT from the same month last year if realized.\nMar 26 Corn closed at $4.26 1/2, down 1 3/4 cents,\nNearby Cash was $3.90 3/4, down 1 1/2 cents,\nMay 26 Corn closed at $4.34 3/4, down 1 1/4 cents,\nJul 26 Corn closed at $4.40 3/4, down 1 1/4 cents,",
+        "authors": "None",
+        "publish_date": "2026-01-27 23:05:13",
+        "published_at_raw": "2026-01-27T23:05:13Z",
+        "meta_site_name": "Barchart",
+        "description": "Corn futures closed the Tuesday session with contracts down 1 to 2 cents in the front months. The CmdtyView national average Cash Corn price was down a 1 ½ cents at $3.90 3/4. USDA reported a private export sale of 110,000 MT of corn to unknown dest...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:38:07",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Brazil",
+            "Corn",
+            "Sorghum",
+            "EIA"
+        ],
+        "triples": [
+            [
+                "Corn futures",
+                "closed",
+                "down 1 to 2 cents"
+            ],
+            [
+                "CmdtyView national average Cash Corn price",
+                "was down",
+                "$3.90 3/4"
+            ],
+            [
+                "USDA",
+                "reported",
+                "private export sale of 110,000 MT of corn to unknown destinations"
+            ],
+            [
+                "ANEC",
+                "estimates",
+                "January export total from Brazil at 3.39 MMT"
+            ],
+            [
+                "January export total from Brazil",
+                "is down",
+                "0.06 MMT from last week"
+            ],
+            [
+                "January export total from Brazil",
+                "would be shy of",
+                "3.59 MMT from the same month last year"
+            ],
+            [
+                "Mar 26 Corn",
+                "closed at",
+                "$4.26 1/2, down 1 3/4 cents"
+            ],
+            [
+                "Nearby Cash",
+                "was",
+                "$3.90 3/4, down 1 1/2 cents"
+            ],
+            [
+                "May 26 Corn",
+                "closed at",
+                "$4.34 3/4, down 1 1/4 cents"
+            ],
+            [
+                "Jul 26 Corn",
+                "closed at",
+                "$4.40 3/4, down 1 1/4 cents"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "17760ef2023449844fc767ff7e66362d",
+        "title": "Corn Easing Lower on Tuesday",
+        "doc_url": "https://www.barchart.com/story/news/37255295/corn-easing-lower-on-tuesday",
+        "all_text": "Corn futures are trading with fractional to penny losses across the front months on Tuesday. The CmdtyView national average Cash Corn price is down a penny at $3.90 1/4.\nUSDA reported a private export sale of 110,000 MT of corn to unknown destinations this morning. Another sale of 306,000 MT of sorghum was reported as sold to unknown.\nANEC estimates the January export total from Brazil at 3.39 MMT, down 0.06 MMT from last week. That would be shy of the 3.59 MMT from the same month last year if realized.\nMar 26 Corn is at $4.27 1/4, down 1 cent,\nNearby Cash is at $3.90 1/4, down 1 cent,\nMay 26 Corn is at $4.35 1/2, down 1/2 cent,\nJul 26 Corn is at $4.41 1/2, down 1/2 cent,",
+        "authors": "None",
+        "publish_date": "2026-01-27 18:00:30",
+        "published_at_raw": "2026-01-27T18:00:30Z",
+        "meta_site_name": "Barchart",
+        "description": "Corn futures are trading with fractional to penny losses across the front months on Tuesday. The CmdtyView national average Cash Corn price is down a penny at $3.90 1/4. USDA reported a private export sale of 110,000 MT of corn to unknown destinatio...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:38:07",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Brazil",
+            "corn",
+            "sorghum"
+        ],
+        "triples": [
+            [
+                "CmdtyView",
+                "reported",
+                "national average Cash Corn price down to $3.90 1/4"
+            ],
+            [
+                "USDA",
+                "reported",
+                "private export sale of 110,000 MT of corn to unknown destinations"
+            ],
+            [
+                "ANEC",
+                "estimates",
+                "January export total from Brazil at 3.39 MMT"
+            ],
+            [
+                "January export total from Brazil",
+                "down",
+                "0.06 MMT from last week"
+            ],
+            [
+                "January export total from Brazil",
+                "shy of",
+                "3.59 MMT from the same month last year"
+            ],
+            [
+                "Mar 26 Corn",
+                "at",
+                "$4.27 1/4, down 1 cent"
+            ],
+            [
+                "Nearby Cash",
+                "at",
+                "$3.90 1/4, down 1 cent"
+            ],
+            [
+                "May 26 Corn",
+                "at",
+                "$4.35 1/2, down 1/2 cent"
+            ],
+            [
+                "Jul 26 Corn",
+                "at",
+                "$4.41 1/2, down 1/2 cent"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

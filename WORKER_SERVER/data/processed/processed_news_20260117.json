@@ -547,5 +547,100 @@
             0.01588813215494156,
             0.01190118957310915
         ]
+    },
+    {
+        "id": "022b8b044968ba43204dab2120486da7",
+        "title": "Wheat mismanagement triggers flour crisis in Pakistan",
+        "doc_url": "https://www.tribuneindia.com/news/world/wheat-mismanagement-triggers-flour-crisis-in-pakistan/",
+        "all_text": "Rahim Yar Khan [Pakistan], January 17 (ANI): A sharp escalation in wheat prices has sent flour rates to historic highs across South Punjab, intensifying economic hardship for ordinary citizens as government-subsidised flour has virtually vanished from local markets.\nThe situation is complicated in Rahim Yar Khan, where families are struggling to cope with daily price shocks, as reported by The Express Tribune.\nAccording to The Express Tribune, market insiders stated that wheat prices in the open market have surged to between Pakistani Rupees (PKR) 4,500 and PKR 4,600 per 40kg. This spike has forced flour millers to revise retail prices upward, pushing flour to around PKR 130 per kg. As a result, a 10kg bag now costs nearly PKR 1,300, placing an unsustainable burden on low- and middle-income households already grappling with inflation.\nThe government's subsidised flour programme, meant to provide relief, has been badly disrupted. Officially fixed rates of PKR 910 for a 10kg bag and PKR 1,820 for 20kg are rarely seen outside Lahore, leaving much of South Punjab at the mercy of private suppliers. Consumers in these districts are increasingly compelled to purchase costly branded flour that is beyond the reach of many families.\nRepresentatives of the Pakistan Flour Mills Association attribute the crisis to depleted wheat stocks held by traders and the public, which has led to widespread supply shortages. They say mills in Rahim Yar Khan, a district with an estimated population of ",
+        "authors": "None",
+        "publish_date": "2026-01-17 07:40:40",
+        "published_at_raw": "2026-01-17T07:40:40Z",
+        "meta_site_name": "The Tribune",
+        "description": "The situation is complicated in Rahim Yar Khan, where families are struggling to cope with daily price shocks, as reported by The Express Tribune.",
+        "key_word": "wheat AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:39:04",
+        "filter_status": "T",
+        "named_entities": [
+            "Pakistan",
+            "Pakistan Flour Mills Association",
+            "Rahim Yar Khan",
+            "South Punjab",
+            "The Express Tribune"
+        ],
+        "triples": [
+            [
+                "wheat prices",
+                "surged",
+                "PKR 4,500 to PKR 4,600 per 40kg"
+            ],
+            [
+                "flour retail prices",
+                "revised upward",
+                "around PKR 130 per kg"
+            ],
+            [
+                "10kg bag of flour",
+                "costs now",
+                "nearly PKR 1,300"
+            ],
+            [
+                "government's subsidised flour programme",
+                "disrupted",
+                "providing little relief"
+            ],
+            [
+                "depleted wheat stocks",
+                "led to",
+                "widespread supply shortages"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "210b080f5fa11d5c4d8863a014eaf8fa",
+        "title": "Grains rebound late week after bearish USDA reports",
+        "doc_url": "https://www.barchart.com/story/news/37097809/grains-rebound-late-week-after-bearish-usda-reports",
+        "all_text": "Howdy market watchers!\nThe cold has returned to a large part of the US after an unseasonably warm January for much of the country. While the Great Lakes and Midwest region have had significant snowfall this week along with New England over the past couple of weeks, the coming cold is dipping far south with Texas, Georgia and Florida experiencing much colder than usual conditions.\nThis week’s EIA natural gas inventory reports showed lower than expected withdrawals on mild temperatures with current storage levels also above the five-year average. There was some disruption to the export flows from some Texas-based terminals this week, but I would expect exports to remain strong and even strengthen with Europe’s natural gas market surging over 20+ percent this week alone due to colder than normal conditions and below average storage inventory.\nHowever, US natural gas prices just cannot catch a bid. Since the December 5, 2025, high at $5.022, this week’s low of $3.006 on the front month February contract adds up to a 40 percent decline in 45 days. Unbelievable considering all the discussion about oil and gas being the primary power supplier to the mega AI data centers being built and discussed around the country. Increasingly, we’ve been hearing about nuclear facilities powering data centers, but this is not a short-term or even near-term solution. Let’s hope this plunge in natural gas prices results in some price relief for farmer fertilizer quotes ahead of a high demand period a",
+        "authors": "None",
+        "publish_date": "2026-01-17 16:04:34",
+        "published_at_raw": "2026-01-17T16:04:34Z",
+        "meta_site_name": "Barchart",
+        "description": "Markets closed Monday for MLK Jr. Day",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:39:59",
+        "filter_status": "T",
+        "named_entities": [
+            "US",
+            "EIA",
+            "Texas",
+            "Georgia",
+            "Florida"
+        ],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "bdc7a4a9668f1a93a850abc77e75e2b2",
+        "title": "Grains rebound late week after bearish USDA reports",
+        "doc_url": "https://www.barchart.com/story/news/37097810/grains-rebound-late-week-after-bearish-usda-reports",
+        "all_text": "Howdy market watchers!\nThe cold has returned to a large part of the US after an unseasonably warm January for much of the country. While the Great Lakes and Midwest region have had significant snowfall this week along with New England over the past couple of weeks, the coming cold is dipping far south with Texas, Georgia and Florida experiencing much colder than usual conditions.\nThis week’s EIA natural gas inventory reports showed lower than expected withdrawals on mild temperatures with current storage levels also above the five-year average. There was some disruption to the export flows from some Texas-based terminals this week, but I would expect exports to remain strong and even strengthen with Europe’s natural gas market surging over 20+ percent this week alone due to colder than normal conditions and below average storage inventory.\nHowever, US natural gas prices just cannot catch a bid. Since the December 5, 2025, high at $5.022, this week’s low of $3.006 on the front month February contract adds up to a 40 percent decline in 45 days. Unbelievable considering all the discussion about oil and gas being the primary power supplier to the mega AI data centers being built and discussed around the country. Increasingly, we’ve been hearing about nuclear facilities powering data centers, but this is not a short-term or even near-term solution. Let’s hope this plunge in natural gas prices results in some price relief for farmer fertilizer quotes ahead of a high demand period a",
+        "authors": "None",
+        "publish_date": "2026-01-17 16:04:34",
+        "published_at_raw": "2026-01-17T16:04:34Z",
+        "meta_site_name": "Barchart",
+        "description": "Markets closed Monday for MLK Jr. Day",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:00",
+        "filter_status": "T",
+        "named_entities": [],
+        "triples": [],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

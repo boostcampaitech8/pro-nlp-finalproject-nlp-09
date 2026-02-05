@@ -1084,5 +1084,193 @@
             0.005657638888806105,
             -0.06751926243305206
         ]
+    },
+    {
+        "id": "bb1df916451d124883c33cd35801779b",
+        "title": "No Bull's Five Spot | Five Charts to Put 2025/26 U.S. Corn Demand in Perspective",
+        "doc_url": "https://www.barchart.com/story/news/36971512/no-bull-s-five-spot-five-charts-to-put-2025-26-u-s-corn-demand-in-perspective",
+        "all_text": "Five Charts to Put 2025/26 U.S. Corn Demand in Perspective\n5 | Off the Charts\nU.S. corn export inspections remain off the charts in 2025/26, with a record 1,056 mbu (26.8 mmt) shipped in the first four months of the marketing year.\n4 | Time to Shine\nThe surge has been driven by the PNW, where shipments continue to shatter records as U.S. corn remains highly competitive into Asia. Sales to Japan are up 45% year over year, while South Korea’s commitments have jumped an incredible 260% from this point in 2024/25.\n3 | Front-loaded\nTypically, U.S. corn shipments build into the winter and peak in the spring — after the bulk of the U.S. soybean export program is complete.\nThis year, that window was pulled forward, as exporters filled PNW capacity left open by China’s absence from the soybean market during the first three months of the marketing year.\n2 | A slowdown ahead?\nThe question now is whether this pace can be sustained as we move deeper into what is traditionally the heart of the U.S. corn shipment window.\nWhile total export commitments topping 2.0 billion bushels in the week ending January 1 — up 460 mbu year over year — shipments are outpacing new sales, a dynamic that suggests the current export pace is likely to cool in the weeks ahead.\nEven so, with tight exporter stocks elsewhere the U.S. is likely to remain the dominant supplier in the global corn market until Ukraine can find its footing or Argentine new crop becomes available later this spring.\n1 | King Corn\nThe soyb",
+        "authors": "None",
+        "publish_date": "2026-01-09 17:23:35",
+        "published_at_raw": "2026-01-09T17:23:35Z",
+        "meta_site_name": "Barchart",
+        "description": "Five Charts to Put 2025/26 U.S. Corn Demand in Perspective 5 | Off the Charts U.S. corn export inspections remain off the charts in 2025/26, with a record 1,056 mbu (26.8 mmt) shipped in the first four months of the marketing year. 4 | Time to Shine...",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:38:09",
+        "filter_status": "T",
+        "named_entities": [
+            "U.S.",
+            "Japan",
+            "South Korea",
+            "USDA",
+            "PNW",
+            "Ukraine",
+            "Argentina",
+            "corn"
+        ],
+        "triples": [
+            [
+                "U.S.",
+                "export inspections",
+                "record 1,056 mbu shipped"
+            ],
+            [
+                "Japan",
+                "sales increase",
+                "45% year over year"
+            ],
+            [
+                "South Korea",
+                "commitments jump",
+                "260% from previous year"
+            ],
+            [
+                "China",
+                "absence",
+                "opened PNW capacity for corn"
+            ],
+            [
+                "U.S.",
+                "likely to remain",
+                "dominant supplier in global corn market"
+            ],
+            [
+                "export commitments",
+                "top",
+                "2.0 billion bushels"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "8cff3f7752928763b4771c63eba6fa4d",
+        "title": "No Bull's Five Spot | Five Charts to Put 2025/26 U.S. Corn Demand in Perspective",
+        "doc_url": "https://www.barchart.com/story/news/36971511/no-bull-s-five-spot-five-charts-to-put-2025-26-u-s-corn-demand-in-perspective",
+        "all_text": "Five Charts to Put 2025/26 U.S. Corn Demand in Perspective\n5 | Off the Charts\nU.S. corn export inspections remain off the charts in 2025/26, with a record 1,056 mbu (26.8 mmt) shipped in the first four months of the marketing year.\n4 | Time to Shine\nThe surge has been driven by the PNW, where shipments continue to shatter records as U.S. corn remains highly competitive into Asia. Sales to Japan are up 45% year over year, while South Korea’s commitments have jumped an incredible 260% from this point in 2024/25.\n3 | Front-loaded\nTypically, U.S. corn shipments build into the winter and peak in the spring — after the bulk of the U.S. soybean export program is complete.\nThis year, that window was pulled forward, as exporters filled PNW capacity left open by China’s absence from the soybean market during the first three months of the marketing year.\n2 | A slowdown ahead?\nThe question now is whether this pace can be sustained as we move deeper into what is traditionally the heart of the U.S. corn shipment window.\nWhile total export commitments topping 2.0 billion bushels in the week ending January 1 — up 460 mbu year over year — shipments are outpacing new sales, a dynamic that suggests the current export pace is likely to cool in the weeks ahead.\nEven so, with tight exporter stocks elsewhere the U.S. is likely to remain the dominant supplier in the global corn market until Ukraine can find its footing or Argentine new crop becomes available later this spring.\n1 | King Corn\nThe soyb",
+        "authors": "None",
+        "publish_date": "2026-01-09 17:23:35",
+        "published_at_raw": "2026-01-09T17:23:35Z",
+        "meta_site_name": "Barchart",
+        "description": "Five Charts to Put 2025/26 U.S. Corn Demand in Perspective 5 | Off the Charts U.S. corn export inspections remain off the charts in 2025/26, with a record 1,056 mbu (26.8 mmt) shipped in the first four months of the marketing year. 4 | Time to Shine...",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:38:09",
+        "filter_status": "T",
+        "named_entities": [
+            "U.S.",
+            "Japan",
+            "South Korea",
+            "China",
+            "Ukraine",
+            "Argentina",
+            "corn"
+        ],
+        "triples": [
+            [
+                "U.S. corn export inspections",
+                "recorded",
+                "1,056 mbu (26.8 mmt) in the first four months of the marketing year"
+            ],
+            [
+                "Shipments to Japan",
+                "increased",
+                "45% year over year"
+            ],
+            [
+                "South Korea's commitments",
+                "grew",
+                "260% from this point in 2024/25"
+            ],
+            [
+                "China's absence from the soybean market",
+                "opened",
+                "PNW capacity for corn shipments"
+            ],
+            [
+                "Total export commitments",
+                "topped",
+                "2.0 billion bushels in the week ending January 1"
+            ],
+            [
+                "Export commitments",
+                "increased",
+                "460 mbu year over year"
+            ],
+            [
+                "U.S.",
+                "likely to remain",
+                "the dominant supplier in the global corn market"
+            ],
+            [
+                "Tight exporter stocks elsewhere",
+                "suggest",
+                "current export pace is likely to cool"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "2f2f76cfe8bb9dc7eb30b3052bf9d38d",
+        "title": "Wheat Squares Up Ahead of USDA data to Close Friday",
+        "doc_url": "https://www.barchart.com/story/news/36976205/wheat-squares-up-ahead-of-usda-data-to-close-friday",
+        "all_text": "The wheat complex spent the Friday session squaring up ahead of the Monday USDA reports. Chicago SRW futures were fractionally lower, with March up 10 ¾ cents this week. KC HRW futures closed with steady action, as March was 15 ¼ cents higher on the week. MPLS spring wheat was down 3 to 4 cents on the day, as that pushed the March contracts down 3 ¼ cents lower on the week.\nExport sales data, now updated just January 1 has wheat export commitments of shipped and unshipped sales at 20.228 MMT, 18% above a year ago. That is also 83% of the USDA estimate and in line with the average sales pace. Export shipments are at 15.16 MMT, which is 21% above last year. That is 61% of USDA’s export number and ahead of the 57% average shipping pace.\nUSDA’s Grain Stocks report will be out on Monday, with a Reuters survey of analysts showing an average guess of 1.636 bbu of wheat on hand as of December 1. The range of estimates is 1.59 to 1.696 bbu.\nNow up to date Commitment of Traders data showed managed money increasing their net short in CBT wheat futures and options as of January 6, taking the total to 107,165 contracts. In KC wheat, spec traders were heading the opposite direction, cutting 2,664 contracts from their net short to 15,655 contracts, the smallest since November 2024.\nMar 26 CBOT Wheat closed at $5.17 1/4, down 3/4 cent,\nMay 26 CBOT Wheat closed at $5.28 3/4, down 1/4 cent,\nMar 26 KCBT Wheat closed at $5.30 1/4, unch,\nMay 26 KCBT Wheat closed at $5.43, unch,\nMar 26 MIAX Wheat ",
+        "authors": "None",
+        "publish_date": "2026-01-09 23:10:31",
+        "published_at_raw": "2026-01-09T23:10:31Z",
+        "meta_site_name": "Barchart",
+        "description": "The wheat complex spent the Friday session squaring up ahead of the Monday USDA reports. Chicago SRW futures were fractionally lower, with March up 10 ¾ cents this week. KC HRW futures closed with steady action, as March was 15 ¼ cents higher on the...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:04",
+        "filter_status": "T",
+        "named_entities": [
+            "United States",
+            "USDA",
+            "Chicago SRW",
+            "KC HRW",
+            "MPLS spring wheat"
+        ],
+        "triples": [
+            [
+                "USDA",
+                "report",
+                "Grain Stocks report"
+            ],
+            [
+                "Wheat export commitments",
+                "are",
+                "20.228 MMT"
+            ],
+            [
+                "Wheat export commitments",
+                "are above",
+                "18% compared to a year ago"
+            ],
+            [
+                "Export shipments",
+                "are",
+                "15.16 MMT"
+            ],
+            [
+                "Export shipments",
+                "are above",
+                "21% compared to last year"
+            ],
+            [
+                "Managed money",
+                "increased",
+                "net short in CBT wheat futures to 107,165 contracts"
+            ],
+            [
+                "KC wheat spec traders",
+                "cut",
+                "net short to 15,655 contracts"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

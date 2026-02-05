@@ -3270,5 +3270,148 @@
             -0.012781603261828423,
             0.010881858877837658
         ]
+    },
+    {
+        "id": "2dc9a27afb847426564886b44466f233",
+        "title": "Wheat Closes Tuesday with Losses",
+        "doc_url": "https://www.barchart.com/story/news/37138537/wheat-closes-tuesday-with-losses",
+        "all_text": "The wheat complex posted weakness across the three markets on Tuesday. Chicago SRW futures posted 7 to 8 cent losses. KC HRW futures saw 3 to 4 1/4 cent losses on the day. MPLS spring wheat was down 2 to 3 cents in the front months on Tuesday.\nUSDA’s FGIS tallied wheat export shipments at 392,661 MT (14.43 mbu) during the week ending on January 15. That was 23.48% larger than the week prior and 49.97% above the same week last year. Mexico was the top destination of 110,660 MT, with 82,764 MT headed to Japan and 54,455 MT to Taiwan. Marketing year exports for 2025/26 are 15.975 MMT (586.96 mbu) since June 1, which is now 19.84% larger than the same period last year.\nA widespread precip even from the Southern Plains to the East Coast is looking to add some moisture back in the next week according to NOAA’s 7-day QPF.\nSaudi Arabia purchased a total of 907,000 MT of wheat in a tender on Monday. Algeria also purchased an estimates 600,000 MT of wheat in a tender on Monday. European commission data showed 11.8 MMT of wheat exports from July 1 to January 15, which is behind the 12 MMT from the same period last year.\nMar 26 CBOT Wheat closed at $5.10 1/4, down 7 3/4 cents,\nMay 26 CBOT Wheat closed at $5.21 3/4, down 7 cents,\nMar 26 KCBT Wheat closed at $5.23, down 4 1/4 cents,\nMay 26 KCBT Wheat closed at $5.34 1/2, down 3 3/4 cents,\nMar 26 MIAX Wheat closed at $5.62, down 3 cents,\nMay 26 MIAX Wheat closed at $5.74 1/2, down 3 cents,",
+        "authors": "None",
+        "publish_date": "2026-01-20 23:07:56",
+        "published_at_raw": "2026-01-20T23:07:56Z",
+        "meta_site_name": "Barchart",
+        "description": "The wheat complex posted weakness across the three markets on Tuesday. Chicago SRW futures posted 7 to 8 cent losses. KC HRW futures saw 3 to 4 1/4 cent losses on the day. MPLS spring wheat was down 2 to 3 cents in the front months on Tuesday. USDA’...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:39:59",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Mexico",
+            "Japan",
+            "Taiwan",
+            "Saudi Arabia",
+            "Algeria",
+            "NOAA"
+        ],
+        "triples": [
+            [
+                "Chicago SRW futures",
+                "posted losses",
+                "7 to 8 cents"
+            ],
+            [
+                "KC HRW futures",
+                "saw losses",
+                "3 to 4 1/4 cents"
+            ],
+            [
+                "MPLS spring wheat",
+                "was down",
+                "2 to 3 cents"
+            ],
+            [
+                "USDA’s FGIS",
+                "tallied wheat export shipments",
+                "392,661 MT during the week ending on January 15"
+            ],
+            [
+                "Weekly export shipments",
+                "were larger than",
+                "23.48% compared to the week prior"
+            ],
+            [
+                "Wheat exports for marketing year 2025/26",
+                "are",
+                "15.975 MMT"
+            ],
+            [
+                "Saudi Arabia",
+                "purchased",
+                "907,000 MT of wheat"
+            ],
+            [
+                "Algeria",
+                "purchased",
+                "600,000 MT of wheat"
+            ],
+            [
+                "European commission data",
+                "showed",
+                "11.8 MMT of wheat exports from July 1 to January 15"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "97432519d82cbf4eb0ec33b73219167c",
+        "title": "Soybeans Ticking Higher at Tuesday’s Midday",
+        "doc_url": "https://www.barchart.com/story/news/37133025/soybeans-ticking-higher-at-tuesdays-midday",
+        "all_text": "Soybeans are showing fractional gains so far on Tuesday. The cmdtyView national average Cash Bean price is 3/4 cent lower at $9.87 1/2. Soymeal futures are up $1.50 to $2.60 at midday, with Soy Oil futures 20 points higher.\nUSDA reported a private export sale of 190,000 MT of soybean meal to the Philippines this morning.\nMonday morning’s Export Inspections report showed 1.34 MMT (49.1 mbu) of soybeans shipped in the week of 1/15. That was 16.1% below the week prior but 35.1% larger than the same week last year. China was as the largest destination of 611,983 MT, with 116,120 MT shipped to Germany and 106,120 MT to Mexico. The marketing year total is now 19.335 MMT (710.44 mbu) of soybeans shipped, which is now 40.2% below the same period last year.\nThe weekly Commitment of Traders report on Friday afternoon showed spec traders in soybean futures and options slashing another 44,756 contracts from their net long to 12,961 contracts as of 1/13.\nBrazilian soybean harvest is estimated at 2% complete as of last Thursday according to AgRural. ANEC estimates the Brazilian soybean export for January at 3.79 MMT, a 0.06 MMT increase from last week’s number.\nMar 26 Soybeans are at $10.58, up 1/4 cent,\nNearby Cash is at $9.87 1/2, down 3/4 cent,\nMay 26 Soybeans are at $10.69 1/4, up 1/2 cent,\nJul 26 Soybeans are at $10.81 1/2, up 1/4 cent,",
+        "authors": "None",
+        "publish_date": "2026-01-20 18:11:54",
+        "published_at_raw": "2026-01-20T18:11:54Z",
+        "meta_site_name": "Barchart",
+        "description": "Soybeans are showing fractional gains so far on Tuesday. The cmdtyView national average Cash Bean price is 3/4 cent lower at $9.87 1/2. Soymeal futures are up $1.50 to $2.60 at midday, with Soy Oil futures 20 points higher. USDA reported a private e...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:39:59",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Philippines",
+            "China",
+            "Germany",
+            "Mexico",
+            "Brazil",
+            "AgRural",
+            "ANEC",
+            "Soybeans"
+        ],
+        "triples": [
+            [
+                "USDA",
+                "reported",
+                "private export sale of 190,000 MT of soybean meal to the Philippines"
+            ],
+            [
+                "Export Inspections report",
+                "showed",
+                "1.34 MMT of soybeans shipped"
+            ],
+            [
+                "Soybeans",
+                "shipped",
+                "16.1% below the week prior"
+            ],
+            [
+                "Soybeans",
+                "shipped",
+                "35.1% larger than the same week last year"
+            ],
+            [
+                "China",
+                "was the largest destination",
+                "611,983 MT"
+            ],
+            [
+                "Brazilian soybean harvest",
+                "is estimated to be",
+                "2% complete"
+            ],
+            [
+                "ANEC",
+                "estimates",
+                "Brazilian soybean export for January at 3.79 MMT"
+            ],
+            [
+                "spec traders in soybean futures and options",
+                "slashed",
+                "44,756 contracts from their net long to 12,961 contracts"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

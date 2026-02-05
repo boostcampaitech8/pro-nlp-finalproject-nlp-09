@@ -2695,5 +2695,308 @@
             0.008166144602000713,
             -0.010399166494607925
         ]
+    },
+    {
+        "id": "89262d9426fb8835423842a82d3463c1",
+        "title": "Data disproves allegations of cartelisation, price manipulation in Bhavantar Yojana: Madhya Pradesh Agri Secy",
+        "doc_url": "https://economictimes.indiatimes.com/small-biz/sustainability/data-disproves-cartelisation-price-manipulation-allegations-in-bhavantar-yojana-madhya-pradesh-agri-secy/articleshow/126408279.cms",
+        "all_text": "Synopsis\nThe Madhya Pradesh government has procured about 16 lakh tonnes of soybean in the current season and has disbursed Rs 1,294 crore to farmers as of December 31, 2025, says Nishant Warwade, Agriculture Secretary, Madhya Pradesh.\nOn December 28, 2025, Madhya Pradesh Chief Minister Mohan Yadav disbursed Rs 810 crore to 3.77 lakh soybean farmers under the Bhavantar Bhugtan Yojana (BBY) at an event in Jaora, Ratlam district. This followed the release of more than Rs 300 crore in November as the first instalment to 1.32 lakh farmers. The payments marks Madhya Pradesh’s second rollout of the BBY, also known as the Price Deficiency Payment Scheme (PDPS), which aims at ensuring farmers receive minimum support price (MSP) while selling in the open market. BBY was first launched in 2017 for eight crops, including soybean, groundnut, and pulses such as pigeon pea, but was later discontinued.\nIn an interaction with ET Digital, Nishant Warwade, Secretary, Farmers Welfare and Agriculture Development Department, Madhya Pradesh, outlines how the state is strengthening the Bhavantar scheme to ensure benefits reach farmers more effectively. He also talks about fertiliser shortages and rising stubble burning in the state and more. Edited excerpts:\nThe Economic Times (ET): How effective has the Bhavantar scheme been? The scheme has faced criticism due to payment delays and compensation based on a model price instead of the farmer’s actual sale price, which often puts small farmers at a di",
+        "authors": "None",
+        "publish_date": "2026-01-08 06:22:00",
+        "published_at_raw": "2026-01-08T06:22:00Z",
+        "meta_site_name": "The Economic Times",
+        "description": "The Madhya Pradesh government has procured about 16 lakh tonnes of soybean in the current season and has disbursed Rs 1,294 crore to farmers as of December 31, 2025, says Nishant Warwade, Agriculture Secretary, Madhya Pradesh.",
+        "key_word": "soybean AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:38:43",
+        "filter_status": "T",
+        "named_entities": [
+            "Madhya Pradesh",
+            "Nishant Warwade",
+            "Bhavantar Bhugtan Yojana",
+            "Price Deficiency Payment Scheme",
+            "soybean",
+            "Mohan Yadav",
+            "Economic Times"
+        ],
+        "triples": [
+            [
+                "Madhya Pradesh government",
+                "procured",
+                "16 lakh tonnes of soybean"
+            ],
+            [
+                "Madhya Pradesh government",
+                "disbursed",
+                "Rs 1,294 crore to farmers"
+            ],
+            [
+                "Mohan Yadav",
+                "disbursed",
+                "Rs 810 crore to 3.77 lakh soybean farmers"
+            ],
+            [
+                "Rs 300 crore",
+                "released",
+                "to 1.32 lakh farmers"
+            ],
+            [
+                "Bhavantar Bhugtan Yojana",
+                "aims",
+                "to ensure minimum support price for farmers"
+            ],
+            [
+                "Bhavantar Bhugtan Yojana",
+                "was",
+                "first launched in 2017"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "87ae01a871890f53485cc6ba9a8b8def",
+        "title": "After move away from India, Bangladesh's corn imports see Westward pivot-American corn after 8 yrs",
+        "doc_url": "https://theprint.in/world/after-move-away-from-india-bangladeshs-corn-imports-see-westward-pivot-american-corn-after-8-yrs/2822440/",
+        "all_text": "New Delhi: Bangladesh is now diversifying its food imports from the West. This week, the country resumed its imports of American corn for the first time in eight years. A shipment of nearly 58,000 metric tons of yellow corn harvested in Minnesota and the Dakotas arrived at Chattogram port Tuesday, according to a statement from the US embassy in Dhaka. The last time Bangladesh imported corn from the United States was in 2018.\nIn 2024, Bangladesh moved away from India, once its largest supplier of corn, and shifted to South American exporters such as Brazil and Argentina. In 2023, Bangladesh imported the most corn from India, valued at USD 171 million, but in 2024-25, Brazil accounted for 93 per cent of the country’s corn imports, followed by Argentina at 4 per cent and Pakistan at 2 per cent.\nThe renewed US imports now come as Dhaka and Washington seek to recalibrate trade ties amid a widening bilateral trade gap. Washington recently reduced its reciprocal tariff rate on Bangladeshi goods to 20 per cent, down from an initial 37 per cent, after Dhaka agreed to increase imports from the US, part of efforts to narrow an annual trade deficit exceeding 6.2 billion dollars.\nWestward shift\nCorn is important for Bangladesh’s feed and livestock industry, and despite being the country’s second-largest grain crop after rice, domestic production falls far short of demand, reports noted.\nThe shipment that landed on 1 January comprised around 58,000 metric tons of corn sourced from North Da",
+        "authors": "None",
+        "publish_date": "2026-01-08 17:28:48",
+        "published_at_raw": "2026-01-08T17:28:48Z",
+        "meta_site_name": "ThePrint",
+        "description": "Corn is important for Bangladesh’s feed and livestock industry, and despite being the country’s second-largest grain crop after rice, domestic production falls far short of demand.",
+        "key_word": "wheat AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:38:09",
+        "filter_status": "T",
+        "named_entities": [
+            "Bangladesh",
+            "United States",
+            "India",
+            "Brazil",
+            "Argentina",
+            "Pakistan",
+            "US Embassy",
+            "Chattogram Port",
+            "Minnesota",
+            "Dakotas"
+        ],
+        "triples": [
+            [
+                "Bangladesh",
+                "resumed imports",
+                "American corn"
+            ],
+            [
+                "Bangladesh",
+                "imported",
+                "58,000 metric tons of corn"
+            ],
+            [
+                "Bangladesh",
+                "shifted imports",
+                "from India to South American exporters"
+            ],
+            [
+                "US",
+                "reduced tariff rate",
+                "to 20 percent"
+            ],
+            [
+                "Bangladesh",
+                "agreed to increase imports",
+                "from the US"
+            ],
+            [
+                "Bangladesh",
+                "domestic production",
+                "falls short of demand"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "e72d7b30bf2b65f9e9296cd6b85217c7",
+        "title": "Resumption of e-auction of wheat sales hits millers as price dips",
+        "doc_url": "https://www.financialexpress.com/business/industry-resumption-of-e-auction-of-wheat-sales-hits-millers-as-price-dips-4101595/",
+        "all_text": "The government’s move to re-launch e-auction of wheat under the open market sale scheme (OMSS), after discontinuing it due sluggish demand, has brought down its market prices, thereby hitting flour millers and stockists.\nTrade sources said that the surplus wheat being sold in the market by Food Corporation of India (FCI) would further depress prices, which may discourage private purchase of grain from the new marketing season (2026-27), starting April 1.\nSources added that while the private entities purchase wheat at minimum support price (MSP) of Rs 2,425/quintal from the farmers at the beginning of the marketing season, there is an additional carrying cost of Rs 650/quintal in the first ten months of current fiscal.\n“The market prices of wheat has dropped by around Rs 100/quintal to around Rs 2,750/quintal – Rs 2,800/quintal, thus putting stress on the stockists,” a leading flour miller told FE.\nPrice of wheat under OMSS\nThe price of wheat under OMSS for the bulk buyers, like millers, is fixed at Rs 2,550/quintal for 2025-26, excluding freight from Punjab.\nSeveral millers said that in the current season, wheat prices have remained sluggish due to a record production of over 117 million tonne (MT) against an estimated demand of around 108 MT and ample availability of the crop in the open market.\n“The policy uncertainty in pursuing offloading of the government’s stock makes the market unstable, while the objective of the OMSS was to control price in the market by providing fo",
+        "authors": "None",
+        "publish_date": "2026-01-08 23:40:43",
+        "published_at_raw": "2026-01-08T23:40:43Z",
+        "meta_site_name": "The Financial Express",
+        "description": "Move may discourage private sector procure from coming season",
+        "key_word": "wheat AND (price OR demand OR supply OR inventory)",
+        "collected_at": "2026-02-04 15:39:04",
+        "filter_status": "T",
+        "named_entities": [
+            "India",
+            "Food Corporation of India",
+            "OMSS",
+            "2025-26",
+            "2026-27",
+            "millers",
+            "wheat"
+        ],
+        "triples": [
+            [
+                "Government",
+                "relaunched",
+                "e-auction of wheat under OMSS"
+            ],
+            [
+                "Wheat prices",
+                "dropped",
+                "around Rs 100/quintal"
+            ],
+            [
+                "Wheat price",
+                "fixed",
+                "Rs 2,550/quintal for bulk buyers"
+            ],
+            [
+                "Production",
+                "recorded",
+                "over 117 million tonne"
+            ],
+            [
+                "Estimated demand",
+                "around",
+                "108 million tonne"
+            ],
+            [
+                "Policy uncertainty",
+                "makes",
+                "market unstable"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "b5e03b7c83d5fc80229de1ee0e4a7b10",
+        "title": "CBOT Corn Ends Nearly Unchanged as Traders Await USDA Crop Data",
+        "doc_url": "https://www.agriculture.com/parnters-cbot-corn-ends-nearly-unchanged-as-traders-await-usda-crop-data-11881966",
+        "all_text": "By Tom Polansek\nJan 8 (Reuters) - Chicago Board of Trade corn futures finished nearly unchanged on Thursday while traders waited for the U.S. Department of Agriculture to issue key data on U.S. grain harvests and stocks next week.\n* Analysts on average expect the USDA on Monday will trim its estimates for U.S. corn production and yields from November, according to a Reuters poll.\n* The average trade estimate for corn stocks as of December 1 was 12.962 billion bushels, another Reuters poll showed. That would be up 7.3% from a year earlier and represent the largest December 1 corn stocks figure in USDA records dating to 1926.\n* The USDA reported that 2025-26 U.S. corn export sales were 377,600 metric tons in the week that ended on January 1. Analysts expected 700,000 to 1.5 million metric tons.\n* In exporter Argentina, dry weather since last month has damaged 2025-26 corn crops in western Buenos Aires province, though significant rain was forecast in coming days, the Buenos Aires Grains Exchange said.\n* CBOT March corn finished 3/4 cent lower at $4.46 per bushel after rising earlier to the highest level since December 29.\n(Reporting by Tom Polansek in Chicago; editing by Diane Craft)",
+        "authors": "None",
+        "publish_date": "2026-01-08 22:56:05",
+        "published_at_raw": "2026-01-08T22:56:05Z",
+        "meta_site_name": "Successful Farming",
+        "description": "Chicago Board of Trade corn futures finished nearly unchanged on Thursday while traders waited for the U.S. Department of Agriculture to issue key data on U.S. grain harvests and stocks next week.",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:40:05",
+        "filter_status": "T",
+        "named_entities": [
+            "U.S. Department of Agriculture",
+            "Chicago Board of Trade",
+            "Argentina",
+            "Buenos Aires",
+            "corn"
+        ],
+        "triples": [
+            [
+                "U.S. Department of Agriculture",
+                "to issue",
+                "key data on U.S. grain harvests and stocks"
+            ],
+            [
+                "USDA",
+                "expects to trim",
+                "estimates for U.S. corn production and yields"
+            ],
+            [
+                "average trade estimate",
+                "for corn stocks",
+                "12.962 billion bushels"
+            ],
+            [
+                "corn stocks",
+                "up",
+                "7.3% from a year earlier"
+            ],
+            [
+                "Buenos Aires Grains Exchange",
+                "reported",
+                "damage to 2025-26 corn crops due to dry weather"
+            ],
+            [
+                "CBOT March corn",
+                "finished lower at",
+                "$4.46 per bushel"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "37df304d71a8a104fd9063741ddb60f2",
+        "title": "Corn Closes with Fractional Price Movement",
+        "doc_url": "https://www.barchart.com/story/news/36958714/corn-closes-with-fractional-price-movement",
+        "all_text": "Corn futures closed out a quiet Thursday session with fractional losses in the front months and fractional gains in other contracts. The CmdtyView national average Cash Corn price was down ¼ cent at $4.08 1/2.\nExport Sales data from this morning showed just 377,598 MT of corn sold in the week ending on January 1, shy of the 0.7-1.5 MMT estimates for 2025/26. That was a marketing year low and 15.1% below the same week last year. The largest buyer was South Korea at 139,000 MT, with 108,100 MT to Japan. Sales for 2026/27 were tallied at 11,860 MT, between the 0-100,000 MT expectations.\nCensus data showed a delayed update for October exports, with a record 6.564 MMT (248.5 mbu) of corn shipped during the month. That was a drop of 5.93% from September but up 63.38% from the same month in 2024. Distillers exports were just shy of last year’s October record at 1.067 MMT. Ethanol shipments were back at a record pace of the month at 185 million gallons.\nUSDA’s WASDE report will be out on Monday, with a Bloomberg survey showing analysts looking for stocks to be tallied at 1.985 bbu, a 44 mbu reduction if realized.\nMar 26 Corn closed at $4.46, down 3/4 cent,\nNearby Cash was $4.08 1/2, down 1/4 cent,\nMay 26 Corn closed at $4.54, unch,\nJul 26 Corn closed at $4.60 1/2, up 3/4 cent,",
+        "authors": "None",
+        "publish_date": "2026-01-08 23:05:56",
+        "published_at_raw": "2026-01-08T23:05:56Z",
+        "meta_site_name": "Barchart",
+        "description": "Corn futures closed out a quiet Thursday session with fractional losses in the front months and fractional gains in other contracts. The CmdtyView national average Cash Corn price was down ¼ cent at $4.08 1/2. Export Sales data from this morning sho...",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:38:09",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "South Korea",
+            "Japan",
+            "Corn"
+        ],
+        "triples": [
+            [
+                "Corn futures",
+                "closed",
+                "fractional losses and gains"
+            ],
+            [
+                "CmdtyView national average Cash Corn price",
+                "was",
+                "$4.08 1/2"
+            ],
+            [
+                "Export Sales data",
+                "showed",
+                "377,598 MT of corn sold"
+            ],
+            [
+                "Sales",
+                "were",
+                "15.1% below the same week last year"
+            ],
+            [
+                "Largest buyer",
+                "was",
+                "South Korea (139,000 MT)"
+            ],
+            [
+                "Census data",
+                "showed",
+                "6.564 MMT of corn shipped"
+            ],
+            [
+                "October exports",
+                "dropped",
+                "5.93% from September"
+            ],
+            [
+                "October exports",
+                "were up",
+                "63.38% from the same month in 2024"
+            ],
+            [
+                "USDA’s WASDE report",
+                "expected stocks",
+                "1.985 bbu"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

@@ -1091,5 +1091,135 @@
             0.055219873785972595,
             0.01171376183629036
         ]
+    },
+    {
+        "id": "2cdcd68b1274a3041cf07b0ce1253de0",
+        "title": "Corn Trading with Midday Losses on Monday",
+        "doc_url": "https://www.barchart.com/story/news/37233481/corn-trading-with-midday-losses-on-monday",
+        "all_text": "Corn futures are showing 1 to 2 cent losses on Monday’s midday. The CmdtyView national average Cash Corn price is down 1 3/4 cents at $3.92 3/4.\nUSDA’s FGIS tallied corn export shipments at 1.51 MMT (59.45 mbu) during the week ending on January 22. That was 1.63% larger than the week prior and 20.74% above the same week last year. Mexico was the top destination of 402,936 MT, with 265,122 MT headed to Japan and 210,763 MT to Spain. Marketing year exports for 2025/26 are 31.437 MMT (1.24 bbu) since September 1, which is now 53.35% larger than the same period last year.\nExport Sales data updated last Friday has corn export commitments at 56.045 MMT, which is 34% ahead of last year. That is 69% of the record USDA export estimate and ahead of the 65% average pace.\nManaged money trimmed their net short position in corn futures and options by just 450 contracts in the week that ended on January 20. That net short was 81,324 contracts according to Commitment of Traders data on Friday.\nAgRural estimates the first corn crop in the center south regions of Brazil at 5% harvested, ahead of the 2.2% pace last year. The second crop is pegged at 4.7% planted as of last Thursday, behind the 8.6% early pace in 2024/25. They raised their estimate for the country’s corn crop by 0.6 MMT to 136.6 MMT.\nMar 26 Corn is at $4.28 3/4, down 1 3/4 cents,\nNearby Cash is at $3.92 3/4, down 1 3/4 cents,\nMay 26 Corn is at $4.36 1/2, down 1 1/2 cents,\nJul 26 Corn is at $4.42 1/2, down 1 1/4 cents,",
+        "authors": "None",
+        "publish_date": "2026-01-26 18:21:01",
+        "published_at_raw": "2026-01-26T18:21:01Z",
+        "meta_site_name": "Barchart",
+        "description": "Corn futures are showing 1 to 2 cent losses on Monday’s midday. The CmdtyView national average Cash Corn price is down 1 3/4 cents at $3.92 3/4. USDA’s FGIS tallied corn export shipments at 1.51 MMT (59.45 mbu) during the week ending on January 22....",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:38:07",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Mexico",
+            "Japan",
+            "Spain",
+            "Brazil",
+            "CmdtyView"
+        ],
+        "triples": [
+            [
+                "Corn futures",
+                "show",
+                "1 to 2 cent losses"
+            ],
+            [
+                "CmdtyView national average Cash Corn price",
+                "is down",
+                "$3.92 3/4"
+            ],
+            [
+                "USDA",
+                "tallied corn export shipments",
+                "1.51 MMT"
+            ],
+            [
+                "Corn export shipments",
+                "is larger than",
+                "1.63% than the week prior"
+            ],
+            [
+                "Corn export shipments",
+                "is",
+                "20.74% above the same week last year"
+            ],
+            [
+                "Mexico",
+                "was the top destination of",
+                "402,936 MT of corn"
+            ],
+            [
+                "Managed money",
+                "trimmed net short position",
+                "by 450 contracts"
+            ],
+            [
+                "AgRural",
+                "estimates first corn crop harvested",
+                "5% compared to 2.2% last year"
+            ],
+            [
+                "AgRural",
+                "raised estimate for Brazil’s corn crop",
+                "by 0.6 MMT to 136.6 MMT"
+            ],
+            [
+                "Corn export commitments",
+                "is ahead of last year by",
+                "34%"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
+    },
+    {
+        "id": "cd0905f139341317a0008def730f4c04",
+        "title": "Minnesota corn farmers blindsided by USDA report showing bigger",
+        "doc_url": "https://www.austindailyherald.com/news/minnesota-corn-farmers-blindsided-by-usda-report-showing-bigger-than-expected-corn-glut-fecb3da8",
+        "all_text": "By Tadeo Ruiz Sandoval\nThe USDA released new data showing corn production was much higher than previously expected. The news sent already depressed corn prices tumbling.\nThe January World Agricultural Supply and Demand Estimates report provides forecasts of corn production from the previous harvest season, making it a newsmaker because it often sets the tone for markets.\nBefore the report was released, ag analysts expected yields to hover somewhere around 16.5 billion bushels. But the USDA report projects that farmers produced more than that, pulling in 17 billion bushels\nMegan Roberts, an agricultural economist for Farm Credit Cooperative, Compeer Financial, said that is a new record in U.S. corn production.\n“It's really hard to wrap your head around how big 17 billion bushels is,” Roberts said. “That was shocking to the market, because it is now the record corn production ever in the U.S.”\nThe higher production level was driven by increased harvested acreage and higher yields.\nRoberts added that, after accounting for expected corn exports and commercial use, there will still be over 2 billion bushels left to deal with.\n“It is a challenge right now for our supplies of corn in the U.S. to have enough equivalent demand to use it up,” Roberts said.\nThe report dealt a blow to many farmers, including Rob Tate of Cannon Falls.\n“It's discouraging,” Tate said. “I was surprised and discouraged at the same time that, OK, this is what we have to deal with.”\nHe had already sold a fair a",
+        "authors": "None",
+        "publish_date": "2026-01-26 14:39:47",
+        "published_at_raw": "2026-01-26T14:39:47Z",
+        "meta_site_name": "Austin Daily Herald",
+        "description": "USDA report revealing record 17 billion-bushel U.S. corn crop deepens a supply glut, driving prices lower and leaving Minnesota farmers bracing for potential losses.",
+        "key_word": "\"United States Department of Agriculture\" OR USDA",
+        "collected_at": "2026-02-04 15:38:07",
+        "filter_status": "T",
+        "named_entities": [
+            "USDA",
+            "Minnesota",
+            "Farm Credit Cooperative",
+            "Compeer Financial",
+            "Rob Tate",
+            "Cannon Falls",
+            "corn"
+        ],
+        "triples": [
+            [
+                "USDA",
+                "released",
+                "new data showing higher corn production"
+            ],
+            [
+                "corn production",
+                "increased",
+                "17 billion bushels"
+            ],
+            [
+                "higher production level",
+                "was driven by",
+                "increased harvested acreage and higher yields"
+            ],
+            [
+                "corn exports and commercial use",
+                "will leave",
+                "over 2 billion bushels"
+            ],
+            [
+                "Rob Tate",
+                "expressed",
+                "discouragement about the report"
+            ]
+        ],
+        "article_embedding": null,
+        "fill_mode": "relaxed",
+        "fill_reason": "min_per_keyword=2"
     }
 ]

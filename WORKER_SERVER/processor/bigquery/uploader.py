@@ -83,38 +83,70 @@ def upload_processed_news(
                 row[field] = json.dumps(row[field], ensure_ascii=False)
 
     # Load into temp table then MERGE to avoid duplicates by id
-    temp_table_id = f"{dataset_id}.temp_processed_news_{int(datetime.utcnow().timestamp())}"
-    temp_full_table_id = f"{client.project}.{temp_table_id}"
-
     job_config = bigquery.LoadJobConfig(
         schema=schema,
-        write_disposition="WRITE_TRUNCATE",
+        write_disposition="WRITE_APPEND",
         ignore_unknown_values=True,
     )
     load_job = client.load_table_from_json(
-        rows, temp_full_table_id, job_config=job_config, location=location
+        rows, full_table_id, job_config=job_config, location=location
     )
     load_job.result()
 
-    columns = [field.name for field in schema]
-    if "id" not in columns:
-        raise ValueError("Target table must have 'id' column for deduplication.")
+    print(f"Uploaded {len(rows)} rows to {full_table_id} (append)")
+    return len(rows)
 
-    cols_csv = ", ".join([f"`{c}`" for c in columns])
-    cols_values = ", ".join([f"S.`{c}`" for c in columns])
 
-    merge_sql = f"""
-    MERGE `{full_table_id}` T
-    USING `{temp_full_table_id}` S
-    ON T.id = S.id
-    WHEN NOT MATCHED THEN
-      INSERT ({cols_csv}) VALUES ({cols_values})
-    """
-    client.query(merge_sql, location=location).result()
+def upload_processed_news_rows(
+    rows,
+    schema_path="/data/ephemeral/home/pro-nlp-finalproject-nlp-09/WORKER_SERVER/processor/bigquery/schema.json",
+):
+    dataset_id = os.getenv("BIGQUERY_DATASET_ID", "tilda")
+    table_id = os.getenv("BIGQUERY_TABLE_ID", "news_article")
+    project_id = os.getenv("BIGQUERY_PROJECT_ID") or os.getenv("VERTEX_AI_PROJECT_ID") or "project-5b75bb04-485d-454e-af7"
+    location = os.getenv("BIGQUERY_LOCATION", "US")
 
-    client.delete_table(temp_full_table_id, not_found_ok=True)
+    if not dataset_id or not table_id:
+        raise ValueError("BIGQUERY_DATASET_ID and BIGQUERY_TABLE_ID must be set")
 
-    print(f"Uploaded {len(rows)} rows to {full_table_id} (dedup by id)")
+    if project_id:
+        client = bigquery.Client(project=project_id)
+    else:
+        client = bigquery.Client()
+
+    full_table_id = f"{client.project}.{dataset_id}.{table_id}"
+    print(f"[BQ] project={client.project} dataset={dataset_id} table={table_id} location={location}")
+    schema = None
+    try:
+        table = client.get_table(full_table_id)
+        schema = table.schema
+    except Exception:
+        schema = _load_schema(schema_path)
+
+    if not rows:
+        print("No rows to upload.")
+        return 0
+
+    print(f"Preparing to upload {len(rows)} news_article rows (XCom payload).")
+
+    for row in rows:
+        if "id" in row and row["id"] is not None:
+            row["id"] = str(row["id"])
+        for field in ("named_entities", "triples", "article_embedding"):
+            if field in row and row[field] is not None and not isinstance(row[field], str):
+                row[field] = json.dumps(row[field], ensure_ascii=False)
+
+    job_config = bigquery.LoadJobConfig(
+        schema=schema,
+        write_disposition="WRITE_APPEND",
+        ignore_unknown_values=True,
+    )
+    load_job = client.load_table_from_json(
+        rows, full_table_id, job_config=job_config, location=location
+    )
+    load_job.result()
+
+    print(f"Uploaded {len(rows)} rows to {full_table_id} (append)")
     return len(rows)
 
 
