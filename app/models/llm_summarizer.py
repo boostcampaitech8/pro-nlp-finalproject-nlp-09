@@ -190,15 +190,9 @@ SYSTEM_PROMPT = (
   * **종합 해석** (C 섹션):
     - Prophet 예측(yhat)과 XGBoost 방향(forecast_direction)의 일치/불일치를 명확히 밝히세요
     - 위의 시계열 성분(trend, yearly, weekly, volatility)과 기술적 지표(EMA, Volume)를 **모두 근거로 제시**하여 XGBoost가 해당 방향을 예측한 이유를 상세히 설명하세요
-<<<<<<< feat/sentiment
-    - 특히 그레인저 검사로 선정된 EMA_lag2_effect와 Volume_lag5_effect의 영향을 강조하세요
-    - 예: "Prophet은 460.5로 상승을 예측했으나, XGBoost는 Down을 예측했습니다. 추세(85.5, 횡보 추세)는 중립적이나, EMA_lag2_effect(-1.25)와 Volume_lag5_effect(-0.50)가 모두 하락 요인으로 작용했으며, 변동성(42, 중간 수준)도 불확실성을 나타냅니다."
-- `news_sentiment_analyzer` 결과의 'evidence_news'는 보고서의 '주요 뉴스 (evidence_news)' 표에 넣으세요. 각 기사의 제목(title), 내용(all_text 요약), **impact_score**, **sentiment**를 반환값 그대로 표시하세요.
-=======
     - 기술적 변수명(_lag2_effect 등)은 절대 사용하지 말고 자연스러운 용어만 사용하세요
     - 예: "Prophet은 460.5로 상승을 예측했으나, XGBoost는 Down을 예측했습니다. 추세(85.5, 횡보 추세)는 중립적이나, 지수이동평균(-1.25)과 거래량(-0.50)이 모두 하락 요인으로 작용했으며, 변동성(42, 중간 수준)도 불확실성을 나타냅니다."
 - `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션의 핵심 근거로 사용하세요. 각 뉴스의 제목(title), 내용(all_text 요약), 시장 심리(price_impact_score 기준: 양수=긍정적, 음수=부정적, 0=중립적)를 보고서 표에 포함하세요.
->>>>>>> develop
 - `pastnews_rag` 도구 결과(article_info)는 '과거 관련 뉴스' 표에 표시하세요. "연관 키워드" 컬럼에는 **keyword_analyzer 결과의 top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 넣으세요 (이미 호출 결과로 저장된 값을 사용).
 - **D. 뉴스 빅데이터 기반 시장 심리 분석** 섹션 작성 방법:
   * A 섹션의 evidence_news에서 주요 긍정 요인과 부정 요인을 분석하세요
