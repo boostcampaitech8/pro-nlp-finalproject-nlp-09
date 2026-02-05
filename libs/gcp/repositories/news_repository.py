@@ -47,12 +47,13 @@ class NewsRepository:
         self._project_id = bq_service.project_id
         self._dataset_id = bq_service.dataset_id
 
-    def save_prediction(self, prediction_data: Dict[str, Any]) -> None:
+    def save_prediction(self, prediction_data: Dict[str, Any], commodity: str) -> None:
         """
         뉴스 감성 분석 결과를 prediction_news_sentiment 테이블에 적재
 
         Args:
             prediction_data: 뉴스 모델의 반환값 (JSON/Dict)
+            commodity: 상품명 (corn, soybean, wheat)
         """
         if not prediction_data or "error" in prediction_data:
             logger.error("Skipping save: Invalid news prediction data")
@@ -60,20 +61,22 @@ class NewsRepository:
 
         table_id = "prediction_news_sentiment"
         
-        # JSON 필드 직렬화 (BigQuery JSON 타입 대응)
+        # JSON 필드 직렬화 및 commodity 추가
         row = prediction_data.copy()
+        row["commodity"] = commodity
+        
         if "features_summary" in row and isinstance(row["features_summary"], dict):
             row["features_summary"] = json.dumps(row["features_summary"], ensure_ascii=False)
         
         if "evidence_news" in row and isinstance(row["evidence_news"], list):
             row["evidence_news"] = json.dumps(row["evidence_news"], ensure_ascii=False)
 
-        logger.info(f"Saving news prediction for date: {row.get('target_date')}")
+        logger.info(f"Saving news prediction for {commodity} on date: {row.get('target_date')}")
         
         errors = self._bq.insert_rows_json(table_id, [row])
         
         if errors:
-            raise RuntimeError(f"Failed to save news prediction: {errors}")
+            raise RuntimeError(f"Failed to save news prediction for {commodity}: {errors}")
 
     def _validate_date(self, date_str: str, param_name: str = "date") -> str:
         """날짜 형식 검증"""
