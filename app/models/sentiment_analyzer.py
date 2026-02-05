@@ -90,7 +90,7 @@ class SentimentAnalyzer:
             if price_df.empty:
                 return {"error": f"[{commodity}] {target_date} 기준 최근 가격 데이터가 없습니다."}
 
-            # 2. 앙상블 모델 예측 실행 (팀원 코드 호출)
+            # 2. 앙상블 모델 예측 실행
             report = _run_daily_prediction(
                 target_date=target_date,
                 lookback_days=lookback_days,
@@ -102,11 +102,26 @@ class SentimentAnalyzer:
             )
             
             if report is None:
-                return {"error": f"[{commodity}] {target_date} 예측 보고서 생성 실패."}
+                return {"error": f"[{commodity}] {target_date} 예측 데이터 준비 실패 (뉴스/임베딩 부족)."}
             
-            # 3. LLM Summarizer 호환을 위한 데이터 정규화
+            # 3. LLM Summarizer 호환을 위한 데이터 가공
             self._enrich_report_for_llm(report, target_date, commodity)
             
+            # llm_summarizer 호환: evidence_news = supporting (최대 3개) + opposing (최대 3개)
+            evidence = report.get("evidence") or {}
+            supporting = evidence.get("supporting_news") or []
+            opposing = evidence.get("opposing_news") or []
+            evidence_news = [
+                {
+                    "title": x.get("title", ""),
+                    # all_text 우선 사용 (없으면 description 폴백)
+                    "all_text": x.get("all_text") or x.get("description", ""),
+                    "impact_score": x.get("impact_score"),
+                    "sentiment": x.get("sentiment", ""),
+                }
+                for x in (supporting[:3] + opposing[:3])
+            ]
+            report["evidence_news"] = evidence_news
             return report
             
         except Exception as e:
@@ -114,7 +129,7 @@ class SentimentAnalyzer:
             return {"error": f"[{commodity}] 시장 예측 중 오류 발생: {str(e)}"}
 
     def _enrich_report_for_llm(self, report: Dict[str, Any], target_date: str, commodity: str):
-        """보고서 데이터를 정규화하여 에이전트가 쓰기 편하게 만듭니다."""
+        """보고서에 LLM 에이전트가 필요로 하는 필드를 추가 및 정규화합니다."""
         evidence = report.get("evidence") or {}
         supporting = evidence.get("supporting_news") or []
         opposing = evidence.get("opposing_news") or []
@@ -137,5 +152,5 @@ class SentimentAnalyzer:
 
 
 if __name__ == "__main__":
-    # 간단한 테스트 로직
+    # 실행 테스트 로직 (필요 시)
     pass
