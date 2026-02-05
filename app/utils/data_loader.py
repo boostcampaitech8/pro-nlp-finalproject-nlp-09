@@ -34,8 +34,19 @@ def load_timeseries_prediction(prediction_data: Dict[str, Any], dataset_id: Opti
     price_repo = PriceRepository(bq_service)
     
     try:
-        price_repo.save_prediction(prediction_data)
-        print(f"✅ 시계열 예측 데이터 적재 완료: {prediction_data.get('target_date', 'Unknown Date')}")
+        # 필요한 핵심 컬럼만 필터링 (스키마 불일치 방지)
+        filtered_data = {
+            "target_date": prediction_data.get("target_date"),
+            "forecast_direction": prediction_data.get("forecast_direction"),
+            "confidence_score": prediction_data.get("confidence_score")
+        }
+        
+        # 필수 값 체크
+        if not all(filtered_data.values()):
+            print(f"⚠️ 경고: 필수 데이터가 누락되었습니다. {filtered_data}")
+
+        price_repo.save_prediction(filtered_data)
+        print(f"✅ 시계열 예측 데이터 적재 완료: {filtered_data.get('target_date', 'Unknown Date')}")
     except Exception as e:
         print(f"❌ 적재 실패: {str(e)}")
         raise e
