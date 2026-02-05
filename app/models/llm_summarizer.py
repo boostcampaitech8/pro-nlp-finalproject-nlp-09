@@ -20,8 +20,8 @@ from models.keyword_analyzer import analyze_keywords as _analyze_keywords
 from models.pastnews_rag_runner import run_pastnews_rag as _run_pastnews_rag
 
 
-REPORT_FORMAT = f"""
-**날짜**: (YYYY-MM-DD) | **종목**: 옥수수 
+REPORT_FORMAT = """
+**날짜**: (YYYY-MM-DD) | **종목**: [분석 대상 품목명] 
 
 | 어제 종가 | Prophet 예측 | XGBoost 방향 | 뉴스 심리 | 종합 의견 |
 |:---:|:---:|:---:|:---:|:---:|
