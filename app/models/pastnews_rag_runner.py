@@ -75,6 +75,7 @@ def vector_search_similar_hash_ids(client, triple_embedding: List[float], top_k:
 
 def run_pastnews_rag(
     triples: Optional[List[List[str]]] = None,
+    commodity: str = "corn",
     top_k: int = 5,
     dimensions: int = 1024,
 ) -> Dict[str, Any]:
@@ -84,11 +85,12 @@ def run_pastnews_rag(
 
     Args:
         triples: [[s, v, o], ...]. None이면 extract_triples_from_today() 사용.
+        commodity: 상품명 (corn, soybean, wheat)
         top_k: 유사 hash_id 개수
         dimensions: (미사용, 호환용)
 
     Returns:
-        dict: article_info (각 항목: {"description": str, "publish_date": str, "0": float, "1": float, "3": float}), error(있을 경우)
+        dict: article_info (가격 데이터 포함)
     """
     result = {"article_info": []}
 
@@ -98,7 +100,7 @@ def run_pastnews_rag(
         result["error"] = "triples가 비어 있습니다."
         return result
 
-    # 첫 번째 triple만 사용 (DAG 저장 형식과 동일하게 str(triple).strip())
+    # 첫 번째 triple만 사용
     first_triple_list = triples[0]
     if not isinstance(first_triple_list, (list, tuple)) or len(first_triple_list) < 3:
         result["error"] = "첫 triple이 [s, v, o] 형식이 아닙니다."
@@ -132,10 +134,10 @@ def run_pastnews_rag(
                 except (ValueError, AttributeError):
                     pass
     
-    # 가격 데이터 조회
+    # 가격 데이터 조회 (commodity 전달)
     prices_by_date = {}
     if dates:
-        prices = fetch_prices_for_dates(client, dates)
+        prices = fetch_prices_for_dates(client, dates, commodity=commodity)
         for price_row in prices:
             base_date_str = str(price_row.base_date)
             if base_date_str not in prices_by_date:
