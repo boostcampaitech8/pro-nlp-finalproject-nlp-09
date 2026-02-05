@@ -52,11 +52,12 @@ def fetch_article_dates(client, hash_ids):
     return list(job.result())
 
 
-def fetch_prices_for_dates(client, dates):
+def fetch_prices_for_dates(client, dates, commodity: str = "corn"):
     if not dates:
         return []
     dataset = os.getenv("BIGQUERY_DATASET_ID", "tilda")
-    table = os.getenv("CORN_TABLE_ID", "corn_price")
+    # 품목에 맞는 가격 테이블 선택
+    table = f"{commodity}_price"
     full_table = f"{client.project}.{dataset}.{table}"
 
     query = f"""
