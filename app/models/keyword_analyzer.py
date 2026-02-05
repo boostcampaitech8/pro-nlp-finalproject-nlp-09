@@ -8,7 +8,7 @@
 import json
 import re
 from collections import defaultdict
-from typing import Dict, List, Optional, Tuple, Any, Union
+from typing import Dict, List, Optional, Tuple, Any
 
 import networkx as nx
 import numpy as np
@@ -48,34 +48,40 @@ except ImportError:
 
 from app.utils.bigquery_client import BigQueryClient
 
+# SpaCy (선택적): 동사 구문 의존 구문 분석으로 정의/관계 구문 유연 판별
+try:
+    import spacy
+    _nlp = spacy.load("en_core_web_sm")
+    SPACY_AVAILABLE = True
+except Exception:
+    _nlp = None
+    SPACY_AVAILABLE = False
+
 
 # ---------------------------
 # 설정 상수
 # ---------------------------
 CLUSTERING_SIMILARITY_THRESHOLD = 0.65  # 클러스터링 유사도 임계값
+TRIPLE_CLUSTERING_SIMILARITY_THRESHOLD = 0.68  # triple 임베딩 클러스터링 유사도 임계값 (같은 주제만 묶고, 다른 주제는 분리)
 
 # Verb 설정: 시장 이동성(stance) vs 토픽 관련성(action)
 BE_VERB_WEIGHT = 0.05  # meaningless be(단독, non-passive) 엣지
 DEFAULT_EDGE_WEIGHT = 1.0  # 초기 엣지 weight (non-be)
-WEIGHT_MIN = 0.1   # contribution 정규화 후 clip 하한
-WEIGHT_MAX = 1.2   # contribution 정규화 후 clip 상한
 STANCE_MIN_WEIGHT = 1   # stance 임베딩 유사도 통과 시 최소 weight
-STANCE_KEYWORDS = {
-    "doubt", "question", "downgrade", "cut", "default", "warn",
-    "agreement", "deal", "contract", "commitment", "promise",
-    "ban", "sanction", "embargo", "restriction",
-    "regulate", "implement", "enforce",
-    "profit", "loss", "gain", "revenue",
-    "invest", "divest", "acquire", "merge", "settle",
-    "risk", "alert", "caution", "concern", "fail", "breach", "litigate", "dispute"
-}
+# 키워드 목록 대신 의미 설명 문장으로 유사도 판별 (목록 확장 없이 유연하게 대응)
+STANCE_DESCRIPTIONS = [
+    "doubt, question, warn, downgrade, cut, default, risk, alert, caution, concern",
+    "agreement, deal, contract, commitment, promise, settle, merge, acquire",
+    "ban, sanction, embargo, restriction, regulate, implement, enforce",
+    "profit, loss, gain, revenue, invest, divest, fail, breach, litigate, dispute",
+]
 STANCE_SIMILARITY_THRESHOLD = 0.65
 
 PRICE_DEMAND_WEIGHT = 0.8
-PRICE_DEMAND_VERBS = {
-    "prices rise", "prices fall", "value increased", "value decreased",
-    "market arrivals", "oversupply", "shortage", "has reduced", "imported by",
-}
+PRICE_DEMAND_DESCRIPTIONS = [
+    "prices rise, prices fall, value increased, value decreased",
+    "market arrivals, oversupply, shortage, supply reduced, imported by, demand",
+]
 PRICE_DEMAND_SIMILARITY_THRESHOLD = 0.65
 
 # 후처리에서 제외할 노이즈 엔티티
@@ -83,15 +89,20 @@ NOISE_ENTITIES = {
     "january", "february", "march", "april", "may", "june", "july",
     "august", "september", "october", "november", "december",
     "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
-    "data", "week", "month", "year", "midday",
+    "data", "week", "month", "year", "midday", "daily", "quarter", "half", "name", "brands",
     "last year", "month off", "time period",
     "cents", "percent", "digit losses", "name brands", "private labels",
-    "midday", "daily", "quarter", "half", "name", "brands"
 }
 
-BE_FORMS = {"is", "are", "was", "were", "be", "been", "being"}
-HAVE_FORMS = {"has", "have", "had"}  # 의미 약한 have 동사 → 낮은 weight
-MEANINGLESS_VERB_FORMS = BE_FORMS | HAVE_FORMS
+# 정의/동의어·관계 구문: 시장 동향과 무관한 triple이라 낮은 weight 부여
+DEFINITIONAL_VERB_PHRASES = {
+    "also known as", "known as", "refers to", "refer to",
+    "is defined as", "defined as", "called", "is called",
+    "means", "is equivalent to", "equivalent to", "abbreviated as",
+    "is part of", "part of", "is a member of", "member of",
+    "belongs to", "is one of", "one of",
+}
+DEFINITIONAL_VERB_WEIGHT = 0.05  # BE_VERB_WEIGHT와 동일하게 낮게
 
 # Lemmatizer 인스턴스
 _lemmatizer = WordNetLemmatizer()
@@ -111,23 +122,47 @@ def _get_wordnet_pos(tag: str):
         return wordnet.NOUN
 
 
+def _get_verb_root_lemma_spacy(verb: str) -> Optional[str]:
+    """SpaCy로 'Something {verb} something' 파싱 후 ROOT 동사 lemma 반환. 실패 시 None."""
+    if not SPACY_AVAILABLE or not verb or not isinstance(verb, str):
+        return None
+    try:
+        s = ("Something " + verb.strip() + " something").strip()
+        if len(s) > 200:
+            return None
+        doc = _nlp(s)
+        root = next((t for t in doc if t.dep_ == "ROOT"), None)
+        return root.lemma_.lower() if root else None
+    except Exception:
+        return None
+
+
 def _is_meaningless_be(verb: str) -> bool:
-    """
-    verb가 '의미 없는' 단독 be/have 동사인지 판별.
-    - 단일 be/has 형태 → True (의미 없음, 낮은 weight)
-    - be + VBN(ed형) 수동태 → False (의미 있음)
-    """
+    """SpaCy로 동사 구문의 ROOT lemma가 be/have면 True. 수동태(be+ed)는 ROOT가 동사라 False."""
     if not verb or not isinstance(verb, str):
         return False
-    verb_tokens = verb.lower().strip().split()
-    if len(verb_tokens) == 1 and verb_tokens[0] in MEANINGLESS_VERB_FORMS:
-        return True
-    if len(verb_tokens) >= 2 and verb_tokens[0] in BE_FORMS and verb_tokens[1].endswith("ed"):
+    root_lemma = _get_verb_root_lemma_spacy(verb)
+    return root_lemma is not None and root_lemma in ("be", "have")
+
+
+def _is_definitional_verb_spacy(verb: str) -> bool:
+    """SpaCy 파싱으로 동사 구문이 be(연결동사) 루트면 True. 목록에 없는 'is part of' 등도 유연히 감지."""
+    return _get_verb_root_lemma_spacy(verb) == "be"
+
+
+def _is_definitional_verb(verb: str) -> bool:
+    """정의/동의어·관계 구문이면 True. 목록 매칭 또는 SpaCy be 루트 보조 판별."""
+    if not verb or not isinstance(verb, str):
         return False
-    # "has CAGR of", "have been" 등: 첫 토큰이 has/have/had면 의미 약함
-    if len(verb_tokens) >= 1 and verb_tokens[0] in HAVE_FORMS:
+    v_lower = verb.lower().strip()
+    if any(phrase in v_lower for phrase in DEFINITIONAL_VERB_PHRASES):
         return True
-    return False
+    return SPACY_AVAILABLE and _is_definitional_verb_spacy(verb)
+
+
+def _is_low_weight_verb(verb: str) -> bool:
+    """의미 없는 be/have 또는 정의·동의어 구문이면 True. 그래프 weight·후보 제외에 공통 사용."""
+    return _is_meaningless_be(verb) or _is_definitional_verb(verb)
 
 
 def _is_valid_entity(entity: str) -> bool:
@@ -236,9 +271,102 @@ def _cluster_similar_words(
         return entity_to_representative
 
 
+def _cluster_triples_by_embedding(
+    candidates: List[Tuple[float, List[str]]],
+    top_k: int = 10,
+    similarity_threshold: float = TRIPLE_CLUSTERING_SIMILARITY_THRESHOLD,
+    bq_embeddings: Optional[Dict[str, List[float]]] = None,
+) -> List[Tuple[float, List[str]]]:
+    """
+    임베딩 기반으로 유사한 triple을 클러스터링하고, 클러스터별 대표 triple(중요도 최상)만 반환.
+    candidates는 (importance, raw_triple) 리스트로 이미 중요도 내림차순 정렬된 상태를 가정.
+    bq_embeddings: news_article_triples 테이블에서 조회한 triple_text -> embedding 매핑.
+                   있으면 이를 사용하고, 없는 triple은 로컬 모델로 보조 임베딩 후 유사도 비교.
+    """
+    if not candidates or top_k <= 0:
+        return []
+    if len(candidates) <= 1:
+        return candidates[:top_k]
+
+    triple_texts = [str(raw).strip() for _, raw in candidates]
+    embedding_list: List[Optional[np.ndarray]] = []
+    dim: Optional[int] = None
+
+    for i, (_, raw) in enumerate(candidates):
+        tt = triple_texts[i]
+        emb = (bq_embeddings or {}).get(tt)
+        if emb is not None:
+            arr = np.asarray(emb, dtype=np.float64)
+            if dim is None:
+                dim = arr.shape[0]
+            embedding_list.append(arr)
+        elif EMBEDDING_AVAILABLE:
+            arr = np.asarray(_embedding_model.encode([tt])[0], dtype=np.float64)
+            if dim is None:
+                dim = arr.shape[0]
+            embedding_list.append(arr)
+        else:
+            embedding_list.append(None)
+
+    if dim is None or all(e is None for e in embedding_list):
+        return candidates[:top_k]
+
+    # BQ/로컬에 없는 항목은 0 벡터로 두어 다른 triple과 묶이지 않도록 함
+    embeddings = np.zeros((len(candidates), dim), dtype=np.float64)
+    for i, e in enumerate(embedding_list):
+        if e is not None:
+            embeddings[i] = e[:dim]
+
+    try:
+        similarity_matrix = cosine_similarity(embeddings)
+        # 이행적 묶음: A~B, B~C이면 A,B,C 한 클러스터 (연결 요소)
+        parent = list(range(len(candidates)))
+
+        def find(x: int) -> int:
+            if parent[x] != x:
+                parent[x] = find(parent[x])
+            return parent[x]
+
+        def union(x: int, y: int) -> None:
+            px, py = find(x), find(y)
+            if px != py:
+                parent[px] = py
+
+        for i in range(len(candidates)):
+            for j in range(i + 1, len(candidates)):
+                if similarity_matrix[i][j] >= similarity_threshold:
+                    union(i, j)
+
+        # 클러스터별 대표 = 해당 클러스터에서 인덱스 최소(중요도 최상)인 항목
+        cluster_rep: Dict[int, int] = {}
+        for i in range(len(candidates)):
+            root = find(i)
+            if root not in cluster_rep:
+                cluster_rep[root] = i
+            # 중요도 순이므로 인덱스가 작을수록 대표로 유지
+
+        # 대표만 중요도 순으로 수집 (이미 candidates가 중요도 내림차순)
+        rep_indices = sorted(cluster_rep.values())
+        representatives = [candidates[i] for i in rep_indices[:top_k]]
+        return representatives
+    except Exception as e:
+        print(f"⚠️ Triple 클러스터링 오류: {e}")
+        return candidates[:top_k]
+
+
 def _contains_number(entity: str) -> bool:
     """엔티티에 숫자가 포함되어 있는지 확인"""
     return bool(re.search(r'\d', entity))
+
+
+def _is_code_like_entity(entity: str) -> bool:
+    """H5N1, H1N1, COVID-19 등 코드형 엔티티(영문+숫자, 중간에 - 허용)인지 확인. 이런 키워드는 top_entities에서 제외하지 않음."""
+    if not entity or len(entity) > 30:
+        return False
+    s = entity.strip()
+    if not re.search(r"\d", s):
+        return False
+    return bool(re.match(r"^[A-Za-z0-9]+(-[A-Za-z0-9]+)*$", s))
 
 
 class KeywordAnalyzer:
@@ -268,7 +396,7 @@ class KeywordAnalyzer:
         Returns:
             Dict containing:
                 - top_entities: 상위 엔티티와 PageRank 점수
-                - top_triples: 핵심 엔티티(top_entities)가 포함된 triple 중 중요도(엣지 실제 weight × entity PageRank) 상위 10개, 각 항목 {"triple": [s,v,o], "importance": 점수}
+                - top_triples: 핵심 엔티티(top_entities)가 포함된 triple 중 중요도(엣지 실제 weight × entity PageRank) 상위 10개, 각 항목 {"triple": [s,v,o], "importance": 점수, "keywords": 해당 triple에 등장한 top_entities 목록}
                 - top_verbs: 상위 verb와 contribution 점수
                 - graph_stats: 그래프 통계 (노드 수, 엣지 수)
                 - triples_count: 분석된 triples 수
@@ -332,7 +460,7 @@ class KeywordAnalyzer:
         # 6. 결과 필터링 및 정렬
         filtered_pagerank = {
             e: score for e, score in pagerank_scores.items()
-            if not _contains_number(e) and e.lower() not in NOISE_ENTITIES
+            if (not _contains_number(e) or _is_code_like_entity(e)) and e.lower() not in NOISE_ENTITIES
         }
         
         top_entities = sorted(
@@ -351,19 +479,50 @@ class KeywordAnalyzer:
         # graph 엣지 weight = verb 중요도(contribution·stance·price_demand 반영)가 반영된 실제 weight
         top_entity_names = {e for e, _ in top_entities}
         candidates = []
+        triple_keywords: Dict[str, List[str]] = {}  # triple_text -> 해당 triple에 등장한 top_entities(주요 키워드)
         for i in range(len(final_triples)):
             s_f, v_f, o_f = final_triples[i][0], final_triples[i][1], final_triples[i][2]
             if s_f not in top_entity_names and o_f not in top_entity_names:
+                continue
+            if _is_low_weight_verb(v_f):
                 continue
             raw = raw_triples_kept[i]
             edge_weight = graph[s_f][o_f].get("weight", 0.0) if graph.has_edge(s_f, o_f) else 0.0
             entity_score = pagerank_scores.get(s_f, 0.0) + pagerank_scores.get(o_f, 0.0)
             importance = edge_weight * entity_score
             candidates.append((importance, raw))
+            # 이 triple에 포함된 top_entity(주요 키워드) 수집
+            entities_in_triple = sorted({s_f, o_f} & top_entity_names)
+            key = str(raw).strip()
+            if key not in triple_keywords:
+                triple_keywords[key] = entities_in_triple
+            else:
+                existing = set(triple_keywords[key])
+                triple_keywords[key] = sorted(existing | set(entities_in_triple))
         candidates.sort(key=lambda x: x[0], reverse=True)
+        # news_article_triples 테이블에서 triple_text로 임베딩 배치 조회 후 클러스터링 (없는 triple은 로컬 임베딩 보조)
+        bq_embeddings: Optional[Dict[str, List[float]]] = None
+        try:
+            from app.models.pastnews_rag.price_jump import get_bq_client
+            from app.models.pastnews_rag_runner import fetch_embeddings_by_triple_texts
+            bq_client = get_bq_client()
+            triple_texts_for_bq = [str(raw).strip() for _, raw in candidates]
+            bq_embeddings = fetch_embeddings_by_triple_texts(bq_client, triple_texts_for_bq)
+        except Exception:
+            bq_embeddings = None
+        clustered = _cluster_triples_by_embedding(
+            candidates,
+            top_k=10,
+            similarity_threshold=TRIPLE_CLUSTERING_SIMILARITY_THRESHOLD,
+            bq_embeddings=bq_embeddings,
+        )
         top_triples = [
-            {"triple": raw, "importance": round(imp, 4)}
-            for imp, raw in candidates[:10]
+            {
+                "triple": raw,
+                "importance": round(imp, 4),
+                "keywords": triple_keywords.get(str(raw).strip(), []),
+            }
+            for imp, raw in clustered
         ]
         
         return {
@@ -501,105 +660,55 @@ class KeywordAnalyzer:
         triples: List[List[str]],
         entities: set
     ) -> Tuple[Dict[str, float], Dict[str, float], nx.DiGraph]:
-        """NetworkX 그래프 생성 및 PageRank 계산"""
+        """NetworkX 그래프 생성 및 PageRank 계산. 임베딩 유사도 가중치를 그래프 생성 시 한 번에 적용하고 PageRank는 1회만 실행."""
+        unique_verbs = list({v for _, v, _ in triples})
+        stance_verb_set: set = set()
+        price_demand_verb_set: set = set()
+
+        if EMBEDDING_AVAILABLE and unique_verbs:
+            try:
+                verb_embeddings = _embedding_model.encode(unique_verbs)
+                stance_embeddings = _embedding_model.encode(STANCE_DESCRIPTIONS)
+                price_demand_embeddings = _embedding_model.encode(PRICE_DEMAND_DESCRIPTIONS)
+                sim_stance = cosine_similarity(verb_embeddings, stance_embeddings)
+                sim_price_demand = cosine_similarity(verb_embeddings, price_demand_embeddings)
+                for i, verb in enumerate(unique_verbs):
+                    if sim_stance[i].max() >= STANCE_SIMILARITY_THRESHOLD:
+                        stance_verb_set.add(verb)
+                    if sim_price_demand[i].max() >= PRICE_DEMAND_SIMILARITY_THRESHOLD:
+                        price_demand_verb_set.add(verb)
+            except Exception:
+                pass
+
         G = nx.DiGraph()
-        
-        # 노드 추가
         for e in entities:
             G.add_node(e)
-        
-        # 엣지 추가
+
         for s, v, o in triples:
             if s in entities and o in entities:
-                weight = BE_VERB_WEIGHT if _is_meaningless_be(v) else DEFAULT_EDGE_WEIGHT
-                G.add_edge(s, o, verb=v, weight=weight)
-        
+                if _is_low_weight_verb(v):
+                    w = BE_VERB_WEIGHT
+                elif v in stance_verb_set:
+                    w = STANCE_MIN_WEIGHT
+                elif v in price_demand_verb_set:
+                    w = PRICE_DEMAND_WEIGHT
+                else:
+                    w = DEFAULT_EDGE_WEIGHT
+                G.add_edge(s, o, verb=v, weight=w)
+
         if G.number_of_edges() == 0:
             return {}, {}, G
-        
-        # 1단계: 초기 PageRank 계산
-        pagerank_initial = nx.pagerank(G, weight="weight")
-        
-        # Verb Average Contribution 계산
-        verb_scores = defaultdict(list)
-        for s, o, data in G.edges(data=True):
-            verb = data["verb"]
-            contribution = pagerank_initial[s] + pagerank_initial[o]
-            verb_scores[verb].append(contribution)
-        
-        verb_avg = {
-            verb: sum(vals) / len(vals)
-            for verb, vals in verb_scores.items()
-        }
-        
-        # 2단계: Verb Contribution 기반 weight 재조정
-        if verb_avg:
-            unique_verbs = list({data["verb"] for _, _, data in G.edges(data=True)})
-            
-            # STANCE / PRICE_DEMAND 임베딩 유사도 판별
-            stance_verb_set = set()
-            price_demand_verb_set = set()
-            
-            if EMBEDDING_AVAILABLE and unique_verbs:
-                try:
-                    stance_list = list(STANCE_KEYWORDS)
-                    price_demand_list = list(PRICE_DEMAND_VERBS)
-                    verb_embeddings = _embedding_model.encode(unique_verbs)
-                    stance_embeddings = _embedding_model.encode(stance_list)
-                    price_demand_embeddings = _embedding_model.encode(price_demand_list)
-                    sim_stance = cosine_similarity(verb_embeddings, stance_embeddings)
-                    sim_price_demand = cosine_similarity(verb_embeddings, price_demand_embeddings)
-                    for i, verb in enumerate(unique_verbs):
-                        if sim_stance[i].max() >= STANCE_SIMILARITY_THRESHOLD:
-                            stance_verb_set.add(verb)
-                        if sim_price_demand[i].max() >= PRICE_DEMAND_SIMILARITY_THRESHOLD:
-                            price_demand_verb_set.add(verb)
-                except Exception:
-                    v_lower = lambda v: (v or "").lower()
-                    stance_verb_set = {v for v in unique_verbs if any(kw in v_lower(v) for kw in STANCE_KEYWORDS)}
-                    price_demand_verb_set = {v for v in unique_verbs if any(phrase in v_lower(v) for phrase in PRICE_DEMAND_VERBS)}
-            else:
-                v_lower = lambda v: (v or "").lower()
-                stance_verb_set = {v for v in unique_verbs if any(kw in v_lower(v) for kw in STANCE_KEYWORDS)}
-                price_demand_verb_set = {v for v in unique_verbs if any(phrase in v_lower(v) for phrase in PRICE_DEMAND_VERBS)}
-            
-            max_contrib = max(verb_avg.values()) if verb_avg else 1.0
-            log_max_contrib = np.log1p(max_contrib) if max_contrib > 0 else 1.0
-            
-            for s, o, data in G.edges(data=True):
-                verb = data["verb"]
-                if _is_meaningless_be(verb):
-                    w = BE_VERB_WEIGHT
-                else:
-                    contrib = verb_avg.get(verb, 0.0)
-                    if log_max_contrib <= 0:
-                        w = WEIGHT_MIN
-                    else:
-                        ratio = np.log1p(contrib) / log_max_contrib
-                        w = WEIGHT_MIN + ratio * (WEIGHT_MAX - WEIGHT_MIN)
-                        w = float(min(max(w, WEIGHT_MIN), WEIGHT_MAX))
-                
-                stance_prior = STANCE_MIN_WEIGHT if verb in stance_verb_set else 0.0
-                price_prior = PRICE_DEMAND_WEIGHT if verb in price_demand_verb_set else 0.0
-                w = max(w, stance_prior, price_prior)
-                
-                G[s][o]['weight'] = w
-        
-        # 3단계: 최종 PageRank 계산
-        pagerank = nx.pagerank(G, weight="weight")
-        
-        # 최종 Verb Contribution 계산
+
+        # 재현성: alpha·tol·max_iter 고정 (NetworkX PageRank는 비확률적 반복이므로 동일 입력이면 동일 결과)
+        pagerank = nx.pagerank(G, alpha=0.85, tol=1e-15, max_iter=1000, weight="weight")
         verb_scores_final = defaultdict(list)
         for s, o, data in G.edges(data=True):
             verb = data["verb"]
-            contribution = pagerank[s] + pagerank[o]
-            verb_scores_final[verb].append(contribution)
-        
+            verb_scores_final[verb].append(pagerank[s] + pagerank[o])
         verb_avg_final = {
             verb: sum(vals) / len(vals)
             for verb, vals in verb_scores_final.items()
         }
-        
         return pagerank, verb_avg_final, G
 
 

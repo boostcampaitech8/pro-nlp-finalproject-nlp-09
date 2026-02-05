@@ -1,5 +1,5 @@
 """
-step3_price_jump 기반: hash_id → article publish_date → 해당 일자 전후 가격 조회
+과거 뉴스 사례 분석을 위한 가격 변동 조회 모듈
 """
 
 import os
@@ -15,15 +15,7 @@ def get_bq_client():
 
 def fetch_article_dates(client, hash_ids):
     """
-    hash_ids로 triple_article_map에서 article_id를 가져온 후,
-    news_article 테이블에서 description과 publish_date를 조회하여 반환합니다.
-    
-    Args:
-        client: BigQuery 클라이언트
-        hash_ids: triple hash_id 리스트
-        
-    Returns:
-        list: 각 행은 description과 publish_date 필드를 가진 Row 객체
+    hash_ids로 기사 정보와 발행일을 조회합니다.
     """
     if not hash_ids:
         return []
@@ -53,6 +45,9 @@ def fetch_article_dates(client, hash_ids):
 
 
 def fetch_prices_for_dates(client, dates, commodity: str = "corn"):
+    """
+    특정 날짜들 전후의 품목별 가격 변동을 조회합니다.
+    """
     if not dates:
         return []
     dataset = os.getenv("BIGQUERY_DATASET_ID", "tilda")
