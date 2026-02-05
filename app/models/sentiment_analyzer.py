@@ -101,21 +101,21 @@ class SentimentAnalyzer:
             )
             if report is None:
                 return {"error": f"{target_date} 예측 데이터 준비 실패 (뉴스/임베딩 부족)."}
-            # llm_summarizer 호환: evidence_news = supporting + opposing 합쳐서 impact_score 절댓값 기준 상위 5개
+            # llm_summarizer 호환: evidence_news = supporting (최대 3개) + opposing (최대 3개)
             evidence = report.get("evidence") or {}
             supporting = evidence.get("supporting_news") or []
             opposing = evidence.get("opposing_news") or []
-            combined = [
+            evidence_news = [
                 {
                     "title": x.get("title", ""),
-                    "all_text": x.get("description", ""),
+                    # all_text 우선 사용 (없으면 description 폴백)
+                    "all_text": x.get("all_text") or x.get("description", ""),
                     "impact_score": x.get("impact_score"),
                     "sentiment": x.get("sentiment", ""),
                 }
-                for x in (supporting + opposing)
+                for x in (supporting[:3] + opposing[:3])
             ]
-            combined.sort(key=lambda a: abs(a.get("impact_score") or 0), reverse=True)
-            report["evidence_news"] = combined[:5]
+            report["evidence_news"] = evidence_news
             return report
         except Exception as e:
             traceback.print_exc()

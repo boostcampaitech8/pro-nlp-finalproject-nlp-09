@@ -201,26 +201,7 @@ class BigQueryClient:
         # daily_prediction_pipeline 및 보고서 생성에 필요한 컬럼 전체 조회
         query = f"""
             SELECT
-                id,
-                title,
-                doc_url,
-                all_text,
-                authors,
-                publish_date,
-                meta_site_name,
-                key_word,
-                filter_status,
-                description,
-                named_entities,
-                triples,
-                article_embedding,
-                combined_text,
-                sentiment,
-                sentiment_confidence,
-                positive_score,
-                negative_score,
-                neutral_score,
-                price_impact_score
+                *
             FROM `{self.project_id}.{dataset}.{table_id}`
             WHERE {where_clause}
             ORDER BY publish_date ASC

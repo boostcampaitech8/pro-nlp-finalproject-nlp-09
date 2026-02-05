@@ -23,9 +23,9 @@ from models.pastnews_rag_runner import run_pastnews_rag as _run_pastnews_rag
 REPORT_FORMAT = f"""
 **날짜**: (YYYY-MM-DD) | **종목**: 옥수수 
 
-| 어제 종가 | Prophet 예측 | XGBoost 방향 | 뉴스 심리 | 종합 의견 |
-|:---:|:---:|:---:|:---:|:---:|
-| [y] | [yhat] | [forecast_direction] | [긍정/부정/중립] | [BUY/SELL/HOLD] |
+| 어제 종가 | Prophet 예측 | XGBoost 방향 | 종합 의견 |
+|:---:|:---:|:---:|:---:|
+| [y] | [yhat] | [forecast_direction] | [BUY/SELL/HOLD] |
 
 ---
 
@@ -68,16 +68,28 @@ REPORT_FORMAT = f"""
 ---
 ### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석
 
-**A. 주요 뉴스 (evidence_news)**
-  - news_sentiment_analyzer 도구 결과의 **prediction.direction**(상승/하락/유지)을 상단 요약 표의 "뉴스 예측 방향"에 사용하세요.
-  - evidence_news 기사들은 반드시 아래 표 형식으로 표시하세요. **impact_score**와 **sentiment**를 그대로 표시합니다.
+**뉴스 기반 예측**
+  - news_sentiment_analyzer 도구 결과의 **prediction.direction**(상승/하락/유지)을 아래 형식으로 표시하세요.
+  - 예측 방향: [prediction.direction]
+  - 예: "예측 방향: 상승" 또는 "예측 방향: 하락"
+
+**A. 주요 뉴스**
+  - news_sentiment_analyzer 도구 결과의 evidence에서 **긍정적인 뉴스 묶음**과 **부정적인 뉴스 묶음**을 구분해서 표시하세요.
   - **중요**: title과 all_text가 영어로 되어 있으면 반드시 한국어로 번역하여 표시하세요.
   
-  | No | 뉴스 제목 | 내용 요약 | impact_score | sentiment |
-  |:--:|-----------|-----------|:------------:|:---------:|
-  | 1 | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어)] | [impact_score 값] | [sentiment 값] |
-  | 2 | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어)] | [impact_score 값] | [sentiment 값] |
-  | ... | ... | ... | ... | ... |
+  **A-1. 긍정적인 뉴스**
+  | No | 뉴스 제목 | 내용 요약 |
+  |:--:|-----------|-----------|
+  | 1 | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어)] |
+  | 2 | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어)] |
+  | ... | ... | ... |
+  
+  **A-2. 부정적인 뉴스**
+  | No | 뉴스 제목 | 내용 요약 |
+  |:--:|-----------|-----------|
+  | 1 | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어)] |
+  | 2 | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어)] |
+  | ... | ... | ... |
 
 
 **B. 주요 키워드**
@@ -85,7 +97,7 @@ REPORT_FORMAT = f"""
 
   **관련 과거 뉴스**
   - pastnews_rag 도구 결과를 반드시 아래 표 형식으로 표시하세요.
-  - **중요**: description이 영어로 되어 있으면 반드시 한국어로 번역하여 "뉴스 내용" 컬럼에 표시하세요.
+  - **중요**: all_text가 영어로 되어 있으면 반드시 한국어로 번역하여 "뉴스 내용" 컬럼에 표시하세요.
   - "연관 키워드" 컬럼에는 **keyword_analyzer가 반환한 top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 **구분해서** 표시하세요 (각 키워드를 명확히 구분).
   
   | 뉴스 날짜 | 뉴스 내용 | 연관 키워드 | 당일 | 1일후 | 3일후 |
@@ -168,12 +180,15 @@ SYSTEM_PROMPT = (
   4. keyword_analyzer 결과를 받은 후, **top_triples 앞 5개**에서 "triple" 배열만 추출하여 `pastnews_rag(triples_json="[[\"s\",\"v\",\"o\"], ...]", top_k=2)` 호출
 - **pastnews_rag 호출 방법**: keyword_analyzer의 **top_triples 중 앞 5개만** 사용. 각 항목의 "triple"만 추출해 JSON 배열 문자열로 전달. 예: pastnews_rag(triples_json='[["A","B","C"],["D","E","F"], ...]', top_k=2) (최대 5개 triple)
 - 이전 도구가 오류를 반환하더라도, 네 도구를 반드시 모두 호출한 뒤에만 보고서를 작성하세요.
-- **뉴스 예측 방향**: news_sentiment_analyzer 결과의 **prediction.direction**(상승/하락/유지)을 보고서 상단 요약 표의 "뉴스 예측 방향" 칸에 그대로 사용하세요.
-- `news_sentiment_analyzer` 결과의 'evidence_news'는 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션의 '주요 뉴스 (evidence_news)' 표에 아래 형식으로 표시하세요. 각 기사의 **impact_score**와 **sentiment**를 반환값 그대로 표에 넣으세요. **title과 all_text는 영어면 한국어로 번역하세요.**
-  | No | 뉴스 제목 | 내용 요약 | impact_score | sentiment |
-  |:--:|-----------|-----------|:------------:|:---------:|
-  | [번호] | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어)] | [impact_score] | [sentiment] |
-- `pastnews_rag` 도구 결과(article_info)는 '과거 관련 뉴스' 표에 아래 형식으로 표시하세요. **연관 키워드** 컬럼에는 keyword_analyzer가 반환한 **top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 넣으세요 (저장해 둔 값 사용).
+- **뉴스 기반 예측**: news_sentiment_analyzer 결과의 **prediction.direction**(상승/하락/유지)을 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션의 "뉴스 기반 예측" 항목에 표시하세요. 예: "예측 방향: 상승" 또는 "예측 방향: 하락".
+- `news_sentiment_analyzer` 결과의 evidence에서 **긍정적인 뉴스 묶음**과 **부정적인 뉴스 묶음**을 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션의 '주요 뉴스'에서 구분해서 표시하세요.
+  - **A-1. 긍정적인 뉴스**: (내부적으로는 evidence.supporting_news를 참고하되, 화면에는 변수명 노출 금지)
+  - **A-2. 부정적인 뉴스**: (내부적으로는 evidence.opposing_news를 참고하되, 화면에는 변수명 노출 금지)
+  - 표에는 제목(title)과 내용(all_text 요약)만 넣으세요. **title과 all_text는 영어면 한국어로 번역하세요.**
+  | No | 뉴스 제목 | 내용 요약 |
+  |:--:|-----------|-----------|
+  | [번호] | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어)] |
+- `pastnews_rag` 도구 결과(article_info)는 '과거 관련 뉴스' 표에 아래 형식으로 표시하세요. **뉴스 내용**은 article_info의 all_text를 사용하고, 영어면 한국어로 번역하세요. **연관 키워드** 컬럼에는 keyword_analyzer가 반환한 **top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 넣으세요 (저장해 둔 값 사용).
   | 뉴스 날짜 | 뉴스 내용 | 연관 키워드 | 당일 | 1일후 | 3일후 |
   |-----------|-----------|-------------|------|------|------|
   | [뉴스 날짜] | [뉴스 내용(한국어)] | [#키워드1 #키워드2 또는 키워드1, 키워드2] | [0] | [1] | [3] |
@@ -192,10 +207,10 @@ SYSTEM_PROMPT = (
     - 위의 시계열 성분(trend, yearly, weekly, volatility)과 기술적 지표(EMA, Volume)를 **모두 근거로 제시**하여 XGBoost가 해당 방향을 예측한 이유를 상세히 설명하세요
     - 기술적 변수명(_lag2_effect 등)은 절대 사용하지 말고 자연스러운 용어만 사용하세요
     - 예: "Prophet은 460.5로 상승을 예측했으나, XGBoost는 Down을 예측했습니다. 추세(85.5, 횡보 추세)는 중립적이나, 지수이동평균(-1.25)과 거래량(-0.50)이 모두 하락 요인으로 작용했으며, 변동성(42, 중간 수준)도 불확실성을 나타냅니다."
-- `news_sentiment_analyzer` 결과에 포함된 'evidence_news'는 보고서의 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션의 핵심 근거로 사용하세요. 각 뉴스의 제목(title), 내용(all_text 요약), 시장 심리(price_impact_score 기준: 양수=긍정적, 음수=부정적, 0=중립적)를 보고서 표에 포함하세요.
+- `news_sentiment_analyzer` 결과의 evidence에서 긍정/부정 뉴스 묶음을 구분해서 표시하세요. 각 뉴스의 제목(title), 내용(all_text 요약)을 보고서 표에 포함하세요. 전체 예측 결과인 prediction.direction은 '뉴스 빅데이터 기반 시장 심리 분석' 섹션의 "뉴스 기반 예측" 항목에 표시하세요.
 - `pastnews_rag` 도구 결과(article_info)는 '과거 관련 뉴스' 표에 표시하세요. "연관 키워드" 컬럼에는 **keyword_analyzer 결과의 top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 넣으세요 (이미 호출 결과로 저장된 값을 사용).
 - **D. 뉴스 빅데이터 기반 시장 심리 분석** 섹션 작성 방법:
-  * A 섹션의 evidence_news에서 주요 긍정 요인과 부정 요인을 분석하세요
+  * A-1(긍정 뉴스)과 A-2(부정 뉴스)를 분석하여 주요 긍정 요인과 부정 요인을 분석하세요
   * C 섹션의 과거 관련 뉴스에서 당일, 1일후, 3일후 가격 변동 패턴을 분석하세요
   * 위 두 가지를 종합하여 현재 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단하고 근거를 명확히 제시하세요
 - `keyword_analyzer` 결과의 top_entities를 활용할 때: (1) score는 사용하지 마세요. (2) entity 이름만 사용하여 최대한 한국어로 번역하세요. (3) #키워드1 #키워드2 형식으로 표기하세요. 예: #옥수수 #가격 #수출 #미국농무부 #시장
@@ -227,7 +242,7 @@ def timeseries_predictor(target_date: str) -> str:
         target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
 
     Returns:
-        JSON 형식의 예측 결과 문자열 (예측값, 방향, 신뢰도, 추세 분석 등 포함)
+        JSON 형식의 예측 결과 문자열 (예측값, 방향, 추세 분석 등 포함)
     """
     return predict_market_trend(target_date)
 
@@ -397,7 +412,7 @@ class LLMSummarizer:
   * **C. 종합 해석**: 위의 모든 요인(시계열 성분 + 기술적 지표)을 근거로 Prophet과 XGBoost 예측을 비교 분석. 기술적 변수명 사용 금지
 - `news_sentiment_analyzer` 및 `pastnews_rag` 결과 활용:
   * **D. 뉴스 빅데이터 기반 시장 심리 분석**: 
-    - evidence_news에서 주요 긍정 요인과 부정 요인 분석
+    - A-1(긍정 뉴스)과 A-2(부정 뉴스)에서 주요 긍정 요인과 부정 요인 분석
     - 과거 관련 뉴스의 당일/1일후/3일후 가격 변동 패턴 분석
     - 위 두 가지를 종합하여 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단하고 근거 제시
 - `keyword_analyzer`의 결과(top_entities)를 활용하여 B 섹션에 주요 키워드를 한국어로 번역 후 #키워드1 #키워드2 형식으로 표기하세요. score는 사용하지 마세요.
@@ -581,7 +596,7 @@ class LLMSummarizer:
 4. timeseries_predictor 결과의 y, yhat, forecast_direction을 표에 정확히 표시해야 합니다
 5. **B-1. 시계열 성분**과 **B-2. 기술적 지표**를 표 형식으로 표시해야 합니다. trend는 상승(> 108.88), 횡보(74.58~108.88), 하락(< 74.58) 기준, 변동성은 낮음(< 40), 중간(40~50), 높음(> 50) 기준으로 판단하세요
 6. **C. 퀀트 기반 예측 모델 해석**에서 모든 요인(추세, 연간주기, 주간주기, 변동성, 지수이동평균, 거래량)을 근거로 Prophet과 XGBoost 예측을 비교 분석해야 합니다. 변수명(_lag2_effect 등)은 절대 사용 금지
-7. **D. 뉴스 빅데이터 기반 시장 심리 분석**에서 evidence_news의 주요 긍정/부정 요인과 과거 관련 뉴스의 가격 변동 패턴을 분석하여 종합 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단해야 합니다
+7. **D. 뉴스 빅데이터 기반 시장 심리 분석**에서 A-1(긍정 뉴스)과 A-2(부정 뉴스)의 주요 긍정/부정 요인과 과거 관련 뉴스의 가격 변동 패턴을 분석하여 종합 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단해야 합니다
 8. 4개의 Tool을 모두 호출해야 합니다: timeseries_predictor, news_sentiment_analyzer, keyword_analyzer, pastnews_rag (keyword_analyzer 결과의 top_triples를 JSON 배열로 변환하여 pastnews_rag에 전달)
 9. Tool 호출 후 반드시 최종 보고서를 작성해야 합니다
 10. **투자자 조언 작성 시 특별히 주의**: 
