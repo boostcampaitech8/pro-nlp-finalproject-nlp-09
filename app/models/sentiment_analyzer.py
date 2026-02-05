@@ -104,11 +104,26 @@ class SentimentAnalyzer:
             )
             
             if report is None:
-                return {"error": f"[{commodity}] {target_date} 예측 데이터 생성 실패."}
+                return {"error": f"[{commodity}] {target_date} 예측 데이터 준비 실패 (뉴스/임베딩 부족)."}
             
             # 3. LLM Summarizer 호환을 위한 데이터 가공
             self._enrich_report_for_llm(report, target_date, commodity)
             
+            # llm_summarizer 호환: evidence_news = supporting (최대 3개) + opposing (최대 3개)
+            evidence = report.get("evidence") or {}
+            supporting = evidence.get("supporting_news") or []
+            opposing = evidence.get("opposing_news") or []
+            evidence_news = [
+                {
+                    "title": x.get("title", ""),
+                    # all_text 우선 사용 (없으면 description 폴백)
+                    "all_text": x.get("all_text") or x.get("description", ""),
+                    "impact_score": x.get("impact_score"),
+                    "sentiment": x.get("sentiment", ""),
+                }
+                for x in (supporting[:3] + opposing[:3])
+            ]
+            report["evidence_news"] = evidence_news
             return report
             
         except Exception as e:

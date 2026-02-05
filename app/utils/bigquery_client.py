@@ -132,11 +132,7 @@ class BigQueryClient:
         # 앙상블 모델용 전체 컬럼 조회
         query = f"""
             SELECT
-                id, title, doc_url, all_text, authors, publish_date,
-                meta_site_name, key_word, filter_status, description,
-                named_entities, triples, article_embedding, combined_text,
-                sentiment, sentiment_confidence, positive_score,
-                negative_score, neutral_score, price_impact_score
+                *
             FROM `{self.project_id}.{dataset}.{table_id}`
             WHERE publish_date >= '{start_date_str}'
               AND publish_date <= '{target_date}'
