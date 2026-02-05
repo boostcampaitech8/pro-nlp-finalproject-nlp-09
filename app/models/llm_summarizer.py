@@ -221,14 +221,14 @@ SYSTEM_PROMPT = (
 @tool
 def timeseries_predictor(target_date: str, commodity: str = "corn") -> str:
     """
-    특정 날짜의 특정 품목(corn, soybean, wheat)에 대한 금융 시장 추세와 가격을 예측합니다.
+    특정 날짜의 특정 품목(corn, soybean, wheat)에 대한 금융 시장 추세(상승/하락)와 가격을 예측합니다.
 
     Args:
         target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
         commodity: 분석할 품목명 (기본값: "corn")
 
     Returns:
-        JSON 형식의 예측 결과 문자열
+        JSON 형식의 예측 결과 문자열 (예측값, 방향, 신뢰도, 추세 분석 등 포함)
     """
     return predict_market_trend(target_date, commodity=commodity)
 
@@ -243,7 +243,7 @@ def news_sentiment_analyzer(target_date: str, commodity: str = "corn") -> str:
         commodity: 분석할 품목명 (기본값: "corn")
 
     Returns:
-        JSON 형식의 예측 결과 문자열
+        JSON 형식의 예측 결과 문자열 (상승 확률, 근거 뉴스 리스트, 피처 요약 포함)
     """
     analyzer = SentimentAnalyzer()
     result = analyzer.predict_market_impact(target_date, commodity=commodity)
@@ -254,14 +254,15 @@ def news_sentiment_analyzer(target_date: str, commodity: str = "corn") -> str:
 def keyword_analyzer(target_date: str, commodity: str = "corn", days: int = 3) -> str:
     """
     특정 날짜 기준으로 뉴스 기사의 주요 키워드를 분석합니다. (품목별 필터링 지원)
+    PageRank 알고리즘(Entity Confidence)과 임베딩 기반 클러스터링을 활용하여 핵심 엔티티를 추출합니다.
 
     Args:
         target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
         commodity: 분석할 품목명 (기본값: "corn")
-        days: 분석할 일수 (기본 3일)
+        days: 분석할 일수 (기본 3일, 최대 7일 권장)
 
     Returns:
-        JSON: top_entities, top_triples
+        JSON: top_entities (상위 10개), top_triples (핵심 엔티티가 포함된 triple 중 엣지 실제 weight×entity PageRank 중요도 상위 10개, 각 항목: {"triple": [s,v,o], "importance": 점수})
     """
     result = json.loads(_analyze_keywords(target_date=target_date, commodity=commodity, days=days, top_k=10))
     top_entities = result.get("top_entities", [])[:10]
@@ -272,15 +273,27 @@ def keyword_analyzer(target_date: str, commodity: str = "corn", days: int = 3) -
 @tool
 def pastnews_rag(triples_json: str, commodity: str = "corn", top_k: int = 5) -> str:
     """
-    전달받은 triples로 특정 품목(corn, soybean, wheat)의 유사 뉴스 및 가격을 조회합니다.
+    전달받은 triples로 특정 품목(corn, soybean, wheat)의 유사 뉴스를 검색하고 해당 뉴스의 description, publish_date, 가격 정보를 조회합니다.
+    
+    사용 방법:
+    1. keyword_analyzer를 먼저 호출하여 결과를 받습니다
+    2. 결과의 top_triples에서 각 항목의 "triple" 필드만 추출합니다
+    3. 추출한 triples를 JSON 배열 문자열로 변환하여 이 함수에 전달합니다
+    
+    예시:
+    - keyword_analyzer 결과: {"top_triples": [{"triple": ["A","B","C"], "importance": 0.01}, {"triple": ["D","E","F"], "importance": 0.02}]}
+    - pastnews_rag 호출: pastnews_rag(triples_json='[["A","B","C"],["D","E","F"]]', top_k=5)
 
+    Args:
+        triples_json: triples 배열의 JSON 문자열. 각 triple은 [주어, 동사, 목적어] 형태. 예: '[["United States","experiencing","government shutdown"],["trade truce","between","economies"]]'
+        top_k: 유사 hash_id 개수 (기본 5)
     Args:
         triples_json: triples 배열의 JSON 문자열
         commodity: 분석할 품목명 (기본값: "corn")
         top_k: 유사 결과 개수
 
     Returns:
-        JSON: article_info
+        JSON: article_info (각 항목: {"description": str, "publish_date": str, "0": float, "1": float, "3": float}), error(있을 경우)
     """
     triples = []
     try:
