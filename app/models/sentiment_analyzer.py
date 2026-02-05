@@ -108,7 +108,8 @@ class SentimentAnalyzer:
             evidence_news = [
                 {
                     "title": x.get("title", ""),
-                    "all_text": x.get("description", ""),
+                    # all_text 우선 사용 (없으면 description 폴백)
+                    "all_text": x.get("all_text") or x.get("description", ""),
                     "impact_score": x.get("impact_score"),
                     "sentiment": x.get("sentiment", ""),
                 }

@@ -104,7 +104,7 @@ def run_pastnews_rag(
         dimensions: (미사용, 호환용)
 
     Returns:
-        dict: article_info (각 항목: description, publish_date, 0, 1, 3), error(있을 경우)
+        dict: article_info (각 항목: all_text, publish_date, 0, 1, 3), error(있을 경우)
     """
     result = {"article_info": []}
     # triple 개수: 호출부(triples 인자)에서 결정. triple당 기사 수: 에이전트 top_k와 무관하게 항상 2개로 제한.
@@ -182,13 +182,19 @@ def run_pastnews_rag(
     for r in articles:
         if len(result["article_info"]) >= max_articles:
             break
-        if not (hasattr(r, "description") and r.description):
+        # all_text 우선, 없으면 description 사용
+        text_val = None
+        if hasattr(r, "all_text") and r.all_text:
+            text_val = r.all_text
+        elif hasattr(r, "description") and r.description:
+            text_val = r.description
+        if not text_val:
             continue
         publish_date_str = str(r.publish_date) if hasattr(r, "publish_date") and r.publish_date else None
         if not publish_date_str:
             continue
         article_item = {
-            "description": r.description,
+            "all_text": text_val,
             "publish_date": publish_date_str,
         }
         if publish_date_str in prices_by_date:

@@ -146,7 +146,8 @@ class CornDataPreprocessor:
             'sentiment_features': sentiment_features,
             'price_features': price_features,
             'news_articles': relevant_news[[
-                'id', 'title', 'description', 'sentiment', 'price_impact_score',
+                # all_text 우선, 없으면 description 사용
+                'id', 'title', 'all_text', 'description', 'sentiment', 'price_impact_score',
                 'positive_score', 'negative_score', 'neutral_score', 'named_entities'
             ]].to_dict('records')
         }
@@ -265,7 +266,7 @@ def prepare_single_day_data_from_dfs(news_df, price_df, target_date, lookback_da
         'volatility': volatility,
     }
 
-    cols = ['id', 'title', 'description', 'sentiment', 'price_impact_score',
+    cols = ['id', 'title', 'all_text', 'sentiment', 'price_impact_score',
             'positive_score', 'negative_score', 'neutral_score', 'named_entities']
     available = [c for c in cols if c in relevant_news.columns]
     news_articles = relevant_news[available].to_dict('records')
@@ -402,7 +403,7 @@ class PredictionReportGenerator:
             article_info = {
                 'article_id': int(article['id']),
                 'title': article['title'],
-                'description': article.get('description', ''),
+                'all_text': article.get('all_text', ''),
                 'sentiment': article['sentiment'],
                 'impact_score': round(float(impact), 3),
                 'positive_score': round(float(article.get('positive_score', 0)), 3),
