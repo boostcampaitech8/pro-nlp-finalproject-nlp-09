@@ -148,23 +148,32 @@ class BigQueryClient:
         return self.client.query(query).to_dataframe()
 
     def get_news_for_prediction(
-        self, target_date: str, lookback_days: int = 7, dataset_id: Optional[str] = None, table_id: str = "corn_all_news_with_sentiment"
+        self,
+        target_date: str,
+        lookback_days: int = 7,
+        dataset_id: Optional[str] = None,
+        table_id: str = "corn_all_news_with_sentiment",
+        filter_status: Optional[str] = None,
+        keyword_filter: Optional[Union[str, List[str]]] = None,
     ) -> pd.DataFrame:
         """
-        뉴스 감성 모델 예측용 뉴스 데이터를 가져옵니다.
+        corn_all_news_with_sentiment 테이블에서 뉴스 감성 예측용 데이터를 가져옵니다.
+        status·keyword 필터는 BigQuery WHERE에서 적용합니다.
 
         Args:
             target_date: 기준 날짜 (YYYY-MM-DD)
             lookback_days: 조회할 과거 일수 (기본 7일)
             dataset_id: 데이터셋 ID
-            table_id: 뉴스 테이블 ID
+            table_id: 뉴스 테이블 ID (기본: corn_all_news_with_sentiment)
+            filter_status: filter_status 컬럼 값 (예: 'T'). None이면 조건 미적용.
+            keyword_filter: key_word 필터. 문자열 하나 또는 문자열 리스트.
+                            리스트면 key_word IN (...), 문자열이면 key_word = 값.
 
         Returns:
-            pd.DataFrame: 뉴스 데이터 (publish_date, title, article_embedding, scores...)
+            pd.DataFrame: id, title, publish_date, description, article_embedding, sentiment, scores 등
         """
         dataset = dataset_id or self.dataset_id or BIGQUERY_DATASET_ID
 
-        # 날짜 계산
         try:
             target_dt = datetime.strptime(target_date, "%Y-%m-%d")
         except ValueError:
@@ -173,26 +182,49 @@ class BigQueryClient:
         start_dt = target_dt - timedelta(days=lookback_days)
         start_date_str = start_dt.strftime("%Y-%m-%d")
 
-        # 필요한 컬럼들 조회
+        conditions = [
+            f"publish_date >= '{start_date_str}'",
+            f"publish_date <= '{target_date}'",
+        ]
+        if filter_status is not None:
+            conditions.append(f"filter_status = '{filter_status}'")
+        if keyword_filter is not None:
+            if isinstance(keyword_filter, str):
+                conditions.append(f"key_word = '{keyword_filter}'")
+            else:
+                if keyword_filter:
+                    quoted = ", ".join(f"'{k}'" for k in keyword_filter)
+                    conditions.append(f"key_word IN ({quoted})")
+
+        where_clause = " AND ".join(conditions)
+
+        # daily_prediction_pipeline 및 보고서 생성에 필요한 컬럼 전체 조회
         query = f"""
-            SELECT 
-                publish_date, 
-                title, 
-                description as all_text,
+            SELECT
+                id,
+                title,
+                doc_url,
+                all_text,
+                authors,
+                publish_date,
+                meta_site_name,
+                key_word,
+                filter_status,
+                description,
+                named_entities,
+                triples,
                 article_embedding,
-                price_impact_score,
+                combined_text,
+                sentiment,
                 sentiment_confidence,
                 positive_score,
                 negative_score,
-                triples,
-                filter_status
+                neutral_score,
+                price_impact_score
             FROM `{self.project_id}.{dataset}.{table_id}`
-            WHERE publish_date >= '{start_date_str}'
-              AND publish_date <= '{target_date}'
-              AND filter_status = 'T'
+            WHERE {where_clause}
             ORDER BY publish_date ASC
         """
-
         return self.client.query(query).to_dataframe()
 
     def get_price_history(
