@@ -1,40 +1,43 @@
-from typing import Dict, Any, Optional, Union, List
+"""
+뉴스 감성 분석 및 시장 영향력 예측 모듈
+"""
+
 import os
 import sys
+import json
 import traceback
+from typing import Dict, Any, List, Optional, Union
+from datetime import datetime, timedelta
 
-# 프로젝트 루트를 path에 추가 (app/models -> app -> 프로젝트 루트, dirname 2회)
-_current_dir = os.path.dirname(os.path.abspath(__file__))
-_project_root = os.path.dirname(os.path.dirname(_current_dir))
-if _project_root not in sys.path:
-    sys.path.insert(0, _project_root)
+# 프로젝트 루트 및 모델 디렉토리를 Python 경로에 추가 (임포트 에러 해결)
+current_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(os.path.dirname(current_dir))
+model_dir_path = os.path.join(project_root, "app", "model", "news_sentiment_model")
 
-# daily_prediction_pipeline 내부에서 "from ensemble_predictor import ..." 사용하므로 해당 디렉터리도 path에 추가
-_news_sentiment_dir = os.path.join(_project_root, "app", "model", "news_sentiment_model")
-if _news_sentiment_dir not in sys.path:
-    sys.path.insert(0, _news_sentiment_dir)
+if project_root not in sys.path:
+    sys.path.append(project_root)
+if model_dir_path not in sys.path:
+    sys.path.append(model_dir_path)
 
-# BigQuery 클라이언트
+# BigQuery Client
 try:
     from app.utils.bigquery_client import BigQueryClient
 except ImportError as e:
     print(f"경고: BigQueryClient 임포트 실패: {e}")
     BigQueryClient = None
 
-# daily_prediction_pipeline (BigQuery에서 가져온 데이터로 예측)
+# daily_prediction_pipeline 임포트
 try:
+    # sys.path 추가 덕분에 내부의 ensemble_predictor 등을 찾을 수 있게 됨
     from app.model.news_sentiment_model.daily_prediction_pipeline import run_daily_prediction as _run_daily_prediction
-except ImportError:
-    try:
-        from model.news_sentiment_model.daily_prediction_pipeline import run_daily_prediction as _run_daily_prediction
-    except ImportError:
-        _run_daily_prediction = None
+except ImportError as e:
+    print(f"경고: daily_prediction_pipeline 임포트 실패 ({e}). 경로 확인 필요: {model_dir_path}")
+    _run_daily_prediction = None
 
 
 class SentimentAnalyzer:
     """
     뉴스 감성 분석 및 시장 예측기.
-    BigQuery corn_all_news_with_sentiment 테이블에서 데이터를 가져와 daily_prediction_pipeline을 실행합니다.
     """
 
     def __init__(self):
@@ -43,64 +46,67 @@ class SentimentAnalyzer:
     def run_daily_prediction(
         self,
         target_date: str,
+        commodity: str = "corn",
         lookback_days: int = 7,
-        filter_status: str = "T",
-        keyword_filter: Union[str, List[str], None] = "corn and (price or demand or supply or inventory)",
         model_dir: Optional[str] = None,
-        output_dir: str = "outputs",
         save_file: bool = False,
+        **kwargs # 예상치 못한 인자(filter_status 등) 처리용
     ) -> Dict[str, Any]:
         """
-        target_date, lookback_days 기준으로 BigQuery에서 뉴스/가격을 불러와 일일 예측을 수행합니다.
-        filter_status는 'T' 고정, keyword는 기본 'corn and (price or demand or supply or inventory)'.
-
-        Args:
-            target_date: 예측 기준 날짜 (YYYY-MM-DD)
-            lookback_days: 뉴스 lookback 일수
-            filter_status: filter_status 필터 (기본 'T' 고정)
-            keyword_filter: key_word 필터 (기본: corn and (price or demand or supply or inventory))
-            model_dir: 앙상블 모델 디렉토리 (None이면 news_sentiment_model/trained_models_noPrice 사용)
-            output_dir: 보고서 저장 디렉토리
-            save_file: True면 예측 결과 JSON 파일 저장
-
-        Returns:
-            Dict: 예측 보고서 (metadata, prediction, evidence, market_analysis 등). 실패 시 error 키 포함.
+        특정 품목(commodity)의 뉴스/가격을 BigQuery에서 가져와 일일 예측을 수행합니다.
         """
         if not BigQueryClient:
             return {"error": "BigQueryClient를 사용할 수 없습니다."}
         if not _run_daily_prediction:
-            return {"error": "daily_prediction_pipeline을 임포트할 수 없습니다."}
+            return {"error": "daily_prediction_pipeline을 임포트할 수 없습니다. 경로 설정을 확인하세요."}
 
         try:
+            # 앙상블 모델 경로 설정
             if model_dir is None:
-                _dir = os.path.dirname(os.path.abspath(__file__))
-                model_dir = os.path.join(_dir, "..", "model", "news_sentiment_model", "trained_models_noPrice")
-                model_dir = os.path.normpath(model_dir)
+                # app/model/news_sentiment_model/trained_models 디렉토리 사용
+                model_dir = os.path.join(model_dir_path, "trained_models")
+                if not os.path.exists(model_dir):
+                    # 차선책: trained_models_noPrice 확인
+                    alt_model_dir = os.path.join(model_dir_path, "trained_models_noPrice")
+                    if os.path.exists(alt_model_dir):
+                        model_dir = alt_model_dir
+
             bq = BigQueryClient()
+
+            # 1. 품목별 데이터 가져오기
             news_df = bq.get_news_for_prediction(
-                target_date,
+                target_date=target_date,
                 lookback_days=lookback_days,
-                filter_status=filter_status,
-                keyword_filter=keyword_filter,
+                commodity=commodity
             )
-            price_df = bq.get_price_history(target_date, lookback_days=30)
+            price_df = bq.get_price_history(
+                target_date=target_date, 
+                lookback_days=30, 
+                commodity=commodity
+            )
 
             if news_df.empty:
-                return {"error": f"{target_date} 기준 최근 뉴스 데이터가 없습니다."}
+                return {"error": f"[{commodity}] {target_date} 기준 최근 뉴스 데이터가 없습니다."}
             if price_df.empty:
-                return {"error": f"{target_date} 기준 최근 가격 데이터가 없습니다."}
+                return {"error": f"[{commodity}] {target_date} 기준 최근 가격 데이터가 없습니다."}
 
+            # 2. 앙상블 모델 예측 실행
             report = _run_daily_prediction(
                 target_date=target_date,
                 lookback_days=lookback_days,
                 news_df=news_df,
                 price_df=price_df,
                 model_dir=model_dir,
-                output_dir=output_dir,
+                output_dir="outputs",
                 save_file=save_file,
             )
+            
             if report is None:
-                return {"error": f"{target_date} 예측 데이터 준비 실패 (뉴스/임베딩 부족)."}
+                return {"error": f"[{commodity}] {target_date} 예측 데이터 준비 실패 (뉴스/임베딩 부족)."}
+            
+            # 3. LLM Summarizer 호환을 위한 데이터 가공
+            self._enrich_report_for_llm(report, target_date, commodity)
+            
             # llm_summarizer 호환: evidence_news = supporting (최대 3개) + opposing (최대 3개)
             evidence = report.get("evidence") or {}
             supporting = evidence.get("supporting_news") or []
@@ -117,31 +123,34 @@ class SentimentAnalyzer:
             ]
             report["evidence_news"] = evidence_news
             return report
+            
         except Exception as e:
             traceback.print_exc()
-            return {"error": f"시장 예측 중 오류 발생: {str(e)}"}
+            return {"error": f"[{commodity}] 시장 예측 중 오류 발생: {str(e)}"}
 
-    def predict_market_impact(self, target_date: str, lookback_days: int = 7) -> Dict[str, Any]:
-        """
-        특정 날짜의 뉴스 기반 시장 예측 (llm_summarizer 등 기존 호환용).
-        BigQuery에서 데이터를 불러와 daily_prediction_pipeline으로 예측합니다.
-
-        Args:
-            target_date: 분석할 날짜 (YYYY-MM-DD)
-            lookback_days: 뉴스 lookback 일수 (기본 7)
-
-        Returns:
-            Dict: 예측 보고서 또는 error 메시지
-        """
-        return self.run_daily_prediction(
-            target_date=target_date,
-            lookback_days=lookback_days,
-            filter_status="T",
-            save_file=False,
-        )
+    def _enrich_report_for_llm(self, report: Dict[str, Any], target_date: str, commodity: str):
+        """보고서에 LLM 에이전트가 필요로 하는 필드를 추가 및 정규화합니다."""
+        evidence = report.get("evidence") or {}
+        supporting = evidence.get("supporting_news") or []
+        opposing = evidence.get("opposing_news") or []
+        
+        # 근거 뉴스 리스트 통합 및 정렬 (상위 5개)
+        combined = [
+            {
+                "title": x.get("title", ""),
+                "all_text": x.get("description", ""),
+                "price_impact_score": x.get("impact_score", 0.0),
+                "sentiment": x.get("sentiment", ""),
+            }
+            for x in (supporting + opposing)
+        ]
+        combined.sort(key=lambda a: abs(a.get("price_impact_score") or 0), reverse=True)
+        
+        report["evidence_news"] = combined[:5]
+        report["target_date"] = target_date
+        report["commodity"] = commodity
 
 
 if __name__ == "__main__":
-    analyzer = SentimentAnalyzer()
-    print("\n시장 예측 테스트 (target_date, lookback_days=7):")
-    print(analyzer.predict_market_impact("2025-11-13", lookback_days=7))
+    # 실행 테스트 로직 (필요 시)
+    pass

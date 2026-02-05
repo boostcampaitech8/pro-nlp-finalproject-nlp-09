@@ -1,7 +1,10 @@
-from typing import Optional
+from typing import Optional, Tuple, Union, Dict, Any, List
 from langchain_core.tools import tool
 import subprocess
 import json
+import os
+import sys
+from datetime import datetime, timedelta
 from langchain_core.messages import HumanMessage, AIMessage
 
 from langchain.agents import create_agent
@@ -20,8 +23,8 @@ from models.keyword_analyzer import analyze_keywords as _analyze_keywords
 from models.pastnews_rag_runner import run_pastnews_rag as _run_pastnews_rag
 
 
-REPORT_FORMAT = f"""
-**날짜**: (YYYY-MM-DD) | **종목**: 옥수수 
+REPORT_FORMAT = """
+**날짜**: (YYYY-MM-DD) | **종목**: [분석 대상 품목명] 
 
 | 어제 종가 | 시계열 분석 예측 | 머신러닝 예측 | 시장 심리 | 종합 의견 |
 |:---:|:---:|:---:|:---:|
@@ -89,10 +92,9 @@ REPORT_FORMAT = f"""
   | ... | ... | ... |
 
 
-**B. 주요 키워드**
-  > [keyword_analyzer 결과의 top_entities 상위 10개 entity]
+**B. 주요 키워드**: [keyword_analyzer 결과의 top_entities 상위 10개 entity]
 
-  **관련 과거 뉴스**
+**C. 과거 관련 뉴스**
   - pastnews_rag 도구 결과를 반드시 아래 표 형식으로 표시하세요.
   - **중요**: all_text가 영어로 되어 있으면 반드시 한국어로 번역하여 "뉴스 내용" 컬럼에 표시하세요.
   - **뉴스 내용 규칙**: 뉴스 내용은 반드시 **완성된 문장 형태**로 끝나야 합니다. 마침표(.), 느낌표(!), 물음표(?)로 끝나거나 "~입니다", "~합니다", "~습니다" 등의 종결어미로 완결되어야 합니다.
@@ -110,7 +112,7 @@ REPORT_FORMAT = f"""
     - 주요 부정 요인: [부정적 뉴스들의 공통 주제/키워드와 시장 영향 분석]
 
   * **과거 유사 상황 분석**
-    - 과거 관련 뉴스를 분석하여 당시 시장 반응(당일, 1일후, 3일후 가격 변동)을 서술
+    - C 섹션의 과거 관련 뉴스를 분석하여 당시 시장 반응(당일, 1일후, 3일후 가격 변동)을 서술
     - 공통 패턴: [과거 유사 뉴스 발생 시 가격 변동 패턴]
 
   * **종합 시장 심리**
@@ -149,38 +151,37 @@ REPORT_FORMAT = f"""
 - **상단 표의 "시장 심리" 컬럼에는 섹션 2의 "종합 시장 심리" 판단 결과([긍정적/중립적/부정적])를 그대로 표시하세요**.
 - **impact_score 처리 (절대 사용자 노출 금지)**: 각 뉴스의 impact_score는 내부 참고용으로만 사용하세요. impact_score의 절댓값이 큰 뉴스일수록 시장에 더 큰 영향을 미치므로 종합 시장 심리 판단 시 더 중요하게 고려하세요. 단, 보고서에는 "영향력 점수", "impact_score", "0.968", "-0.929" 같은 구체적인 숫자값을 절대 언급하지 마세요. 대신 "부정적 뉴스가 시장에 더 큰 영향을 미치는 것으로 분석됩니다", "긍정 뉴스보다 부정 뉴스의 영향이 더 크게 작용" 같은 자연스러운 표현만 사용하세요."""
 
-SYSTEM_PROMPT = (
-    """당신은 전문 금융 분석가입니다.
+SYSTEM_PROMPT = """당신은 전문 금융 분석가입니다.
 
 **사용 가능한 도구**:
 1. timeseries_predictor: 시계열 분석 + 머신러닝 하이브리드 예측
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
-   - 설명: 시계열 분석 모델의 가격 예측(yhat)과 머신러닝의 방향 예측(forecast_direction)을 반환합니다.
-   - 반환 값: target_date, y(어제 종가), yhat(시계열 분석 예측값), forecast_direction(Up/Down), trend, EMA_lag2_effect, Volume_lag5_effect, volatility 등 시계열 features 전체
+   - commodity: 상품명 (corn, soybean, wheat)
+   - 설명: 특정 품목의 가격 예측(yhat)과 방향 예측(forecast_direction)을 반환합니다.
 
 2. news_sentiment_analyzer: 뉴스 기반 시장 영향력 분석 및 근거 추출
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
-   - 설명: 해당 날짜 전후의 뉴스를 분석하여 시장 상승/하락 확률을 예측하고, 예측의 핵심 근거가 된 주요 뉴스들을 반환합니다.
+   - commodity: 상품명 (corn, soybean, wheat)
+   - lookback_days: 조회할 과거 일수 (기본 7일)
+   - 설명: 해당 날짜 전후의 뉴스를 분석하여 시장 상승/하락 확률을 예측하고, 주요 근거 뉴스를 반환합니다.
 
-3. keyword_analyzer: 뉴스 기사의 주요 키워드 분석 (Entity Confidence / PageRank 기반)
+3. keyword_analyzer: 뉴스 기사의 주요 키워드 분석
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
+   - commodity: 상품명 (corn, soybean, wheat)
    - days: 분석할 일수 (기본 3일)
-   - 설명: PageRank 알고리즘을 활용하여 뉴스의 Entity Confidence(중요도) 상위 키워드를 추출합니다.
-   - 반환 값: top_entities (상위 10개, 각 항목: {"entity": "...", "score": ...})
+   - 설명: 뉴스 기사에서 핵심 키워드와 Triple(S-V-O) 관계를 추출합니다.
 
-4. pastnews_rag: 전달받은 triples로 유사 과거 뉴스 description, publish_date, 가격 조회
-   - triples_json: keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple" 배열만 모은 JSON 문자열. 예: '[["A","B","C"],["D","E","F"]]' (최대 5개)
-   - top_k: triple당 유사 뉴스 개수 (기본 2)
-   - 연관 키워드는 keyword_analyzer의 top_triples 앞 5개에 이미 있으므로, 보고서 표의 "연관 키워드" 컬럼에는 그 앞 5개의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시하세요.
+4. pastnews_rag: 전달받은 triples로 유사 뉴스 및 과거 가격 조회
+   - triples_json: keyword_analyzer 결과의 top_triples 배열을 JSON으로 전달
+   - commodity: 상품명 (corn, soybean, wheat)
+   - top_k: 유사 결과 개수 (기본 2~5)
+   - 설명: 현재의 주요 뉴스 상황이 과거 언제 발생했는지 찾고, 당시의 가격 변동을 보여줍니다.
 
 **도구 사용 규칙**:
-- 분석 대상 날짜(target_date)가 주어지면 반드시 다음 순서로 도구를 호출하세요:
-  1. `timeseries_predictor(target_date="YYYY-MM-DD")` 호출
-  2. `news_sentiment_analyzer(target_date="YYYY-MM-DD")` 호출
-  3. `keyword_analyzer(target_date="YYYY-MM-DD")` 호출
-  4. keyword_analyzer 결과를 받은 후, **top_triples 앞 5개**에서 "triple" 배열만 추출하여 `pastnews_rag(triples_json="[[\"s\",\"v\",\"o\"], ...]", top_k=2)` 호출
-- **pastnews_rag 호출 방법**: keyword_analyzer의 **top_triples 중 앞 5개만** 사용. 각 항목의 "triple"만 추출해 JSON 배열 문자열로 전달. 예: pastnews_rag(triples_json='[["A","B","C"],["D","E","F"], ...]', top_k=2) (최대 5개 triple)
+- 모든 도구 호출 시 현재 분석 중인 `commodity`를 명시적으로 전달하세요.
+- keyword_analyzer 호출 후, 결과의 top_triples **앞 5개**를 추출하여 pastnews_rag에 전달하세요.
 - 이전 도구가 오류를 반환하더라도, 네 도구를 반드시 모두 호출한 뒤에만 보고서를 작성하세요.
+- 모든 영어 텍스트(뉴스 제목, 내용 등)는 반드시 한국어로 번역하여 보고서에 포함하세요.
 - **뉴스 기반 예측**: news_sentiment_analyzer 결과의 **prediction.direction**(상승/하락/유지)을 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션의 "뉴스 기반 예측" 항목에 표시하세요. 예: "예측 방향: 상승" 또는 "예측 방향: 하락".
 - `news_sentiment_analyzer` 결과의 evidence에서 **긍정적인 뉴스 묶음**과 **부정적인 뉴스 묶음**을 '### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석' 섹션의 '주요 뉴스'에서 구분해서 표시하세요.
   - **A-1. 긍정적인 뉴스**: (내부적으로는 evidence.supporting_news를 참고하되, 화면에는 변수명 노출 금지)
@@ -232,15 +233,12 @@ SYSTEM_PROMPT = (
 **보고서 작성 형식 (반드시 이 형식을 따라야 합니다)**:
 
 """
-    + REPORT_FORMAT
-)
-
 
 # LangChain Tools 정의
 @tool
-def timeseries_predictor(target_date: str) -> str:
+def timeseries_predictor(target_date: str, commodity: str = "corn") -> str:
     """
-    특정 날짜의 금융 시장 추세(상승/하락)와 가격을 예측합니다.
+    특정 날짜의 특정 품목(corn, soybean, wheat)에 대한 금융 시장 추세(상승/하락)와 가격을 예측합니다.
 
     Args:
         target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
@@ -248,47 +246,34 @@ def timeseries_predictor(target_date: str) -> str:
     Returns:
         JSON 형식의 예측 결과 문자열 (예측값, 방향, 추세 분석 등 포함)
     """
-    return predict_market_trend(target_date)
+    return predict_market_trend(target_date, commodity=commodity)
 
 
 @tool
-def news_sentiment_analyzer(target_date: str, lookback_days: int = 7) -> str:
+def news_sentiment_analyzer(target_date: str, commodity: str = "corn", lookback_days: int = 7) -> str:
     """
-    특정 날짜의 뉴스를 분석하여 시장 영향력을 예측하고 주요 근거 뉴스(제목, 영향력 점수, 관계 정보 등)를 제공합니다.
-    BigQuery corn_all_news_with_sentiment 테이블에서 target_date 기준 lookback_days 일치 뉴스를 불러와 예측합니다.
-
-    Args:
-        target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
-        lookback_days: 뉴스 lookback 일수 (기본 7일)
-
-    Returns:
-        JSON 형식의 예측 결과 문자열 (metadata, prediction, evidence, market_analysis 등)
+    특정 날짜의 뉴스를 분석하여 특정 품목(corn, soybean, wheat)의 시장 영향력을 예측하고 주요 근거 뉴스를 제공합니다.
     """
     analyzer = SentimentAnalyzer()
+    
+    # 실제 구현된 run_daily_prediction 파라미터에 맞춰 호출
     result = analyzer.run_daily_prediction(
         target_date=target_date,
+        commodity=commodity,
         lookback_days=lookback_days,
-        filter_status="T",
         save_file=False,
     )
+        
     return json.dumps(result, ensure_ascii=False)
 
 
 @tool
-def keyword_analyzer(target_date: str, days: int = 3) -> str:
+def keyword_analyzer(target_date: str, commodity: str = "corn", days: int = 3) -> str:
     """
-    특정 날짜 기준으로 뉴스 기사의 주요 키워드를 분석합니다.
-    PageRank 알고리즘(Entity Confidence)과 임베딩 기반 클러스터링을 활용하여 핵심 엔티티를 추출합니다.
-
-    Args:
-        target_date: 분석할 날짜 문자열 (형식: "YYYY-MM-DD")
-        days: 분석할 일수 (기본 3일, 최대 7일 권장)
-
-    Returns:
-        JSON: top_entities (상위 10개), top_triples (핵심 엔티티가 포함된 triple 중 엣지 실제 weight×entity PageRank 중요도 상위 10개, 각 항목: {"triple": [s,v,o], "importance": 점수})
+    특정 날짜 기준으로 뉴스 기사의 주요 키워드를 분석합니다. (품목별 필터링 지원)
     """
-    print("[keyword_analyzer] 실행 시작", flush=True)
-    result = json.loads(_analyze_keywords(target_date=target_date, days=days, top_k=10))
+    print(f"[keyword_analyzer] 실행 시작 (commodity: {commodity})", flush=True)
+    result = json.loads(_analyze_keywords(target_date=target_date, commodity=commodity, days=days, top_k=10))
     top_entities = result.get("top_entities", [])[:10]
     top_triples = result.get("top_triples", [])
     print("[keyword_analyzer] 종료", flush=True)
@@ -296,19 +281,11 @@ def keyword_analyzer(target_date: str, days: int = 3) -> str:
 
 
 @tool
-def pastnews_rag(triples_json: str, top_k: int = 2) -> str:
+def pastnews_rag(triples_json: str, commodity: str = "corn", top_k: int = 5) -> str:
     """
-    전달받은 triples로 유사 과거 뉴스를 검색하고, description, publish_date, 가격을 반환합니다.
-    연관 키워드는 keyword_analyzer의 top_triples **앞 5개**에 있으므로, 보고서 작성 시 그 값을 저장해 두었다가 "연관 키워드" 컬럼에 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시하세요.
-
-    Args:
-        triples_json: triples 배열의 JSON 문자열. keyword_analyzer의 **top_triples 앞 5개**에서 "triple"만 추출. 예: '[["A","B","C"],["D","E","F"]]' (최대 5개)
-        top_k: triple당 유사 뉴스 개수 (기본 2)
-
-    Returns:
-        JSON: article_info (각 항목: description, publish_date, 0, 1, 3), error(있을 경우)
+    전달받은 triples로 특정 품목(corn, soybean, wheat)의 유사 뉴스를 검색하고 과거 가격 정보를 조회합니다.
     """
-    print("[pastnews_rag] 실행 시작", flush=True)
+    print(f"[pastnews_rag] 실행 시작 (commodity: {commodity})", flush=True)
     triples = []
     if triples_json and triples_json.strip():
         try:
@@ -321,9 +298,10 @@ def pastnews_rag(triples_json: str, top_k: int = 2) -> str:
                         triples.append(list(item["triple"][:3]))
         except (json.JSONDecodeError, TypeError):
             pass
-    # top_triples 앞 5개만 사용
+    
+    # 앞 5개만 사용 (리소스 제한)
     triples = triples[:5] if triples else []
-    result = _run_pastnews_rag(triples=triples if triples else None, top_k=top_k)
+    result = _run_pastnews_rag(triples=triples if triples else None, commodity=commodity, top_k=top_k)
     print("[pastnews_rag] 종료", flush=True)
     return json.dumps(result, ensure_ascii=False, indent=2)
 
@@ -332,12 +310,6 @@ class LLMSummarizer:
     """Vertex AI를 사용하는 LangChain Agent를 이용한 통합 분석"""
 
     def __init__(self, model_name: str = None, project_id: str = None, location: str = None):
-        """
-        Args:
-            model_name: 생성 모델 이름 (기본값: 설정 파일의 GENERATE_MODEL_NAME)
-            project_id: Google Cloud 프로젝트 ID (지정하지 않으면 설정 파일 또는 gcloud config에서 자동으로 가져옴)
-            location: Vertex AI 리전 (기본값: 설정 파일의 VERTEX_AI_LOCATION)
-        """
         self.model_name = model_name or GENERATE_MODEL_NAME
         self.project_id = project_id or VERTEX_AI_PROJECT_ID or self._get_project_id()
         self.location = location or VERTEX_AI_LOCATION
@@ -345,9 +317,7 @@ class LLMSummarizer:
         self.agent = None
         self._initialize()
 
-    # TODO project id .env로 관리
     def _get_project_id(self) -> str:
-        """gcloud config에서 프로젝트 ID를 가져옴"""
         try:
             result = subprocess.run(
                 ["gcloud", "config", "get-value", "project"], capture_output=True, text=True, timeout=2
@@ -355,17 +325,11 @@ class LLMSummarizer:
             if result.returncode == 0 and result.stdout.strip():
                 return result.stdout.strip()
             else:
-                raise ValueError("gcloud config에서 프로젝트를 찾을 수 없습니다.")
-        except Exception as e:
-            raise ValueError(
-                f"project_id가 필요합니다.\n"
-                f"해결 방법: gcloud config set project YOUR_PROJECT_ID\n"
-                f"또는 환경변수 GOOGLE_CLOUD_PROJECT를 설정하세요.\n"
-                f"오류: {e}"
-            )
+                return VERTEX_AI_PROJECT_ID or "unknown"
+        except Exception:
+            return VERTEX_AI_PROJECT_ID or "unknown"
 
     def _create_llm(self) -> ChatVertexAI:
-        """ChatVertexAI 인스턴스 생성 (모델명·프로젝트·리전은 env에서 로드)"""
         return ChatVertexAI(
             model=self.model_name,
             project=self.project_id,
@@ -375,35 +339,23 @@ class LLMSummarizer:
         )
 
     def _initialize(self):
-        """LLM 및 Agent 초기화"""
         self.llm = self._create_llm()
-        print(f"✅ ChatVertexAI 사용 (모델: {self.model_name}, env 기반)")
-
         tools = [timeseries_predictor, news_sentiment_analyzer, keyword_analyzer, pastnews_rag]
         llm_with_tools = self.llm.bind_tools(tools)
+        self.agent = create_agent(model=llm_with_tools, tools=tools, system_prompt=SYSTEM_PROMPT)
 
-        self.agent = create_agent(
-            model=llm_with_tools,
-            tools=tools,
-            system_prompt=SYSTEM_PROMPT,
-        )
-
-    def _build_user_input(
-        self,
-        context: str,
-        target_date: str,
-    ) -> str:
-        """Agent에게 전달할 사용자 입력 메시지 생성"""
-
+    def _build_user_input(self, context: str, target_date: str, commodity: str) -> str:
         user_input = f"""다음 정보를 바탕으로 전문적인 금융 시장 분석 보고서를 작성해주세요.
 
-**분석 맥락**: {context or "최근 시장 상황 분석"}
+**분석 대상 품목**: {commodity}
+**분석 맥락**: {context or f"최근 {commodity} 시장 상황 분석"}
 **분석 기준 일자**: {target_date}
 
+- 모든 도구 호출 시 `commodity='{commodity}'` 인자를 반드시 전달하세요.
 - 다음 순서로 도구를 호출하세요:
-  1. `timeseries_predictor(target_date="{target_date}")`
-  2. `news_sentiment_analyzer(target_date="{target_date}")`
-  3. `keyword_analyzer(target_date="{target_date}")`
+  1. `timeseries_predictor(target_date="{target_date}", commodity='{commodity}')`
+  2. `news_sentiment_analyzer(target_date="{target_date}", commodity='{commodity}')`
+  3. `keyword_analyzer(target_date="{target_date}", commodity='{commodity}')`
   4. keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple"만 추출해 `pastnews_rag(triples_json="...", top_k=2)` 호출. 연관 키워드는 그 앞 5개 top_triples의 keywords를 저장해 두었다가 보고서 표에 사용하세요.
 - **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"], "keywords": ["x","y"]}}, ...]}}를 반환하면, **앞 5개만** 사용해 `pastnews_rag(triples_json='[["A","B","C"], ...]', top_k=2)` 호출 (최대 5개). 표의 "연관 키워드"에는 그 앞 5개 top_triples의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시.
 - `timeseries_predictor` 결과 활용:
@@ -430,7 +382,7 @@ class LLMSummarizer:
     - 예: "변동성이 높아(55) 단기 급등 가능성", "정부 정책 변화 시 반등 가능"
 """
         return user_input
-
+        
     def _validate_output_format(self, summary: str) -> bool:
         """출력 형식이 올바른지 검증 (최소 검증)
 
@@ -514,11 +466,11 @@ class LLMSummarizer:
         # 모든 방법 실패 시 전체 결과를 문자열로 변환
         return str(result).strip().rstrip("\\")
 
-    # TODO 재시도 로직 점검
     def summarize(
         self,
         context: str = "",
         target_date: Optional[str] = None,
+        commodity: str = "corn",
         max_retries: int = 2,
     ) -> dict:
         """LangChain Agent를 이용한 LLM 요약 생성
@@ -526,6 +478,7 @@ class LLMSummarizer:
         Args:
             context: 분석 맥락
             target_date: 분석 기준 날짜 (YYYY-MM-DD)
+            commodity: 분석 대상 품목 (corn, soybean, wheat)
             max_retries: 재시도 횟수
         """
         # 날짜 기본값 (오늘)
@@ -534,7 +487,7 @@ class LLMSummarizer:
 
             target_date = datetime.now().strftime("%Y-%m-%d")
 
-        user_input = self._build_user_input(context=context, target_date=target_date)
+        user_input = self._build_user_input(context=context, target_date=target_date, commodity=commodity)
 
         for attempt in range(max_retries + 1):
             # Agent 실행 (LangChain이 자동으로 tool call을 처리함)
@@ -550,7 +503,6 @@ class LLMSummarizer:
 
                 summary = self._extract_summary_from_result(result)
                 agent_result = result
-
                 # 디버깅: 메시지 상태 확인
                 print(f"\n[디버깅] 총 메시지 수: {len(messages)}")
                 tool_call_count = sum(1 for msg in messages if isinstance(msg, AIMessage) and msg.tool_calls)

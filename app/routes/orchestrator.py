@@ -53,7 +53,7 @@ def parse_agent_result_raw(agent_result: dict) -> Dict[str, Any]:
     return extracted_data
 
 
-def run_market_analysis(target_date: Optional[str] = None, context: str = "금융 시장 분석") -> Dict[str, Any]:
+def run_market_analysis(target_date: Optional[str] = None, commodity: str = "corn", context: Optional[str] = None) -> Dict[str, Any]:
     """
     [Airflow용] 시장 분석을 실행하고 적재할 모든 데이터를 반환합니다.
     기존 orchestrate_analysis 로직을 재사용하여 정합성을 보장합니다.
@@ -61,14 +61,20 @@ def run_market_analysis(target_date: Optional[str] = None, context: str = "금�
     Returns:
         dict: {
             "target_date": str,
+            "commodity": str,
             "timeseries_data": dict, # BQ 적재용
             "news_data": dict,       # BQ 적재용
             "final_report": str      # GCS 적재용
         }
     """
+    # 컨텍스트가 없으면 품목명을 포함한 기본값 생성
+    if not context:
+        context = f"{commodity} 시장 분석"
+
     # 1. 검증된 메인 함수 호출 (Agent 실행)
     orchestrator_output, agent_result = orchestrate_analysis(
         target_date=target_date,
+        commodity=commodity,
         context=context,
         return_agent_result=True
     )
@@ -76,14 +82,11 @@ def run_market_analysis(target_date: Optional[str] = None, context: str = "금�
     # 2. Pydantic 모델을 딕셔너리로 변환 (시계열 데이터)
     timeseries_data = None
     if orchestrator_output.timeseries_prediction:
-        # Pydantic v2 model_dump, v1 dict 호환
         ts_pred = orchestrator_output.timeseries_prediction
         timeseries_data = {
             "target_date": ts_pred.timestamp,
             "forecast_value": ts_pred.prediction,
             "confidence_score": ts_pred.confidence * 100, # 0~1 -> 0~100
-            # Pydantic 모델에 없는 추가 정보는 원본 Agent Result에서 보강해야 할 수도 있음
-            # 일단 핵심 정보 위주로 구성
         }
         
         # 원본 Agent Result에서 더 풍부한 데이터(feature 등)를 찾아서 병합
@@ -92,8 +95,6 @@ def run_market_analysis(target_date: Optional[str] = None, context: str = "금�
             timeseries_data.update(raw_data["timeseries_data"])
 
     # 3. 뉴스 데이터 변환
-    # OrchestratorOutput은 감성 분석 결과만 리스트로 가지고 있음.
-    # 적재를 위해서는 원본 통계 데이터(feature summary 등)가 필요하므로 raw_data 사용
     if "raw_data" not in locals():
         raw_data = parse_agent_result_raw(agent_result)
     
@@ -101,7 +102,8 @@ def run_market_analysis(target_date: Optional[str] = None, context: str = "금�
 
     # 4. 최종 결과 조합
     output = {
-        "target_date": target_date,
+        "target_date": target_date or datetime.now().strftime("%Y-%m-%d"),
+        "commodity": commodity,
         "timeseries_data": timeseries_data,
         "news_data": news_data,
         "final_report": orchestrator_output.llm_summary
@@ -170,7 +172,11 @@ def parse_agent_result(agent_result: dict) -> Tuple[TimeSeriesPrediction, list]:
 
 
 def orchestrate_analysis(
-    target_date: Optional[str] = None, context: str = "금융 시장 분석", return_agent_result: bool = False, **kwargs
+    target_date: Optional[str] = None, 
+    commodity: str = "corn",
+    context: str = "금융 시장 분석", 
+    return_agent_result: bool = False, 
+    **kwargs
 ) -> Union[OrchestratorOutput, Tuple[OrchestratorOutput, dict]]:
     """
     Orchestrator 분석 로직
@@ -181,7 +187,8 @@ def orchestrate_analysis(
     if not target_date:
         target_date = datetime.now().strftime("%Y-%m-%d")
 
-    result = summarizer.summarize(context=context, target_date=target_date)
+    # 요약 실행 (commodity 정보 전달)
+    result = summarizer.summarize(context=context, target_date=target_date, commodity=commodity)
 
     agent_result = result.get("agent_result", {})
     timeseries_prediction, sentiment_analysis = parse_agent_result(agent_result)

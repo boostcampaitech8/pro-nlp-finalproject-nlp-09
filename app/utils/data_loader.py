@@ -21,8 +21,16 @@ from app.config.settings import BIGQUERY_DATASET_ID
 from datetime import datetime
 
 
-def load_timeseries_prediction(prediction_data: Dict[str, Any], dataset_id: Optional[str] = None) -> None:
-    # ... (기존 코드 유지) ...
+def load_timeseries_prediction(prediction_data: Dict[str, Any], commodity: str, dataset_id: Optional[str] = None) -> None:
+    """
+    시계열 예측 결과를 BigQuery 'prediction_timeseries' 테이블에 적재합니다.
+    (PriceRepository 사용)
+
+    Args:
+        prediction_data (dict): 시계열 모델 예측 결과 (JSON 구조)
+        commodity (str): 상품명 (corn, soybean, wheat)
+        dataset_id (str): 대상 BigQuery 데이터셋 ID (기본값: settings.BIGQUERY_DATASET_ID)
+    """
     # 데이터셋 ID 결정 (인자값 -> 설정값 -> 기본값 'market')
     target_dataset = dataset_id or BIGQUERY_DATASET_ID or "market"
 
@@ -41,19 +49,23 @@ def load_timeseries_prediction(prediction_data: Dict[str, Any], dataset_id: Opti
             "confidence_score": prediction_data.get("confidence_score")
         }
         
-        # 필수 값 체크
-        if not all(filtered_data.values()):
-            print(f"⚠️ 경고: 필수 데이터가 누락되었습니다. {filtered_data}")
-
-        price_repo.save_prediction(filtered_data)
-        print(f"✅ 시계열 예측 데이터 적재 완료: {filtered_data.get('target_date', 'Unknown Date')}")
+        price_repo.save_prediction(filtered_data, commodity=commodity)
+        print(f"✅ [{commodity}] 시계열 예측 데이터 적재 완료: {filtered_data.get('target_date', 'Unknown Date')}")
     except Exception as e:
-        print(f"❌ 적재 실패: {str(e)}")
+        print(f"❌ [{commodity}] 적재 실패: {str(e)}")
         raise e
 
 
-def load_news_prediction(prediction_data: Dict[str, Any], dataset_id: Optional[str] = None) -> None:
-    # ... (기존 코드 유지) ...
+def load_news_prediction(prediction_data: Dict[str, Any], commodity: str, dataset_id: Optional[str] = None) -> None:
+    """
+    뉴스 감성 분석 결과를 BigQuery 'prediction_news_sentiment' 테이블에 적재합니다.
+    (NewsRepository 사용)
+
+    Args:
+        prediction_data (dict): 뉴스 모델 예측 결과 (JSON 구조)
+        commodity (str): 상품명 (corn, soybean, wheat)
+        dataset_id (str): 대상 BigQuery 데이터셋 ID
+    """
     target_dataset = dataset_id or BIGQUERY_DATASET_ID or "market"
 
     factory = GCPServiceFactory()
@@ -62,40 +74,41 @@ def load_news_prediction(prediction_data: Dict[str, Any], dataset_id: Optional[s
     news_repo = NewsRepository(bq_service)
     
     try:
-        news_repo.save_prediction(prediction_data)
-        print(f"✅ 뉴스 예측 데이터 적재 완료: {prediction_data.get('target_date', 'Unknown Date')}")
+        news_repo.save_prediction(prediction_data, commodity=commodity)
+        print(f"✅ [{commodity}] 뉴스 예측 데이터 적재 완료: {prediction_data.get('target_date', 'Unknown Date')}")
     except Exception as e:
-        print(f"❌ 뉴스 적재 실패: {str(e)}")
+        print(f"❌ [{commodity}] 뉴스 적재 실패: {str(e)}")
         raise e
 
 
-def upload_report_to_gcs(report_text: str, target_date: str, bucket_name: str = "team-blue-raw-data") -> None:
+def upload_report_to_gcs(report_text: str, target_date: str, commodity: str, bucket_name: str = "team-blue-raw-data") -> None:
     """
     최종 리포트 텍스트를 GCS에 업로드합니다.
-    경로: reports/{YYYY}/{MM}/market_report_{YYYY-MM-DD}.txt
+    경로: reports/{YYYY}/{MM}/{commodity}_report_{YYYY-MM-DD}.txt
 
     Args:
         report_text (str): 리포트 내용
         target_date (str): 분석 날짜 (YYYY-MM-DD)
+        commodity (str): 상품명 (corn, soybean, wheat)
         bucket_name (str): GCS 버킷 이름
     """
     if not report_text:
-        print("⚠️ 리포트 내용이 비어있어 업로드를 건너뜁니다.")
+        print(f"⚠️ [{commodity}] 리포트 내용이 비어있어 업로드를 건너뜁니다.")
         return
 
     try:
         dt = datetime.strptime(target_date, "%Y-%m-%d")
         year = dt.strftime("%Y")
         month = dt.strftime("%m")
-        blob_path = f"reports/{year}/{month}/market_report_{target_date}.txt"
+        # 파일명에 품목명 추가
+        blob_path = f"reports/{year}/{month}/{commodity}_report_{target_date}.txt"
 
         factory = GCPServiceFactory()
-        # 버킷 이름이 지정되지 않았으면 팩토리 기본값 사용
         storage_service = factory.get_storage_client(bucket_name=bucket_name)
         
         storage_service.upload_from_string(report_text, blob_path)
-        print(f"✅ 리포트 GCS 업로드 완료: gs://{bucket_name}/{blob_path}")
+        print(f"✅ [{commodity}] 리포트 GCS 업로드 완료: gs://{bucket_name}/{blob_path}")
         
     except Exception as e:
-        print(f"❌ 리포트 업로드 실패: {str(e)}")
+        print(f"❌ [{commodity}] 리포트 업로드 실패: {str(e)}")
         raise e
