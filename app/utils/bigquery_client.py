@@ -152,7 +152,7 @@ class BigQueryClient:
         return self.client.query(query).to_dataframe()
 
     def get_news_for_prediction(
-        self, target_date: str, lookback_days: int = 7, dataset_id: Optional[str] = None, table_id: str = "corn_all_news_with_sentiment"
+        self, target_date: str, lookback_days: int = 7, commodity: str = "corn", dataset_id: Optional[str] = None, table_id: Optional[str] = None
     ) -> pd.DataFrame:
         """
         뉴스 감성 모델 예측용 뉴스 데이터를 가져옵니다.
@@ -160,13 +160,18 @@ class BigQueryClient:
         Args:
             target_date: 기준 날짜 (YYYY-MM-DD)
             lookback_days: 조회할 과거 일수 (기본 7일)
+            commodity: 상품명 (corn, soybean, wheat)
             dataset_id: 데이터셋 ID
-            table_id: 뉴스 테이블 ID
+            table_id: 뉴스 테이블 ID (지정 시 commodity 무시)
 
         Returns:
             pd.DataFrame: 뉴스 데이터 (publish_date, title, article_embedding, scores...)
         """
         dataset = dataset_id or self.dataset_id or BIGQUERY_DATASET_ID
+        
+        # 테이블명 동적 생성 (예: corn_all_news_with_sentiment)
+        if not table_id:
+            table_id = f"{commodity}_all_news_with_sentiment"
 
         # 날짜 계산
         try:
