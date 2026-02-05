@@ -107,7 +107,8 @@ def run_pastnews_rag(
         dict: article_info (각 항목: description, publish_date, 0, 1, 3), error(있을 경우)
     """
     result = {"article_info": []}
-    max_per_triple = max(1, min(top_k, 10))
+    # triple 개수: 호출부(triples 인자)에서 결정. triple당 기사 수: 에이전트 top_k와 무관하게 항상 2개로 제한.
+    max_per_triple = 2
 
     if triples is None or len(triples) == 0:
         triples = extract_triples_from_today()
@@ -120,6 +121,7 @@ def run_pastnews_rag(
         if not isinstance(t, (list, tuple)) or len(t) < 3:
             continue
         triple_texts.append(str(t).strip())
+    triple_texts = triple_texts[:5]
     if not triple_texts:
         result["error"] = "유효한 [s, v, o] 형식의 triple이 없습니다."
         return result
@@ -176,7 +178,10 @@ def run_pastnews_rag(
             prices_by_date[base_date_str][offset] = float(price_row.close) if price_row.close is not None else None
 
     result["article_info"] = []
+    max_articles = 10
     for r in articles:
+        if len(result["article_info"]) >= max_articles:
+            break
         if not (hasattr(r, "description") and r.description):
             continue
         publish_date_str = str(r.publish_date) if hasattr(r, "publish_date") and r.publish_date else None

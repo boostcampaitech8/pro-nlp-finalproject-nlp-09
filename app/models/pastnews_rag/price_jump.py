@@ -53,6 +53,10 @@ def fetch_article_dates(client, hash_ids):
 
 
 def fetch_prices_for_dates(client, dates):
+    """
+    base_date(뉴스 날짜) 기준 당일(0), 1거래일후(1), 3거래일후(3) 종가 조회.
+    time이 DATE든 TIMESTAMP든 항상 DATE( time )로 날짜만 쓰고, 날짜당 1행만 보장.
+    """
     if not dates:
         return []
     dataset = os.getenv("BIGQUERY_DATASET_ID", "tilda")
@@ -60,24 +64,23 @@ def fetch_prices_for_dates(client, dates):
     full_table = f"{client.project}.{dataset}.{table}"
 
     query = f"""
-    WITH base_dates AS (
-      SELECT date as base_date
-      FROM UNNEST(@dates) as date
-    ),
-    price_dates AS (
-      SELECT DISTINCT 
-        CAST(time AS DATE) AS parsed_time,
-        time AS original_time
+    WITH
+    one_per_date AS (
+      SELECT DATE(time) AS parsed_time, ANY_VALUE(close) AS close
       FROM `{full_table}`
+      WHERE time IS NOT NULL
+      GROUP BY DATE(time)
+    ),
+    base_dates AS (
+      SELECT date AS base_date FROM UNNEST(@dates) AS date
     ),
     trading_days AS (
       SELECT
         b.base_date,
-        pd.parsed_time AS traded_date,
-        ROW_NUMBER() OVER (PARTITION BY b.base_date ORDER BY pd.parsed_time) - 1 AS trade_offset
+        p.parsed_time AS traded_date,
+        ROW_NUMBER() OVER (PARTITION BY b.base_date ORDER BY p.parsed_time) - 1 AS trade_offset
       FROM base_dates b
-      JOIN price_dates pd
-        ON pd.parsed_time >= b.base_date
+      JOIN one_per_date p ON p.parsed_time >= b.base_date
     ),
     offsets AS (
       SELECT 0 AS offset_days UNION ALL SELECT 1 UNION ALL SELECT 3
@@ -88,12 +91,8 @@ def fetch_prices_for_dates(client, dates):
       t.traded_date,
       p.close
     FROM offsets o
-    JOIN trading_days t
-      ON t.trade_offset = o.offset_days
-    JOIN price_dates pd
-      ON pd.parsed_time = t.traded_date
-    JOIN `{full_table}` p
-      ON p.time = pd.original_time
+    JOIN trading_days t ON t.trade_offset = o.offset_days
+    JOIN one_per_date p ON p.parsed_time = t.traded_date
     ORDER BY t.base_date, o.offset_days
     """
     job = client.query(
