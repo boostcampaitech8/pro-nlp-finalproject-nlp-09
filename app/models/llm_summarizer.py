@@ -379,25 +379,6 @@ class LLMSummarizer:
     - 예: "변동성이 높아(55) 단기 급등 가능성", "정부 정책 변화 시 반등 가능"
 """
         return user_input
-
-    def summarize(self, context: str = "", target_date: Optional[str] = None, commodity: str = "corn", max_retries: int = 2) -> dict:
-        if not target_date:
-            target_date = datetime.now().strftime("%Y-%m-%d")
-
-        user_input = self._build_user_input(context=context, target_date=target_date, commodity=commodity)
-
-        for attempt in range(max_retries + 1):
-            try:
-                result = self.agent.invoke({"messages": [HumanMessage(content=user_input)]})
-                summary = self._extract_summary_from_result(result)
-                
-                if summary and len(summary.strip()) > 50:
-                    return {"summary": summary, "agent_result": result}
-            except Exception as e:
-                print(f"⚠️ Agent 실행 중 오류 (시도 {attempt+1}): {e}")
-                if attempt == max_retries: raise e
-
-        return {"summary": "", "agent_result": {}}
         
     def _validate_output_format(self, summary: str) -> bool:
         """출력 형식이 올바른지 검증 (최소 검증)
@@ -482,11 +463,11 @@ class LLMSummarizer:
         # 모든 방법 실패 시 전체 결과를 문자열로 변환
         return str(result).strip().rstrip("\\")
 
-    # TODO 재시도 로직 점검
     def summarize(
         self,
         context: str = "",
         target_date: Optional[str] = None,
+        commodity: str = "corn",
         max_retries: int = 2,
     ) -> dict:
         """LangChain Agent를 이용한 LLM 요약 생성
@@ -494,6 +475,7 @@ class LLMSummarizer:
         Args:
             context: 분석 맥락
             target_date: 분석 기준 날짜 (YYYY-MM-DD)
+            commodity: 분석 대상 품목 (corn, soybean, wheat)
             max_retries: 재시도 횟수
         """
         # 날짜 기본값 (오늘)
@@ -502,7 +484,7 @@ class LLMSummarizer:
 
             target_date = datetime.now().strftime("%Y-%m-%d")
 
-        user_input = self._build_user_input(context=context, target_date=target_date)
+        user_input = self._build_user_input(context=context, target_date=target_date, commodity=commodity)
 
         for attempt in range(max_retries + 1):
             # Agent 실행 (LangChain이 자동으로 tool call을 처리함)
