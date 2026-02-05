@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Literal
 from langchain_core.tools import tool
 import subprocess
 import json
@@ -23,9 +23,9 @@ from models.pastnews_rag_runner import run_pastnews_rag as _run_pastnews_rag
 REPORT_FORMAT = f"""
 **날짜**: (YYYY-MM-DD) | **종목**: [분석 대상 품목명]  
 
-| 어제 종가 | 퀀트 예측 | 시장 심리 | 종합 의견 |
-|:---:|:---:|:---:|:---:|
-| [y] | [상승/하락] | [긍정적/중립적/부정적] | [BUY/SELL/HOLD] |
+| 어제 종가 | 퀀트 예측 | 시장 심리 | 종합 의견 | 확신도 |
+|:---:|:---:|:---:|:---:| :---:|
+| [y] | [상승/하락] | [긍정적/중립적/부정적] | [BUY/SELL/HOLD] |  [0~100 사이의 점수]  |
 
 ---
 
@@ -171,6 +171,14 @@ SYSTEM_PROMPT = (
    - top_k: triple당 유사 뉴스 개수 (기본 2)
    - 연관 키워드는 keyword_analyzer의 top_triples 앞 5개에 이미 있으므로, 보고서 표의 "연관 키워드" 컬럼에는 그 앞 5개의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시하세요.
 
+5. decision_meta: 최종 투자 의견(BUY/SELL/HOLD)과 confidence(확률 분포)를 저장하는 내부 도구
+- stage: "v1" 또는 "v2"
+- recommendation: "BUY"|"HOLD"|"SELL"
+- p_buy, p_hold, p_sell: 0~1 범위의 실수 (합은 1이 되도록)
+- rationale_short: 보고서에 실제로 사용한 표현만으로 1~2문장 요약(모델명/변수명/impact_score 언급 금지)
+- warnings: 불확실성 요인(상충 신호, 높은 변동성 등)을 1문장으로 요약
+
+
 **도구 사용 규칙**:
 - 분석 대상 날짜(target_date)가 주어지면 반드시 다음 순서로 도구를 호출하세요:
   1. `timeseries_predictor(target_date="YYYY-MM-DD")` 호출
@@ -193,6 +201,28 @@ SYSTEM_PROMPT = (
   | 뉴스 날짜 | 뉴스 내용 | 연관 키워드 | 당일 | 1일후 | 3일후 |
   |-----------|-----------|-------------|------|------|------|
   | [뉴스 날짜] | [뉴스 내용(한국어, 완성된 문장으로 끝)] | [#키워드1 #키워드2 또는 키워드1, 키워드2] | [0] | [1] | [3] |
+[추가 도구 사용 규칙]
+- 네 개 분석 도구(timeseries_predictor → news_sentiment_analyzer → keyword_analyzer → pastnews_rag) 호출 이후,
+  반드시 아래 순서로 추가 작업을 수행하라.
+
+(1) 1차 confidence 산출: decision_meta 호출(stage="v1")
+  - 이 단계에서는 도구 결과를 바탕으로 BUY/HOLD/SELL 확률을 먼저 산출하고 저장한다.
+  - 숫자(확률)는 절대 보고서 본문에 쓰지 말고 decision_meta 도구로만 남겨라.
+
+(2) 보고서 작성: REPORT_FORMAT을 정확히 지켜 최종 보고서를 작성한다.
+
+(3) 2차 confidence 보정: decision_meta 호출(stage="v2")
+  - 보고서의 '종합 의견'이 (1)의 확률/추천과 논리적으로 일치하는지 점검한 뒤 확률을 보정한다.
+  - 상충 신호가 있으면 HOLD 확률을 늘리고, 신호가 강하게 일치하면 BUY 또는 SELL을 늘린다.
+  - 변동성이 높거나(불확실성) 뉴스와 퀀트가 불일치하면 극단적 확률(예: 0.9 이상)을 피한다.
+  - 이 단계 역시 확률은 본문에 쓰지 말고 decision_meta 도구로만 남겨라.
+
+[확률 산출 가이드]
+- 확률 합은 1이 되게 하라.
+- 확신이 낮으면 HOLD를 가장 크게 두어라.
+- 퀀트 예측 방향과 뉴스 심리가 일치하면 BUY/SELL 확률을 강화하되,
+  변동성이 높으면 강화 폭을 줄여라.
+- 절대 금지: 보고서 본문에 "확률", "%", "confidence", "p_buy" 같은 수치/용어를 쓰는 것.
 - `timeseries_predictor` 결과 활용법:
   * **기본 정보**: y(어제 종가)를 상단 표에 표시
   * **퀀트 예측 컬럼**: 상단 표의 "퀀트 예측" 컬럼에는 반드시 섹션 1의 B섹션에서 도출한 최종 예측 방향([상승/하락])을 표시
@@ -235,6 +265,62 @@ SYSTEM_PROMPT = (
 """
     + REPORT_FORMAT
 )
+
+Decision = Literal["BUY", "HOLD", "SELL"]
+Stage = Literal["v1", "v2"]
+
+@tool
+def decision_meta(
+    target_date: str,
+    commodity: str,
+    stage: Stage,                 # "v1" or "v2"
+    recommendation: Decision,     # "BUY"|"HOLD"|"SELL"
+    p_buy: float,
+    p_hold: float,
+    p_sell: float,
+    rationale_short: str = "",    # 보고서에서 쓴 표현만 사용(모델명/변수명 금지)
+    warnings: str = "",           # 불확실성/상충 신호 등(역시 자연어)
+) -> str:
+    """
+    LLM이 최종 BUY/SELL/HOLD 결정을 내릴 때 확률 분포를 툴로 기록합니다.
+
+    Args:
+        target_date: 분석 대상 날짜 (형식: "YYYY-MM-DD")
+        commodity: 종목명 (corn, soybean, wheat)
+        stage: "v1" 또는 "v2"
+        - v1은 도구 결과를 받은 직후 초안 확률을 도출합니다.
+        - v2는 보고서를 작성한 뒤 자기 점검/일관성 체크 후 보정 확률을 도출합니다.
+        recommendation: "BUY"|"HOLD"|"SELL"
+        p_buy: BUY 확신도 (0~1 실수)
+        p_hold: HOLD 확신도 (0~1 실수)
+        p_sell: SELL 확신도 (0~1 실수)
+        rationale_short: 보고서에 실제로 사용한 표현만으로 1~2문장 요약(모델명/변수명/impact_score 언급 금지)
+        warnings: 불확실성 요인(상충 신호, 높은 변동성 등)을 1문장으로 요약
+    """
+    # 안전장치: 음수 방지 + 정규화
+    p_buy = max(0.0, float(p_buy))
+    p_hold = max(0.0, float(p_hold))
+    p_sell = max(0.0, float(p_sell))
+    s = p_buy + p_hold + p_sell
+    if s <= 0:
+        print("[decision_meta] 경고: 확신도 합계가 0 이하입니다. 균등 분배로 처리합니다.", flush=True)
+        p_buy, p_hold, p_sell = 0.34, 0.33, 0.33
+    else:
+        p_buy, p_hold, p_sell = p_buy / s, p_hold / s, p_sell / s
+
+    return json.dumps(
+        {
+            "target_date": target_date,
+            "commodity": commodity,
+            "stage": stage,
+            "recommendation": recommendation,
+            "confidence": {"BUY": p_buy, "HOLD": p_hold, "SELL": p_sell},
+            "rationale_short": rationale_short,
+            "warnings": warnings,
+        },
+        ensure_ascii=False,
+    )
+
 
 
 # LangChain Tools 정의
@@ -381,7 +467,7 @@ class LLMSummarizer:
         self.llm = self._create_llm()
         print(f"✅ ChatVertexAI 사용 (모델: {self.model_name}, env 기반)")
 
-        tools = [timeseries_predictor, news_sentiment_analyzer, keyword_analyzer, pastnews_rag]
+        tools = [timeseries_predictor, news_sentiment_analyzer, keyword_analyzer, pastnews_rag, decision_meta]
         llm_with_tools = self.llm.bind_tools(tools)
 
         self.agent = create_agent(
