@@ -186,18 +186,14 @@ def news_sentiment_analyzer(target_date: str, commodity: str = "corn", lookback_
     특정 날짜의 뉴스를 분석하여 특정 품목(corn, soybean, wheat)의 시장 영향력을 예측하고 주요 근거 뉴스를 제공합니다.
     """
     analyzer = SentimentAnalyzer()
-    # 팀원들이 추가한 run_daily_prediction 메서드 사용 (commodity 인자 전달 가능하다고 가정)
-    try:
-        result = analyzer.run_daily_prediction(
-            target_date=target_date,
-            lookback_days=lookback_days,
-            commodity=commodity,
-            filter_status="T",
-            save_file=False,
-        )
-    except TypeError:
-        # 만약 run_daily_prediction이 아직 commodity를 안 받는다면 기존 메서드로 폴백
-        result = analyzer.predict_market_impact(target_date, commodity=commodity)
+    
+    # 실제 구현된 run_daily_prediction 파라미터에 맞춰 호출
+    result = analyzer.run_daily_prediction(
+        target_date=target_date,
+        commodity=commodity,
+        lookback_days=lookback_days,
+        save_file=False,
+    )
         
     return json.dumps(result, ensure_ascii=False)
 

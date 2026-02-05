@@ -240,3 +240,50 @@ class BigQueryClient:
                 item[col] = row[col]
             data.append(item)
         return data
+
+
+def get_bigquery_timeseries(
+    dataset_id: Optional[str] = None,
+    table_id: Optional[str] = None,
+    project_id: Optional[str] = None,
+    date_column: Optional[str] = None,
+    value_column: Optional[Union[str, List[str]]] = None,
+    base_date: Optional[str] = None,
+    days: Optional[int] = None,
+) -> Union[List[float], Dict[str, List[float]]]:
+    """
+    BigQuery에서 시계열 데이터 값 리스트를 가져오는 편의 함수
+    """
+    client = BigQueryClient(
+        project_id=project_id,
+        dataset_id=dataset_id,
+        table_id=table_id,
+        date_column=date_column,
+        value_column=value_column,
+        base_date=base_date,
+        days=days,
+    )
+    
+    data = client.get_timeseries_data(
+        dataset_id=dataset_id,
+        table_id=table_id,
+        date_column=date_column,
+        value_column=value_column,
+        base_date=base_date,
+        days=days,
+    )
+
+    if not data:
+        return []
+
+    # 첫 번째 행에서 컬럼 확인 (date 제외)
+    first_row_keys = [k for k in data[0].keys() if k != "date"]
+
+    if len(first_row_keys) == 1:
+        col_name = first_row_keys[0]
+        return [float(item[col_name]) for item in data]
+    else:
+        result = {}
+        for col_name in first_row_keys:
+            result[col_name] = [float(item[col_name]) for item in data]
+        return result
