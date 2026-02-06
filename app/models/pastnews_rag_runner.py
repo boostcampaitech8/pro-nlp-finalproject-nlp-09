@@ -111,23 +111,26 @@ def run_pastnews_rag(
     commodity: str = "corn",
     top_k: int = 2,
     dimensions: int = 1024,
+    target_date: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     모든 triple을 사용: 각 triple마다 embedding 조회 후 유사 hash_id 검색(triple당 최대 top_k개)
-    → 과거 뉴스 수집 후 최신순 정렬. 연관 키워드는 keyword_analyzer의 top_triples를 보고서에서 사용하면 됨.
+    → 과거 뉴스 수집 후 최신순 정렬. target_date 기준 최소 3일 이전 기사만 포함하며,
+    앞 100자가 같은 기사는 중복으로 간주하고 가장 최근 1건만 유지합니다.
 
     Args:
         triples: [[s, v, o], ...]. None이면 extract_triples_from_today() 사용.
         commodity: 상품명 (corn, soybean, wheat)
         top_k: triple당 가져올 유사 hash_id 개수 (기본 2)
         dimensions: (미사용, 호환용)
+        target_date: 기준일 (YYYY-MM-DD). None이면 오늘. 이 날짜 기준 최소 3일 이전 기사만 포함.
 
     Returns:
         dict: article_info (가격 데이터 포함)
     """
     result = {"article_info": []}
     # triple 개수: 호출부(triples 인자)에서 결정. triple당 기사 수: 에이전트 top_k와 무관하게 항상 2개로 제한.
-    max_per_triple = 1
+    max_per_triple = 2
 
     if triples is None or len(triples) == 0:
         triples = extract_triples_from_today()
@@ -140,7 +143,7 @@ def run_pastnews_rag(
         if not isinstance(t, (list, tuple)) or len(t) < 3:
             continue
         triple_texts.append(str(t).strip())
-    triple_texts = triple_texts[:5]
+    triple_texts = triple_texts[:7]
     if not triple_texts:
         result["error"] = "유효한 [s, v, o] 형식의 triple이 없습니다."
         return result
@@ -164,7 +167,8 @@ def run_pastnews_rag(
     if not hash_ids:
         return result
 
-    articles = fetch_article_dates(client, hash_ids)
+    # target_date가 있으면 BigQuery 조회 시점에 최소 3일 이전 기사만 가져옴
+    articles = fetch_article_dates(client, hash_ids, target_date=target_date)
 
     def _sort_key(r):
         pd = getattr(r, "publish_date", None)
@@ -196,8 +200,16 @@ def run_pastnews_rag(
             offset = price_row.offset_days
             prices_by_date[base_date_str][offset] = float(price_row.close) if price_row.close is not None else None
 
+    def _normalize_prefix(s: str, length: int = 50) -> str:
+        """중복 판별용: 공백 정규화 후 앞 length자. 다른 날짜 같은 기사 제거용."""
+        if not s:
+            return ""
+        normalized = " ".join(str(s).split())
+        return normalized[:length]
+
     result["article_info"] = []
     max_articles = 10
+    seen_prefix: set = set()  # 앞 50자(정규화) 기준 중복 제거, 최신순이라 첫 등장이 가장 최근
     for r in articles:
         if len(result["article_info"]) >= max_articles:
             break
@@ -209,6 +221,10 @@ def run_pastnews_rag(
             text_val = r.description
         if not text_val:
             continue
+        prefix = _normalize_prefix(text_val, 50)
+        if prefix in seen_prefix:
+            continue
+        seen_prefix.add(prefix)
         publish_date_str = str(r.publish_date) if hasattr(r, "publish_date") and r.publish_date else None
         if not publish_date_str:
             continue

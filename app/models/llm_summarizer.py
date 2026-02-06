@@ -306,19 +306,21 @@ def keyword_analyzer(target_date: str, commodity: str = "corn", days: int = 3) -
 
 
 @tool
-def pastnews_rag(triples_json: str, commodity: str = "corn", top_k: int = 5) -> str:
+def pastnews_rag(triples_json: str, commodity: str = "corn", top_k: int = 5, target_date: Optional[str] = None) -> str:
     """
     전달받은 triples로 유사 과거 뉴스를 검색하고, description, publish_date, 가격을 반환합니다.
+    target_date 기준 최소 3일 이전 기사만 포함하며, 앞 100자가 같은 기사는 중복 제거(가장 최근 1건만 유지)합니다.
     연관 키워드는 keyword_analyzer의 top_triples **앞 5개**에 있으므로, 보고서 작성 시 그 값을 저장해 두었다가 "연관 키워드" 컬럼에 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시하세요.
 
     Args:
         triples_json: triples 배열의 JSON 문자열. keyword_analyzer의 **top_triples 앞 5개**에서 "triple"만 추출. 예: '[["A","B","C"],["D","E","F"]]' (최대 5개)
         top_k: triple당 유사 뉴스 개수 (기본 2)
+        target_date: 분석 기준일 (YYYY-MM-DD). 이 날짜 기준 최소 3일 이전 기사만 포함. 미입력 시 오늘 기준.
 
     Returns:
         JSON: article_info (각 항목: description, publish_date, 0, 1, 3), error(있을 경우)
     """
-    print(f"[pastnews_rag] 실행 시작 (commodity: {commodity})", flush=True)
+    print(f"[pastnews_rag] 실행 시작 (commodity: {commodity}, target_date: {target_date})", flush=True)
     triples = []
     if triples_json and triples_json.strip():
         try:
@@ -333,7 +335,7 @@ def pastnews_rag(triples_json: str, commodity: str = "corn", top_k: int = 5) -> 
             pass
     # top_triples 앞 5개만 사용
     triples = triples[:5] if triples else []
-    result = _run_pastnews_rag(triples=triples if triples else None, commodity=commodity, top_k=top_k)
+    result = _run_pastnews_rag(triples=triples if triples else None, commodity=commodity, top_k=top_k, target_date=target_date)
     print("[pastnews_rag] 종료", flush=True)
     return json.dumps(result, ensure_ascii=False, indent=2)
 
@@ -411,9 +413,9 @@ class LLMSummarizer:
 - 다음 순서로 도구를 호출하세요:
   1. `timeseries_predictor(target_date="{target_date}", commodity="{commodity}")`
   2. `news_sentiment_analyzer(target_date="{target_date}", commodity="{commodity}")`
-  3. `keyword_analyzer(target_date="{target_date}", commodit    y="{commodity}")`
-  4. keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple"만 추출해 `pastnews_rag(triples_json="...", commodity="{commodity}", top_k=2)` 호출. 연관 키워드는 그 앞 5개 top_triples의 keywords를 저장해 두었다가 보고서 표에 사용하세요.
-- **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"], "keywords": ["x","y"]}}, ...]}}를 반환하면, **앞 5개만** 사용해 `pastnews_rag(triples_json='[["A","B","C"], ...]', top_k=2)` 호출 (최대 5개). 표의 "연관 키워드"에는 그 앞 5개 top_triples의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시.
+  3. `keyword_analyzer(target_date="{target_date}", commodity="{commodity}")`
+  4. keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple"만 추출해 `pastnews_rag(triples_json="...", commodity="{commodity}", top_k=2, target_date="{target_date}")` 호출. 연관 키워드는 그 앞 5개 top_triples의 keywords를 저장해 두었다가 보고서 표에 사용하세요.
+- **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"], "keywords": ["x","y"]}}, ...]}}를 반환하면, **앞 5개만** 사용해 `pastnews_rag(triples_json='[["A","B","C"], ...]', commodity="{commodity}", top_k=2, target_date="{target_date}")` 호출 (최대 5개). 표의 "연관 키워드"에는 그 앞 5개 top_triples의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시.
 - `timeseries_predictor` 결과 활용:
   * y, yhat, forecast_direction을 상단 표에 표시
   * **상단 표의 "시장 심리" 컬럼**: 반드시 섹션 2의 "종합 시장 심리" 판단 결과([긍정적/중립적/부정적])를 그대로 표시
