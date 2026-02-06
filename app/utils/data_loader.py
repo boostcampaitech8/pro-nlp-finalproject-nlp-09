@@ -100,8 +100,8 @@ def upload_report_to_gcs(report_text: str, target_date: str, commodity: str, buc
         dt = datetime.strptime(target_date, "%Y-%m-%d")
         year = dt.strftime("%Y")
         month = dt.strftime("%m")
-        # 파일명에 품목명 추가
-        blob_path = f"reports/{year}/{month}/{commodity}_report_{target_date}.txt"
+        # 품목 중심 계층 구조로 경로 수정
+        blob_path = f"reports/{commodity}/{year}/{month}/{commodity}_report_{target_date}.txt"
 
         factory = GCPServiceFactory()
         storage_service = factory.get_storage_client(bucket_name=bucket_name)
