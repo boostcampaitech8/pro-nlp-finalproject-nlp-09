@@ -13,9 +13,15 @@ def get_bq_client():
     return bigquery.Client()
 
 
-def fetch_article_dates(client, hash_ids):
+def fetch_article_dates(client, hash_ids, target_date=None):
     """
     hash_ids로 기사 정보와 발행일을 조회합니다.
+    target_date가 주어지면 해당 날짜 기준 최소 3일 이전(publish_date <= target_date - 3일)인 기사만 BigQuery에서 필터링해 가져옵니다.
+
+    Args:
+        client: BigQuery 클라이언트
+        hash_ids: 조회할 hash_id 목록
+        target_date: 기준일 (YYYY-MM-DD). None이면 날짜 제한 없음.
     """
     if not hash_ids:
         return []
@@ -24,22 +30,33 @@ def fetch_article_dates(client, hash_ids):
     news_table = os.getenv("NEWS_TABLE", "news_article")
     map_full_table = f"{client.project}.{dataset}.{map_table}"
     news_full_table = f"{client.project}.{dataset}.{news_table}"
-    
+
+    conditions = [
+        "m.hash_id IN UNNEST(@hash_ids)",
+        "m.publish_date IS NOT NULL",
+    ]
+    # target_date 기준 최소 LOOKBACK_DAYS 일 이전 기사만 (숫자 낮출수록 최근 기사 더 포함 → 다양성↑)
+    LOOKBACK_DAYS = 4
+    if target_date:
+        conditions.append(
+            f"CAST(m.publish_date AS DATE) <= DATE_SUB(@target_date, INTERVAL {LOOKBACK_DAYS} DAY)"
+        )
+
     query = f"""
-    SELECT DISTINCT 
-      n.description, 
+    SELECT DISTINCT
+      n.description,
       CAST(m.publish_date AS DATE) AS publish_date
     FROM `{map_full_table}` m
     JOIN `{news_full_table}` n
       ON m.article_id = n.id
-    WHERE m.hash_id IN UNNEST(@hash_ids)
-      AND m.publish_date IS NOT NULL
+    WHERE {" AND ".join(conditions)}
     """
+    params = [bigquery.ArrayQueryParameter("hash_ids", "STRING", hash_ids)]
+    if target_date:
+        params.append(bigquery.ScalarQueryParameter("target_date", "DATE", target_date))
     job = client.query(
         query,
-        job_config=bigquery.QueryJobConfig(
-            query_parameters=[bigquery.ArrayQueryParameter("hash_ids", "STRING", hash_ids)]
-        ),
+        job_config=bigquery.QueryJobConfig(query_parameters=params),
     )
     return list(job.result())
 

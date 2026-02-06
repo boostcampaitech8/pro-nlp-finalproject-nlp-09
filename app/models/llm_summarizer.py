@@ -94,7 +94,7 @@ REPORT_FORMAT = """
   - pastnews_rag 도구 결과를 반드시 아래 표 형식으로 표시하세요.
   - **중요**: all_text가 영어로 되어 있으면 반드시 한국어로 번역하여 "뉴스 내용" 컬럼에 표시하세요.
   - **뉴스 내용 규칙**: 뉴스 내용은 반드시 **완성된 문장 형태**로 끝나야 합니다. 마침표(.), 느낌표(!), 물음표(?)로 끝나거나 "~입니다", "~합니다", "~습니다" 등의 종결어미로 완결되어야 합니다.
-  - "연관 키워드" 컬럼에는 **keyword_analyzer가 반환한 top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 **구분해서** 표시하세요 (각 키워드를 명확히 구분).
+  - "연관 키워드" 컬럼에는 **keyword_analyzer가 반환한 top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 **구분해서** 표시하세요 (각 키워드를 명확히 구분). 키워드가 부족하거나 뉴스 내용과 맞지 않으면 **주요 키워드 목록(top_entities 또는 top_triples의 키워드)**에서 적절한 것을 골라 보충하세요.
   
   | 뉴스 날짜 | 뉴스 내용 | 연관 키워드 | 당일 | 1일후 | 3일후 |
   |-----------|-----------|-------------|------|------|------|
@@ -153,18 +153,18 @@ SYSTEM_PROMPT = (
 **사용 가능한 도구**:
 1. timeseries_predictor: 시계열 분석 + 머신러닝 하이브리드 예측
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
-      - commodity: 상품명 (corn, soybean, wheat)
+   - commodity: 상품명 (corn, soybean, wheat)
    - 설명: 시계열 분석 모델의 가격 예측(yhat)과 머신러닝의 방향 예측(forecast_direction)을 반환합니다.
    - 반환 값: target_date, y(어제 종가), yhat(시계열 분석 예측값), forecast_direction(Up/Down), trend, EMA_lag2_effect, Volume_lag5_effect, volatility 등 시계열 features 전체
 
 2. news_sentiment_analyzer: 뉴스 기반 시장 영향력 분석 및 근거 추출
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
-      - commodity: 상품명 (corn, soybean, wheat)
+   - commodity: 상품명 (corn, soybean, wheat)
    - 설명: 해당 날짜 전후의 뉴스를 분석하여 시장 상승/하락 확률을 예측하고, 예측의 핵심 근거가 된 주요 뉴스들을 반환합니다.
 
 3. keyword_analyzer: 뉴스 기사의 주요 키워드 분석 (Entity Confidence / PageRank 기반)
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
-      - commodity: 상품명 (corn, soybean, wheat)
+   - commodity: 상품명 (corn, soybean, wheat)
    - days: 분석할 일수 (기본 3일)
    - 설명: PageRank 알고리즘을 활용하여 뉴스의 Entity Confidence(중요도) 상위 키워드를 추출합니다.
    - 반환 값: top_entities (상위 10개, 각 항목: {"entity": "...", "score": ...})
@@ -173,7 +173,7 @@ SYSTEM_PROMPT = (
    - triples_json: keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple" 배열만 모은 JSON 문자열. 예: '[["A","B","C"],["D","E","F"]]' (최대 5개)
       - commodity: 상품명 (corn, soybean, wheat)
    - top_k: triple당 유사 뉴스 개수 (기본 2)
-   - 연관 키워드는 keyword_analyzer의 top_triples 앞 5개에 이미 있으므로, 보고서 표의 "연관 키워드" 컬럼에는 그 앞 5개의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시하세요.
+   - 연관 키워드는 keyword_analyzer의 top_triples 앞 5개에 이미 있으므로, 보고서 표의 "연관 키워드" 컬럼에는 그 앞 5개의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시하세요. 부족하면 **주요 키워드 목록(top_entities·top_triples)**에서 보충하세요.
 
 5. decision_meta: 최종 투자 의견(BUY/SELL/HOLD)과 confidence(확률 분포)를 저장하는 내부 도구
 - stage: "v1" 또는 "v2"
@@ -201,7 +201,7 @@ SYSTEM_PROMPT = (
   | No | 뉴스 제목 | 내용 요약 |
   |:--:|-----------|-----------|
   | [번호] | [뉴스 제목(한국어 번역)] | [all_text 요약(한국어, 완성된 문장으로 끝)] |
-- `pastnews_rag` 도구 결과(article_info)는 '과거 관련 뉴스' 표에 아래 형식으로 표시하세요. **뉴스 내용**은 article_info의 all_text를 사용하고, 영어면 한국어로 번역하세요. **뉴스 내용은 반드시 완성된 문장 형태로 끝나야 합니다** (마침표, 종결어미 등). **연관 키워드** 컬럼에는 keyword_analyzer가 반환한 **top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 넣으세요 (저장해 둔 값 사용).
+- `pastnews_rag` 도구 결과(article_info)는 '과거 관련 뉴스' 표에 아래 형식으로 표시하세요. **뉴스 내용**은 article_info의 all_text를 사용하고, 영어면 한국어로 번역하세요. **뉴스 내용은 반드시 완성된 문장 형태로 끝나야 합니다** (마침표, 종결어미 등). **연관 키워드** 컬럼에는 keyword_analyzer가 반환한 **top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 넣으세요 (저장해 둔 값 사용). 키워드가 부족하거나 뉴스와 맞지 않으면 **주요 키워드 목록(top_entities·top_triples)**에서 골라 보충하세요.
   | 뉴스 날짜 | 뉴스 내용 | 연관 키워드 | 당일 | 1일후 | 3일후 |
   |-----------|-----------|-------------|------|------|------|
   | [뉴스 날짜] | [뉴스 내용(한국어, 완성된 문장으로 끝)] | [#키워드1 #키워드2 또는 키워드1, 키워드2] | [0] | [1] | [3] |
@@ -248,7 +248,7 @@ SYSTEM_PROMPT = (
     - 변수명(_lag2_effect 등)도 절대 사용하지 말고 "지수이동평균", "거래량" 등 자연스러운 용어만 사용하세요
     - 예: "시계열 예측 분석에서는 추세(85.5, 횡보 추세), 연간주기(-0.08, 부정적 영향), 주간주기(+0.12, 긍정적 영향), 변동성(42, 중간 수준)을 고려했습니다. 피처 기반 머신러닝 분석에서는 지수이동평균(-1.25)과 거래량(-0.50)이 모두 하락 요인으로 작용했습니다. 이를 종합하면 하락으로 예측됩니다."
 - `news_sentiment_analyzer` 결과의 evidence에서 긍정/부정 뉴스 묶음을 구분해서 표시하세요. 각 뉴스의 제목(title), 내용(all_text 요약)을 보고서 표에 포함하세요(impact_score는 표시 안 함). 전체 예측 결과인 prediction.direction은 '뉴스 빅데이터 기반 시장 심리 분석' 섹션의 "뉴스 기반 예측" 항목에 표시하세요. **내부적으로 impact_score의 절댓값이 큰 뉴스를 더 중요하게 고려**하여 종합 시장 심리를 판단하되, 보고서에는 "영향력 점수"나 숫자값을 언급하지 말고 자연스러운 표현만 사용하세요.
-- `pastnews_rag` 도구 결과(article_info)는 '과거 관련 뉴스' 표에 표시하세요. "연관 키워드" 컬럼에는 **keyword_analyzer 결과의 top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 넣으세요 (이미 호출 결과로 저장된 값을 사용).
+- `pastnews_rag` 도구 결과(article_info)는 '과거 관련 뉴스' 표에 표시하세요. "연관 키워드" 컬럼에는 **keyword_analyzer 결과의 top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 넣으세요 (이미 호출 결과로 저장된 값을 사용). 부족하면 **주요 키워드 목록(top_entities·top_triples)**에서 보충하세요.
 - **C. 뉴스 빅데이터 기반 시장 심리 분석** 섹션 작성 방법:
   * A-1(긍정 뉴스)과 A-2(부정 뉴스)를 분석하여 주요 긍정 요인과 부정 요인을 분석하세요
   * 과거 관련 뉴스에서 당일, 1일후, 3일후 가격 변동 패턴을 분석하세요
@@ -446,19 +446,21 @@ def keyword_analyzer(target_date: str, commodity: str = "corn", days: int = 3) -
 
 
 @tool
-def pastnews_rag(triples_json: str, commodity: str = "corn", top_k: int = 5) -> str:
+def pastnews_rag(triples_json: str, commodity: str = "corn", top_k: int = 5, target_date: Optional[str] = None) -> str:
     """
     전달받은 triples로 유사 과거 뉴스를 검색하고, description, publish_date, 가격을 반환합니다.
-    연관 키워드는 keyword_analyzer의 top_triples **앞 5개**에 있으므로, 보고서 작성 시 그 값을 저장해 두었다가 "연관 키워드" 컬럼에 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시하세요.
+    target_date 기준 최소 3일 이전 기사만 포함하며, 앞 100자가 같은 기사는 중복 제거(가장 최근 1건만 유지)합니다.
+    연관 키워드는 keyword_analyzer의 top_triples **앞 5개**에 있으므로, 보고서 작성 시 그 값을 저장해 두었다가 "연관 키워드" 컬럼에 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시하세요. 키워드가 부족하면 주요 키워드 목록(top_entities·top_triples)에서 보충하세요.
 
     Args:
         triples_json: triples 배열의 JSON 문자열. keyword_analyzer의 **top_triples 앞 5개**에서 "triple"만 추출. 예: '[["A","B","C"],["D","E","F"]]' (최대 5개)
         top_k: triple당 유사 뉴스 개수 (기본 2)
+        target_date: 분석 기준일 (YYYY-MM-DD). 이 날짜 기준 최소 3일 이전 기사만 포함. 미입력 시 오늘 기준.
 
     Returns:
         JSON: article_info (각 항목: description, publish_date, 0, 1, 3), error(있을 경우)
     """
-    print(f"[pastnews_rag] 실행 시작 (commodity: {commodity})", flush=True)
+    print(f"[pastnews_rag] 실행 시작 (commodity: {commodity}, target_date: {target_date})", flush=True)
     triples = []
     if triples_json and triples_json.strip():
         try:
@@ -473,7 +475,7 @@ def pastnews_rag(triples_json: str, commodity: str = "corn", top_k: int = 5) -> 
             pass
     # top_triples 앞 5개만 사용
     triples = triples[:5] if triples else []
-    result = _run_pastnews_rag(triples=triples if triples else None, commodity=commodity, top_k=top_k)
+    result = _run_pastnews_rag(triples=triples if triples else None, commodity=commodity, top_k=top_k, target_date=target_date)
     print("[pastnews_rag] 종료", flush=True)
     return json.dumps(result, ensure_ascii=False, indent=2)
 
@@ -552,8 +554,8 @@ class LLMSummarizer:
   1. `timeseries_predictor(target_date="{target_date}", commodity="{commodity}")`
   2. `news_sentiment_analyzer(target_date="{target_date}", commodity="{commodity}")`
   3. `keyword_analyzer(target_date="{target_date}", commodity="{commodity}")`
-  4. keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple"만 추출해 `pastnews_rag(triples_json="...", commodity="{commodity}", top_k=2)` 호출. 연관 키워드는 그 앞 5개 top_triples의 keywords를 저장해 두었다가 보고서 표에 사용하세요.
-- **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"], "keywords": ["x","y"]}}, ...]}}를 반환하면, **앞 5개만** 사용해 `pastnews_rag(triples_json='[["A","B","C"], ...]', top_k=2)` 호출 (최대 5개). 표의 "연관 키워드"에는 그 앞 5개 top_triples의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시.
+  4. keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple"만 추출해 `pastnews_rag(triples_json="...", commodity="{commodity}", top_k=2, target_date="{target_date}")` 호출. 연관 키워드는 그 앞 5개 top_triples의 keywords를 저장해 두었다가 보고서 표에 사용하고, 부족하면 주요 키워드 목록에서 보충하세요.
+- **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"], "keywords": ["x","y"]}}, ...]}}를 반환하면, **앞 5개만** 사용해 `pastnews_rag(triples_json='[["A","B","C"], ...]', commodity="{commodity}", top_k=2, target_date="{target_date}")` 호출 (최대 5개). 표의 "연관 키워드"에는 그 앞 5개 top_triples의 keywords를 #키워드1 #키워드2 형식으로 표시하고, 부족하면 top_entities·top_triples에서 보충.
 - `timeseries_predictor` 결과 활용:
   * **중요**: yhat와 forecast_direction 값을 직접 보여주지 마세요. 대신 요인들만 분석하고 LLM이 최종 예측 방향을 도출하세요
   * y(어제 종가)만 상단 표에 표시
