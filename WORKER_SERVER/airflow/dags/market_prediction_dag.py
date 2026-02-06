@@ -86,22 +86,22 @@ def create_dag(commodity_name):
             # commodity 인자 전달
             load_timeseries_prediction(timeseries_data, commodity=commodity_name, dataset_id=BIGQUERY_DATASET_ID)
 
-        def load_news_task(**context):
-            """뉴스 데이터 적재"""
-            if not load_news_prediction:
-                raise ImportError("load_news_prediction 함수를 불러오지 못했습니다.")
+        # def load_news_task(**context):
+        #     """뉴스 데이터 적재"""
+        #     if not load_news_prediction:
+        #         raise ImportError("load_news_prediction 함수를 불러오지 못했습니다.")
 
-            analysis_result = context['ti'].xcom_pull(task_ids='run_analysis')
-            if not analysis_result: raise ValueError("분석 결과가 없습니다.")
+        #     analysis_result = context['ti'].xcom_pull(task_ids='run_analysis')
+        #     if not analysis_result: raise ValueError("분석 결과가 없습니다.")
                 
-            news_data = analysis_result.get('news_data')
-            if not news_data:
-                print(f"⚠️ [{commodity_name}] 뉴스 예측 데이터가 없습니다. 적재를 건너뜁니다.")
-                return
+        #     news_data = analysis_result.get('news_data')
+        #     if not news_data:
+        #         print(f"⚠️ [{commodity_name}] 뉴스 예측 데이터가 없습니다. 적재를 건너뜁니다.")
+        #         return
 
-            print(f"💾 [{commodity_name}] 뉴스 데이터 적재 시작")
-            # commodity 인자 전달
-            load_news_prediction(news_data, commodity=commodity_name, dataset_id=BIGQUERY_DATASET_ID)
+        #     print(f"💾 [{commodity_name}] 뉴스 데이터 적재 시작")
+        #     # commodity 인자 전달
+        #     load_news_prediction(news_data, commodity=commodity_name, dataset_id=BIGQUERY_DATASET_ID)
 
         def upload_report_task(**context):
             """리포트 GCS 업로드"""
@@ -136,11 +136,11 @@ def create_dag(commodity_name):
             provide_context=True
         )
 
-        t3_load_news = PythonOperator(
-            task_id='load_news',
-            python_callable=load_news_task,
-            provide_context=True
-        )
+        # t3_load_news = PythonOperator(
+        #     task_id='load_news',
+        #     python_callable=load_news_task,
+        #     provide_context=True
+        # )
 
         t4_upload_report = PythonOperator(
             task_id='upload_report',
@@ -148,8 +148,8 @@ def create_dag(commodity_name):
             provide_context=True
         )
 
-        # 실행 순서
-        t1_analyze >> [t2_load_timeseries, t3_load_news, t4_upload_report]
+        # 실행 순서: 분석 -> [시계열 적재, 리포트 업로드] 병렬 실행
+        t1_analyze >> [t2_load_timeseries, t4_upload_report]
 
     return dag
 
