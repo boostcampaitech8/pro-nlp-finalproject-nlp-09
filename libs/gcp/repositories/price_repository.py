@@ -288,23 +288,27 @@ class PriceRepository:
 
         logger.info(f"Loaded {job.output_rows} rows to {table_ref}")
 
-    def save_prediction(self, prediction_data: Dict[str, Any]) -> None:
+    def save_prediction(self, prediction_data: Dict[str, Any], commodity: str) -> None:
         """
         시계열 예측 결과를 prediction_timeseries 테이블에 적재
 
         Args:
             prediction_data: 시계열 모델의 반환값 (JSON/Dict)
+            commodity: 상품명 (corn, soybean, wheat)
         """
         if not prediction_data or "error" in prediction_data:
             logger.error("Skipping save: Invalid prediction data")
             return
 
-        # 테이블 이름 (dataset_id 제외, insert_rows_json에서 처리함)
         table_id = "prediction_timeseries"
         
-        logger.info(f"Saving timeseries prediction for date: {prediction_data.get('target_date')}")
+        # 데이터에 commodity 추가
+        row = prediction_data.copy()
+        row["commodity"] = commodity
         
-        errors = self._bq.insert_rows_json(table_id, [prediction_data])
+        logger.info(f"Saving timeseries prediction for {commodity} on date: {row.get('target_date')}")
+        
+        errors = self._bq.insert_rows_json(table_id, [row])
         
         if errors:
-            raise RuntimeError(f"Failed to save timeseries prediction: {errors}")
+            raise RuntimeError(f"Failed to save timeseries prediction for {commodity}: {errors}")

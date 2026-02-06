@@ -1,30 +1,47 @@
 """
-triple_text로 tilda.news_article_triples에서 embedding 조회 → 유사 hash_id 검색 → 뉴스 일자 전후 가격 조회
+과거 뉴스 사례 검색 및 가격 변동 매칭 실행 모듈
 """
 
 import os
+import json
 from datetime import date
 from typing import List, Optional, Any, Dict
-
 from google.cloud import bigquery
 
 from app.models.pastnews_rag.price_jump import get_bq_client as _get_bq_client
 from app.models.pastnews_rag.price_jump import fetch_article_dates, fetch_prices_for_dates
 
 
-
 def extract_triples_from_today():
-    """triples 없을 때 사용할 예시 1개 반환 (BQ triple_text 조회용)"""
-    return [["USDA", "announced", "corn export restrictions"]]
+    """기본 검색용 triples"""
+    return [["USDA", "announced", "export restrictions"]]
 
 
 def fetch_embedding_by_triple_text(client, triple_text: str) -> Optional[List[float]]:
-    """BigQuery tilda.news_article_triples에서 triple_text로 행을 찾아 embedding 반환."""
+    """BigQuery에서 triple_text에 해당하는 임베딩 조회"""
     if not triple_text or not client:
         return None
-    result = fetch_embeddings_by_triple_texts(client, [triple_text])
-    return result.get(triple_text)
-
+    dataset = os.getenv("BIGQUERY_DATASET_ID", "tilda")
+    table = "news_article_triples"
+    full_table = f"{client.project}.{dataset}.{table}"
+    query = f"""
+    SELECT embedding
+    FROM `{full_table}`
+    WHERE triple_text = @triple_text
+    LIMIT 1
+    """
+    job = client.query(
+        query,
+        job_config=bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("triple_text", "STRING", triple_text)
+            ]
+        ),
+    )
+    rows = list(job.result())
+    if not rows or not rows[0].embedding:
+        return None
+    return list(rows[0].embedding)
 
 def fetch_embeddings_by_triple_texts(
     client, triple_texts: List[str]
@@ -62,15 +79,15 @@ def fetch_embeddings_by_triple_texts(
 
 
 def vector_search_similar_hash_ids(client, triple_embedding: List[float], top_k: int = 5) -> List[str]:
-    """BigQuery VECTOR_SEARCH로 유사 hash_id 검색"""
+    """BigQuery VECTOR_SEARCH를 이용한 유사 기사 검색"""
     if not triple_embedding:
         return []
     dataset = os.getenv("BIGQUERY_DATASET_ID", "tilda")
-    table = os.getenv("TRIPLES_TABLE", "news_article_triples")
+    table = "news_article_triples"
     full_table = f"{client.project}.{dataset}.{table}"
 
     query = f"""
-    SELECT base.hash_id, distance
+    SELECT base.hash_id
     FROM VECTOR_SEARCH(
       TABLE `{full_table}`,
       'embedding',
@@ -91,6 +108,7 @@ def vector_search_similar_hash_ids(client, triple_embedding: List[float], top_k:
 
 def run_pastnews_rag(
     triples: Optional[List[List[str]]] = None,
+    commodity: str = "corn",
     top_k: int = 2,
     dimensions: int = 1024,
 ) -> Dict[str, Any]:
@@ -100,11 +118,12 @@ def run_pastnews_rag(
 
     Args:
         triples: [[s, v, o], ...]. None이면 extract_triples_from_today() 사용.
+        commodity: 상품명 (corn, soybean, wheat)
         top_k: triple당 가져올 유사 hash_id 개수 (기본 2)
         dimensions: (미사용, 호환용)
 
     Returns:
-        dict: article_info (각 항목: all_text, publish_date, 0, 1, 3), error(있을 경우)
+        dict: article_info (가격 데이터 포함)
     """
     result = {"article_info": []}
     # triple 개수: 호출부(triples 인자)에서 결정. triple당 기사 수: 에이전트 top_k와 무관하게 항상 2개로 제한.
@@ -169,7 +188,7 @@ def run_pastnews_rag(
 
     prices_by_date = {}
     if dates:
-        prices = fetch_prices_for_dates(client, dates)
+        prices = fetch_prices_for_dates(client, dates, commodity=commodity)
         for price_row in prices:
             base_date_str = str(price_row.base_date)
             if base_date_str not in prices_by_date:

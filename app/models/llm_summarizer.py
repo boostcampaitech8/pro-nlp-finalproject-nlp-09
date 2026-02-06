@@ -21,24 +21,19 @@ from models.pastnews_rag_runner import run_pastnews_rag as _run_pastnews_rag
 
 
 REPORT_FORMAT = f"""
-**날짜**: (YYYY-MM-DD) | **종목**: 옥수수 
+**날짜**: (YYYY-MM-DD) | **종목**: [분석 대상 품목명]  
 
-| 어제 종가 | 시계열 분석 예측 | 머신러닝 예측 | 시장 심리 | 종합 의견 |
+| 어제 종가 | 퀀트 예측 | 시장 심리 | 종합 의견 |
 |:---:|:---:|:---:|:---:|
-| [y] | [yhat] | [forecast_direction] | [섹션2 종합시장심리 판단결과] | [BUY/SELL/HOLD] |
+| [y] | [상승/하락] | [긍정적/중립적/부정적] | [BUY/SELL/HOLD] |
 
 ---
 
 ### 1. 📈 [Quant] 퀀트 기반 기술적 분석
 
-**A. 가격 예측**
-* **어제 종가**: [y]
-* **시계열 분석 예측값**: [yhat] 
-* **머신러닝 방향 예측**: [forecast_direction] (Up/Down)
+**A. 주요 변동 요인**
 
-**B. 주요 변동 요인**
-
-**B-1. 시계열 성분**
+**A-1. 시계열 성분**
 
 | 지표 | 값 | 해석 | 설명 |
 |------|-----|------|------|
@@ -47,24 +42,23 @@ REPORT_FORMAT = f"""
 | 주간 주기 (weekly) | [값] | [긍정적/부정적/중립] 영향 | 요일별 패턴 |
 | 변동성 (volatility) | [값] | [높음/중간/낮음] 수준 | 시장 불확실성 지표 |
 
-**B-2. 기술적 지표**
+**A-2. 기술적 지표**
 
 | 지표 | 값 | 해석 | 설명 |
 |------|-----|------|------|
 | EMA (지수이동평균) | [값] | [상승/하락] 요인 | EMA 영향 지표 |
 | Volume (거래량) | [값] | [상승/하락] 요인 | 거래량 영향 지표 |
 
-**C. 퀀트 기반 예측 모델 해석**
+**B. 퀀트 기반 종합 판단**
 
-* **시계열 분석 vs 머신러닝 비교**:
-  - 시계열 분석 예측: [yhat] ([상승/하락])
-  - 머신러닝 예측: [forecast_direction] (Up/Down)
-  - 일치 여부: [일치/불일치]
+* **예측 방향**: [상승/하락]
 
-* **핵심 근거 분석**:
-  - **시계열 성분**: 추세([trend], [상승/횡보/하락] 추세), 연간주기([yearly]), 주간주기([weekly]), 변동성([volatility], [높음/중간/낮음] 수준)을 종합하면 [분석 내용]
-  - **기술적 지표**: 지수이동평균(EMA_lag2_effect: [값])과 거래량(Volume_lag5_effect: [값])은 [상승/하락] 요인으로 작용
-  - **종합 판단**: 시계열 분석이 [yhat]로 예측하고 머신러닝이 [forecast_direction]을 예측한 이유를 위 요인들을 바탕으로 서술. 단, 변수명(EMA_lag2_effect 등)은 사용하지 말고 "지수이동평균", "거래량" 등 자연스러운 표현 사용
+* **판단 근거**:
+  - **시계열 예측 분석**: 추세([trend], [상승/횡보/하락] 추세), 연간주기([yearly]), 주간주기([weekly]), 변동성([volatility], [높음/중간/낮음] 수준)을 종합하면 [분석 내용]. 시계열 패턴 분석 결과 [상승/하락] 신호가 나타남
+  - **피처 기반 머신러닝 분석**: 지수이동평균([값])과 거래량([값])이 [상승/하락] 요인으로 작용. 기술적 지표 기반 예측 결과 [상승/하락] 가능성이 높음
+  - **종합 판단**: 시계열 패턴과 기술적 지표를 종합적으로 분석한 결과, [상승/하락]으로 예측됩니다. [구체적인 근거 서술]
+  
+* **중요**: Prophet이나 XGBoost 같은 모델명을 직접 언급하지 마세요. 대신 "시계열 예측 분석", "머신러닝 분석" 같은 설명적 표현을 사용하세요. 변수명(EMA_lag2_effect 등)도 사용하지 말고 "지수이동평균", "거래량" 등 자연스러운 표현만 사용하세요.
 ---
 ### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석
 
@@ -155,21 +149,25 @@ SYSTEM_PROMPT = (
 **사용 가능한 도구**:
 1. timeseries_predictor: 시계열 분석 + 머신러닝 하이브리드 예측
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
+   - commodity: 상품명 (corn, soybean, wheat)
    - 설명: 시계열 분석 모델의 가격 예측(yhat)과 머신러닝의 방향 예측(forecast_direction)을 반환합니다.
    - 반환 값: target_date, y(어제 종가), yhat(시계열 분석 예측값), forecast_direction(Up/Down), trend, EMA_lag2_effect, Volume_lag5_effect, volatility 등 시계열 features 전체
 
 2. news_sentiment_analyzer: 뉴스 기반 시장 영향력 분석 및 근거 추출
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
+   - commodity: 상품명 (corn, soybean, wheat)
    - 설명: 해당 날짜 전후의 뉴스를 분석하여 시장 상승/하락 확률을 예측하고, 예측의 핵심 근거가 된 주요 뉴스들을 반환합니다.
 
 3. keyword_analyzer: 뉴스 기사의 주요 키워드 분석 (Entity Confidence / PageRank 기반)
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
+   - commodity: 상품명 (corn, soybean, wheat)
    - days: 분석할 일수 (기본 3일)
    - 설명: PageRank 알고리즘을 활용하여 뉴스의 Entity Confidence(중요도) 상위 키워드를 추출합니다.
    - 반환 값: top_entities (상위 10개, 각 항목: {"entity": "...", "score": ...})
 
 4. pastnews_rag: 전달받은 triples로 유사 과거 뉴스 description, publish_date, 가격 조회
    - triples_json: keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple" 배열만 모은 JSON 문자열. 예: '[["A","B","C"],["D","E","F"]]' (최대 5개)
+      - commodity: 상품명 (corn, soybean, wheat)
    - top_k: triple당 유사 뉴스 개수 (기본 2)
    - 연관 키워드는 keyword_analyzer의 top_triples 앞 5개에 이미 있으므로, 보고서 표의 "연관 키워드" 컬럼에는 그 앞 5개의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시하세요.
 
@@ -196,21 +194,23 @@ SYSTEM_PROMPT = (
   |-----------|-----------|-------------|------|------|------|
   | [뉴스 날짜] | [뉴스 내용(한국어, 완성된 문장으로 끝)] | [#키워드1 #키워드2 또는 키워드1, 키워드2] | [0] | [1] | [3] |
 - `timeseries_predictor` 결과 활용법:
-  * **기본 정보**: y(어제 종가), yhat(시계열 분석 예측값), forecast_direction(머신러닝 방향 예측)을 상단 표에 표시
-  * **시장 심리 컬럼**: 상단 표의 "시장 심리" 컬럼에는 반드시 섹션 2의 "종합 시장 심리" 판단 결과([긍정적/중립적/부정적])를 그대로 표시
-  * **시계열 성분 해석** (B-1 섹션):
-    - trend: 값과 함께 추세 해석. 기준 - 상승 추세(> 108.88), 횡보 추세(74.58~108.88), 하락 추세(< 74.58). 예: "94.34 (상승 추세)" 또는 "80.00 (횡보 추세)" 또는 "60.00 (하락 추세)"
+  * **기본 정보**: y(어제 종가)를 상단 표에 표시
+  * **퀀트 예측 컬럼**: 상단 표의 "퀀트 예측" 컬럼에는 반드시 섹션 1의 B섹션에서 도출한 최종 예측 방향([상승/하락])을 표시
+  * **시장 심리 컬럼**: 상단 표의 "시장 심리" 컬럼에는 반드시 섹션 2의 "종합 시장 심리" 판단 결과([긍정적/중립적/부정적])를 표시
+  * **시계열 성분 해석** (A-1 섹션):
+    - trend: 값과 함께 추세 해석. 기준 - 상승 추세(> 108.88), 횡보 추세(74.58~108.88), 하락 추세(< 74.58). 예: "94.34 (상승 추세)"
     - yearly: 연간 주기 성분. 예: "+0.12 (긍정적 영향)" 또는 "-0.08 (부정적 영향)"
     - weekly: 주간 주기 성분. 예: "+0.12 (긍정적 영향)" 또는 "-0.08 (부정적 영향)"
-    - volatility: 변동성 지표. 기준 - 낮음(< 40), 중간(40~50), 높음(> 50). 예: "42 (중간 수준)" 또는 "55 (높음 수준)" 또는 "35 (낮음 수준)"
-  * **기술적 지표 해석** (B-2 섹션, 그레인저 검사로 선정된 Lag Features):
-    - EMA (지수이동평균): EMA_lag2_effect 값을 사용하되, "지수이동평균" 또는 "EMA"로 표현. 예: "지수이동평균 +1.25 (상승 요인)" 또는 "EMA -1.25 (하락 요인)"
-    - Volume (거래량): Volume_lag5_effect 값을 사용하되, "거래량"으로 표현. 예: "거래량 +0.85 (상승 요인)" 또는 "거래량 -0.50 (하락 요인)"
-  * **종합 해석** (C 섹션):
-    - 시계열 분석 예측(yhat)과 머신러닝 방향(forecast_direction)의 일치/불일치를 명확히 밝히세요
-    - 위의 시계열 성분(trend, yearly, weekly, volatility)과 기술적 지표(EMA, Volume)를 **모두 근거로 제시**하여 머신러닝이 해당 방향을 예측한 이유를 상세히 설명하세요
-    - 기술적 변수명(_lag2_effect 등)은 절대 사용하지 말고 자연스러운 용어만 사용하세요
-    - 예: "시계열 분석은 460.5로 상승을 예측했으나, 머신러닝은 Down을 예측했습니다. 추세(85.5, 횡보 추세)는 중립적이나, 지수이동평균(-1.25)과 거래량(-0.50)이 모두 하락 요인으로 작용했으며, 변동성(42, 중간 수준)도 불확실성을 나타냅니다."
+    - volatility: 변동성 지표. 기준 - 낮음(< 40), 중간(40~50), 높음(> 50). 예: "42 (중간 수준)"
+  * **기술적 지표 해석** (A-2 섹션):
+    - EMA (지수이동평균): EMA_lag2_effect 값을 사용하되, "지수이동평균"으로 표현. 예: "지수이동평균 +1.25 (상승 요인)"
+    - Volume (거래량): Volume_lag5_effect 값을 사용하되, "거래량"으로 표현. 예: "거래량 +0.85 (상승 요인)"
+  * **종합 판단** (B 섹션):
+    - **중요**: yhat와 forecast_direction 값을 직접 보여주지 마세요
+    - 시계열 성분(trend, yearly, weekly, volatility)과 기술적 지표(EMA, Volume)를 **모두 근거로 제시**하여 최종 예측 방향([상승/하락])을 도출하세요
+    - **모델명 사용 금지**: "Prophet", "XGBoost" 같은 모델명을 직접 언급하지 마세요. 대신 "시계열 예측 분석", "피처 기반 머신러닝 분석" 같은 설명적 표현만 사용하세요
+    - 변수명(_lag2_effect 등)도 절대 사용하지 말고 "지수이동평균", "거래량" 등 자연스러운 용어만 사용하세요
+    - 예: "시계열 예측 분석에서는 추세(85.5, 횡보 추세), 연간주기(-0.08, 부정적 영향), 주간주기(+0.12, 긍정적 영향), 변동성(42, 중간 수준)을 고려했습니다. 피처 기반 머신러닝 분석에서는 지수이동평균(-1.25)과 거래량(-0.50)이 모두 하락 요인으로 작용했습니다. 이를 종합하면 하락으로 예측됩니다."
 - `news_sentiment_analyzer` 결과의 evidence에서 긍정/부정 뉴스 묶음을 구분해서 표시하세요. 각 뉴스의 제목(title), 내용(all_text 요약)을 보고서 표에 포함하세요(impact_score는 표시 안 함). 전체 예측 결과인 prediction.direction은 '뉴스 빅데이터 기반 시장 심리 분석' 섹션의 "뉴스 기반 예측" 항목에 표시하세요. **내부적으로 impact_score의 절댓값이 큰 뉴스를 더 중요하게 고려**하여 종합 시장 심리를 판단하되, 보고서에는 "영향력 점수"나 숫자값을 언급하지 말고 자연스러운 표현만 사용하세요.
 - `pastnews_rag` 도구 결과(article_info)는 '과거 관련 뉴스' 표에 표시하세요. "연관 키워드" 컬럼에는 **keyword_analyzer 결과의 top_triples 앞 5개의 keywords**를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 넣으세요 (이미 호출 결과로 저장된 값을 사용).
 - **C. 뉴스 빅데이터 기반 시장 심리 분석** 섹션 작성 방법:
@@ -219,14 +219,15 @@ SYSTEM_PROMPT = (
   * **중요**: 위 두 가지를 종합하여 현재 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단할 때, 각 뉴스의 **impact_score의 절댓값이 클수록 시장에 더 큰 영향을 미치는 중요한 뉴스**이므로 이를 내부적으로 더 중요하게 고려하여 판단하세요. 단, 보고서에는 "영향력 점수", "impact_score", 구체적인 숫자값을 절대 언급하지 말고, "부정적 뉴스가 더 큰 영향을 미치는 것으로 분석됩니다", "긍정 요인보다 부정 요인이 더 크게 작용" 같은 자연스러운 표현만 사용하여 근거를 명확히 제시하세요
 - `keyword_analyzer` 결과의 top_entities를 활용할 때: (1) score는 사용하지 마세요. (2) entity 이름만 사용하여 최대한 한국어로 번역하세요. (3) #키워드1 #키워드2 형식으로 표기하세요. 예: #옥수수 #가격 #수출 #미국농무부 #시장
 - **### 3. 종합 의견** 섹션 작성 방법:
-  * 섹션 1의 퀀트 분석 결과(시계열 분석, 머신러닝, 시계열 성분, 기술적 지표)를 요약하세요
+  * 섹션 1의 퀀트 분석 결과(최종 예측 방향, 시계열 성분, 기술적 지표)를 요약하세요
   * 섹션 2의 뉴스 심리 분석 결과(시장 심리 판단, 주요 테마)를 요약하세요
-  * 퀀트 모델과 뉴스 심리가 일치하는지 불일치하는지 분석하고, 어떤 신호가 더 강한지 판단하세요
+  * 퀀트 예측과 뉴스 심리가 일치하는지 불일치하는지 분석하고, 어떤 신호가 더 강한지 판단하세요
   * **투자자 조언 작성 시 특히 주의**: 
     - 새로운 정보를 만들지 말고, 섹션 1과 2에서 이미 분석한 내용을 구체적으로 인용하세요
-    - BUY/SELL/HOLD 의견과 함께 반드시 구체적인 근거를 제시하세요 (예: "머신러닝 Down 예측(EMA -1.25), 뉴스 부정적(가뭄 5건)")
+    - **모델명 사용 금지**: "Prophet", "XGBoost" 대신 "시계열 예측 분석", "피처 기반 머신러닝 분석" 같은 표현 사용
+    - BUY/SELL/HOLD 의견과 함께 반드시 구체적인 근거를 제시하세요 (예: "퀀트 분석 하락 예측(지수이동평균 -1.25, 거래량 -0.50), 뉴스 심리도 부정적(가뭄 우려 5건)")
     - 주요 리스크를 구체적으로 명시하세요 (예: "변동성 높음(55), 정책 변화 시 반등 가능")
-- 네 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요. 시계열 지표(시계열 분석 + 머신러닝), 뉴스 감성 분석, 키워드 분석 결과가 서로 보완되도록 서술하세요.
+- 네 도구의 결과를 종합하여 논리적인 금융 보고서를 작성하세요. 퀀트 분석, 뉴스 감성 분석, 키워드 분석 결과가 서로 보완되도록 서술하세요.
 - target_date는 반드시 다음 문자열 리터럴을 그대로 복사해서 사용하세요. (YYYY-MM-DD)
 - **투자자 조언이 보고서의 핵심입니다**: 섹션 1과 2의 분석 내용을 충실히 인용하며, 투자자가 실제로 활용할 수 있는 구체적이고 실행 가능한 조언을 작성하세요. 막연한 표현 대신 구체적인 근거와 수치를 제시하세요.
 **보고서 작성 형식 (반드시 이 형식을 따라야 합니다)**:
@@ -238,7 +239,7 @@ SYSTEM_PROMPT = (
 
 # LangChain Tools 정의
 @tool
-def timeseries_predictor(target_date: str) -> str:
+def timeseries_predictor(target_date: str, commodity: str = "corn") -> str:
     """
     특정 날짜의 금융 시장 추세(상승/하락)와 가격을 예측합니다.
 
@@ -248,11 +249,11 @@ def timeseries_predictor(target_date: str) -> str:
     Returns:
         JSON 형식의 예측 결과 문자열 (예측값, 방향, 추세 분석 등 포함)
     """
-    return predict_market_trend(target_date)
+    return predict_market_trend(target_date, commodity=commodity)
 
 
 @tool
-def news_sentiment_analyzer(target_date: str, lookback_days: int = 7) -> str:
+def news_sentiment_analyzer(target_date: str, commodity: str = "corn", lookback_days: int = 7) -> str:
     """
     특정 날짜의 뉴스를 분석하여 시장 영향력을 예측하고 주요 근거 뉴스(제목, 영향력 점수, 관계 정보 등)를 제공합니다.
     BigQuery corn_all_news_with_sentiment 테이블에서 target_date 기준 lookback_days 일치 뉴스를 불러와 예측합니다.
@@ -267,6 +268,7 @@ def news_sentiment_analyzer(target_date: str, lookback_days: int = 7) -> str:
     analyzer = SentimentAnalyzer()
     result = analyzer.run_daily_prediction(
         target_date=target_date,
+        commodity=commodity,
         lookback_days=lookback_days,
         filter_status="T",
         save_file=False,
@@ -275,7 +277,7 @@ def news_sentiment_analyzer(target_date: str, lookback_days: int = 7) -> str:
 
 
 @tool
-def keyword_analyzer(target_date: str, days: int = 3) -> str:
+def keyword_analyzer(target_date: str, commodity: str = "corn", days: int = 3) -> str:
     """
     특정 날짜 기준으로 뉴스 기사의 주요 키워드를 분석합니다.
     PageRank 알고리즘(Entity Confidence)과 임베딩 기반 클러스터링을 활용하여 핵심 엔티티를 추출합니다.
@@ -287,8 +289,8 @@ def keyword_analyzer(target_date: str, days: int = 3) -> str:
     Returns:
         JSON: top_entities (상위 10개), top_triples (핵심 엔티티가 포함된 triple 중 엣지 실제 weight×entity PageRank 중요도 상위 10개, 각 항목: {"triple": [s,v,o], "importance": 점수})
     """
-    print("[keyword_analyzer] 실행 시작", flush=True)
-    result = json.loads(_analyze_keywords(target_date=target_date, days=days, top_k=10))
+    print(f"[keyword_analyzer] 실행 시작 (commodity: {commodity})", flush=True)
+    result = json.loads(_analyze_keywords(target_date=target_date, commodity=commodity, days=days, top_k=10))
     top_entities = result.get("top_entities", [])[:10]
     top_triples = result.get("top_triples", [])
     print("[keyword_analyzer] 종료", flush=True)
@@ -296,7 +298,7 @@ def keyword_analyzer(target_date: str, days: int = 3) -> str:
 
 
 @tool
-def pastnews_rag(triples_json: str, top_k: int = 2) -> str:
+def pastnews_rag(triples_json: str, commodity: str = "corn", top_k: int = 5) -> str:
     """
     전달받은 triples로 유사 과거 뉴스를 검색하고, description, publish_date, 가격을 반환합니다.
     연관 키워드는 keyword_analyzer의 top_triples **앞 5개**에 있으므로, 보고서 작성 시 그 값을 저장해 두었다가 "연관 키워드" 컬럼에 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시하세요.
@@ -308,7 +310,7 @@ def pastnews_rag(triples_json: str, top_k: int = 2) -> str:
     Returns:
         JSON: article_info (각 항목: description, publish_date, 0, 1, 3), error(있을 경우)
     """
-    print("[pastnews_rag] 실행 시작", flush=True)
+    print(f"[pastnews_rag] 실행 시작 (commodity: {commodity})", flush=True)
     triples = []
     if triples_json and triples_json.strip():
         try:
@@ -323,7 +325,7 @@ def pastnews_rag(triples_json: str, top_k: int = 2) -> str:
             pass
     # top_triples 앞 5개만 사용
     triples = triples[:5] if triples else []
-    result = _run_pastnews_rag(triples=triples if triples else None, top_k=top_k)
+    result = _run_pastnews_rag(triples=triples if triples else None, commodity=commodity, top_k=top_k)
     print("[pastnews_rag] 종료", flush=True)
     return json.dumps(result, ensure_ascii=False, indent=2)
 
@@ -388,33 +390,36 @@ class LLMSummarizer:
             system_prompt=SYSTEM_PROMPT,
         )
 
-    def _build_user_input(
-        self,
-        context: str,
-        target_date: str,
-    ) -> str:
+    def _build_user_input(self, context: str, target_date: str, commodity: str) -> str:
         """Agent에게 전달할 사용자 입력 메시지 생성"""
 
         user_input = f"""다음 정보를 바탕으로 전문적인 금융 시장 분석 보고서를 작성해주세요.
 
-**분석 맥락**: {context or "최근 시장 상황 분석"}
+    **분석 대상 품목**: {commodity}
+    **분석 맥락**: {context or "최근 시장 상황 분석"}
 **분석 기준 일자**: {target_date}
 
+- 모든 도구 호출 시 `commodity='{commodity}'` 인자를 반드시 전달하세요.
 - 다음 순서로 도구를 호출하세요:
-  1. `timeseries_predictor(target_date="{target_date}")`
-  2. `news_sentiment_analyzer(target_date="{target_date}")`
-  3. `keyword_analyzer(target_date="{target_date}")`
-  4. keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple"만 추출해 `pastnews_rag(triples_json="...", top_k=2)` 호출. 연관 키워드는 그 앞 5개 top_triples의 keywords를 저장해 두었다가 보고서 표에 사용하세요.
+  1. `timeseries_predictor(target_date="{target_date}", commodity="{commodity}")`
+  2. `news_sentiment_analyzer(target_date="{target_date}", commodity="{commodity}")`
+  3. `keyword_analyzer(target_date="{target_date}", commodity="{commodity}")`
+  4. keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple"만 추출해 `pastnews_rag(triples_json="...", commodity="{commodity}", top_k=2)` 호출. 연관 키워드는 그 앞 5개 top_triples의 keywords를 저장해 두었다가 보고서 표에 사용하세요.
 - **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"], "keywords": ["x","y"]}}, ...]}}를 반환하면, **앞 5개만** 사용해 `pastnews_rag(triples_json='[["A","B","C"], ...]', top_k=2)` 호출 (최대 5개). 표의 "연관 키워드"에는 그 앞 5개 top_triples의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시.
 - `timeseries_predictor` 결과 활용:
-  * y, yhat, forecast_direction을 상단 표에 표시
-  * **상단 표의 "시장 심리" 컬럼**: 반드시 섹션 2의 "종합 시장 심리" 판단 결과([긍정적/중립적/부정적])를 그대로 표시
-  * **B-1. 시계열 성분**: 
-    - trend: 상승 추세(> 108.88), 횡보 추세(74.58~108.88), 하락 추세(< 74.58) 기준으로 판단. 예: "94.34 (상승 추세)" 또는 "80.00 (횡보 추세)"
+  * **중요**: yhat와 forecast_direction 값을 직접 보여주지 마세요. 대신 요인들만 분석하고 LLM이 최종 예측 방향을 도출하세요
+  * y(어제 종가)만 상단 표에 표시
+  * **상단 표의 "퀀트 예측" 컬럼**: 섹션 1의 B섹션에서 도출한 최종 예측 방향([상승/하락])을 표시
+  * **상단 표의 "시장 심리" 컬럼**: 섹션 2의 "종합 시장 심리" 판단 결과([긍정적/중립적/부정적])를 표시
+  * **A-1. 시계열 성분**: 
+    - trend: 상승 추세(> 108.88), 횡보 추세(74.58~108.88), 하락 추세(< 74.58) 기준으로 판단
     - yearly, weekly: "+0.12 (긍정적 영향)" 또는 "-0.08 (부정적 영향)" 형태로 표현
-    - volatility: 값과 함께 낮음(< 40), 중간(40~50), 높음(> 50) 기준으로 판단. 예: "42 (중간 수준)"
-  * **B-2. 기술적 지표**: 변수명 대신 자연스러운 표현 사용. "지수이동평균 +1.25 (상승 요인)" 또는 "거래량 -0.50 (하락 요인)" 형태로 표현. 절대 _lag2_effect 같은 변수명 사용 금지
-  * **C. 종합 해석**: 위의 모든 요인(시계열 성분 + 기술적 지표)을 근거로 시계열 분석과 머신러닝 예측을 비교 분석. 기술적 변수명 사용 금지
+    - volatility: 낮음(< 40), 중간(40~50), 높음(> 50) 기준으로 판단
+  * **A-2. 기술적 지표**: 변수명 대신 자연스러운 표현 사용. "지수이동평균 +1.25 (상승 요인)" 형태로 표현
+  * **B. 퀀트 기반 종합 판단**: 
+    - **모델명 사용 금지**: "Prophet", "XGBoost" 대신 "시계열 예측 분석", "피처 기반 머신러닝 분석" 표현 사용
+    - 위의 모든 요인을 근거로 최종 예측 방향([상승/하락])을 도출하고 구체적인 근거 제시
+    - 예: "시계열 예측 분석에서는 추세, 연간주기 등을 고려했고, 피처 기반 머신러닝 분석에서는 지수이동평균과 거래량이 하락 요인으로 작용하여 종합적으로 하락으로 예측됩니다"
 - `news_sentiment_analyzer` 및 `pastnews_rag` 결과 활용:
   * **C. 뉴스 빅데이터 기반 시장 심리 분석**: 
     - A-1(긍정 뉴스)과 A-2(부정 뉴스)에서 주요 긍정 요인과 부정 요인 분석
@@ -424,8 +429,9 @@ class LLMSummarizer:
 - **### 3. 종합 의견 - 투자자 조언 작성 시 특별 지침**:
   * 투자자 조언이 가장 중요한 부분입니다. 다음 사항을 반드시 지켜주세요:
   * **새로운 정보를 만들지 마세요**: 섹션 1(퀀트)과 섹션 2(뉴스)에서 이미 분석한 내용만 사용하세요
-  * **구체적인 근거 제시**: BUY/SELL/HOLD 의견을 낼 때 구체적인 수치와 분석 결과를 인용하세요. 단, 변수명은 사용하지 말고 자연스러운 표현 사용
-    - 예: "머신러닝이 Down 예측(지수이동평균 -1.25, 거래량 -0.50)하고, 뉴스 심리도 부정적(가뭄 우려 뉴스 5건)"
+  * **구체적인 근거 제시**: BUY/SELL/HOLD 의견을 낼 때 구체적인 수치와 분석 결과를 인용하세요. 단, 변수명과 모델명은 사용하지 말고 자연스러운 표현 사용
+    - **모델명 사용 금지**: "Prophet", "XGBoost" 대신 "시계열 예측 분석", "피처 기반 머신러닝 분석" 사용
+    - 예: "퀀트 분석에서 하락 예측(시계열·머신러닝 분석 결과, 지수이동평균 -1.25, 거래량 -0.50), 뉴스 심리도 부정적(가뭄 우려 뉴스 5건)"
   * **리스크 구체화**: 단순히 "리스크 존재"가 아니라 구체적으로 어떤 리스크인지 명시하세요
     - 예: "변동성이 높아(55) 단기 급등 가능성", "정부 정책 변화 시 반등 가능"
 """
@@ -519,6 +525,7 @@ class LLMSummarizer:
         self,
         context: str = "",
         target_date: Optional[str] = None,
+        commodity: str = "corn",
         max_retries: int = 2,
     ) -> dict:
         """LangChain Agent를 이용한 LLM 요약 생성
@@ -534,7 +541,7 @@ class LLMSummarizer:
 
             target_date = datetime.now().strftime("%Y-%m-%d")
 
-        user_input = self._build_user_input(context=context, target_date=target_date)
+        user_input = self._build_user_input(context=context, target_date=target_date, commodity=commodity)
 
         for attempt in range(max_retries + 1):
             # Agent 실행 (LangChain이 자동으로 tool call을 처리함)
@@ -598,18 +605,21 @@ class LLMSummarizer:
 1. 섹션 제목이 정확히 일치해야 합니다: "### 1. 📈 [Quant] 퀀트 기반 기술적 분석", "### 2. 📰 [Insight] 뉴스 빅데이터 기반 시장 심리 분석", "### 3. 종합 의견"
 2. 각 섹션은 "---"로 구분되어야 합니다
 3. 마크다운 테이블 형식(|)을 사용해야 합니다
-4. timeseries_predictor 결과의 y, yhat, forecast_direction을 상단 표에 정확히 표시해야 합니다
-5. **상단 표의 "시장 심리" 컬럼에는 반드시 섹션 2의 "종합 시장 심리" 판단 결과([긍정적/중립적/부정적])를 그대로 표시해야 합니다**
-6. **B-1. 시계열 성분**과 **B-2. 기술적 지표**를 표 형식으로 표시해야 합니다. trend는 상승(> 108.88), 횡보(74.58~108.88), 하락(< 74.58) 기준, 변동성은 낮음(< 40), 중간(40~50), 높음(> 50) 기준으로 판단하세요
-7. **C. 퀀트 기반 예측 모델 해석**에서 모든 요인(추세, 연간주기, 주간주기, 변동성, 지수이동평균, 거래량)을 근거로 시계열 분석과 머신러닝 예측을 비교 분석해야 합니다. 변수명(_lag2_effect 등)은 절대 사용 금지
-8. **C. 뉴스 빅데이터 기반 시장 심리 분석**에서 A-1(긍정 뉴스)과 A-2(부정 뉴스)의 주요 긍정/부정 요인과 과거 관련 뉴스의 가격 변동 패턴을 분석하여 종합 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단해야 합니다. **중요 (절대 사용자 노출 금지)**: 각 뉴스의 impact_score의 절댓값이 큰 뉴스를 내부적으로 더 중요하게 고려하되, 보고서에는 "영향력 점수", "impact_score", 구체적인 숫자값을 절대 언급하지 말고 "부정적 뉴스가 더 큰 영향", "긍정 요인보다 부정 요인이 더 크게 작용" 같은 자연스러운 표현만 사용하세요 (impact_score는 표에도 표시 안 함)
-9. **뉴스 내용 요약 필수 규칙**: 모든 뉴스 내용 요약(all_text)은 반드시 **완성된 문장 형태**로 끝나야 합니다. 마침표(.), 느낌표(!), 물음표(?)로 끝나거나 "~입니다", "~합니다", "~습니다" 등의 종결어미로 완결되어야 합니다. "~하며", "~고", "~되어" 등으로 끝나지 마세요.
-10. 4개의 Tool을 모두 호출해야 합니다: timeseries_predictor, news_sentiment_analyzer, keyword_analyzer, pastnews_rag (keyword_analyzer 결과의 top_triples를 JSON 배열로 변환하여 pastnews_rag에 전달)
-11. Tool 호출 후 반드시 최종 보고서를 작성해야 합니다
-12. **투자자 조언 작성 시 특별히 주의**: 
+4. timeseries_predictor 결과의 y(어제 종가)를 상단 표에 표시해야 합니다
+5. **상단 표의 "퀀트 예측" 컬럼에는 섹션 1의 B섹션에서 도출한 최종 예측 방향([상승/하락])을 표시해야 합니다**
+6. **상단 표의 "시장 심리" 컬럼에는 반드시 섹션 2의 "종합 시장 심리" 판단 결과([긍정적/중립적/부정적])를 표시해야 합니다**
+7. **A-1. 시계열 성분**과 **A-2. 기술적 지표**를 표 형식으로 표시해야 합니다
+8. **B. 퀀트 기반 종합 판단**에서 모든 요인(추세, 연간주기, 주간주기, 변동성, 지수이동평균, 거래량)을 근거로 최종 예측 방향을 도출해야 합니다
+9. **중요 - 모델명 사용 금지**: "Prophet", "XGBoost" 같은 모델명을 직접 언급하지 마세요. "시계열 예측 분석", "피처 기반 머신러닝 분석" 같은 설명적 표현만 사용하세요. yhat, forecast_direction 값도 직접 보여주지 마세요
+10. **C. 뉴스 빅데이터 기반 시장 심리 분석**에서 A-1(긍정 뉴스)과 A-2(부정 뉴스)의 주요 긍정/부정 요인과 과거 관련 뉴스의 가격 변동 패턴을 분석하여 종합 시장 심리를 [긍정적/중립적/부정적] 중 하나로 판단해야 합니다
+11. **뉴스 내용 요약 필수 규칙**: 모든 뉴스 내용 요약(all_text)은 반드시 **완성된 문장 형태**로 끝나야 합니다
+12. 4개의 Tool을 모두 호출해야 합니다: timeseries_predictor, news_sentiment_analyzer, keyword_analyzer, pastnews_rag
+13. Tool 호출 후 반드시 최종 보고서를 작성해야 합니다
+14. **투자자 조언 작성 시 특별히 주의**: 
     - 섹션 1과 2에서 이미 분석한 내용만 사용 (새로운 정보 만들지 말 것)
-    - BUY/SELL/HOLD 의견과 함께 구체적인 수치 인용하되, 변수명 사용 금지 (예: "지수이동평균 -1.25, 거래량 -0.50")
-    - 리스크를 구체적으로 명시 (예: "변동성 55로 높음, 정책 변화 시 반등 가능")"""
+    - **모델명 사용 금지**: "Prophet", "XGBoost" 대신 "시계열 예측 분석", "피처 기반 머신러닝 분석" 사용
+    - BUY/SELL/HOLD 의견과 함께 구체적인 수치 인용하되, 변수명과 모델명 사용 금지
+    - 리스크를 구체적으로 명시"""
             else:
                 print("\n⚠️ 최대 재시도 횟수에 도달했습니다. 형식이 완벽하지 않을 수 있습니다.")
                 print(f"최종 요약 길이: {len(summary)}자")
