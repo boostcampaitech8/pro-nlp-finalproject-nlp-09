@@ -45,6 +45,33 @@ class SentimentAnalyzer:
     def __init__(self):
         pass
 
+    def _dedupe_news_by_text_prefix(self, news_df, text_col: str = "all_text", prefix_length: int = 50):
+        """
+        all_text(또는 지정 컬럼) 기준 앞 prefix_length자(공백 정규화 후)가 같은 행은 중복으로 보고,
+        publish_date 기준 가장 최근 행만 남깁니다.
+        """
+        try:
+            import pandas as pd
+        except ImportError:
+            return news_df
+        if news_df.empty:
+            return news_df
+        # 텍스트 컬럼: all_text 없으면 description 사용
+        if text_col not in news_df.columns:
+            text_col = "description" if "description" in news_df.columns else news_df.columns[0]
+        col = news_df[text_col]
+        # 공백 정규화 후 앞 prefix_length자
+        prefix = col.fillna("").astype(str).str.split().str.join(" ").str.slice(0, prefix_length)
+        news_df = news_df.copy()
+        news_df["_text_prefix"] = prefix
+        # 날짜 컬럼: 문자열이면 파싱해서 정렬
+        date_col = "publish_date"
+        if date_col not in news_df.columns:
+            return news_df.drop(columns=["_text_prefix"], errors="ignore")
+        df_sorted = news_df.sort_values(date_col, ascending=False)
+        df_deduped = df_sorted.drop_duplicates(subset=["_text_prefix"], keep="first")
+        return df_deduped.drop(columns=["_text_prefix"], errors="ignore").reset_index(drop=True)
+
     def run_daily_prediction(
         self,
         target_date: str,
@@ -91,6 +118,9 @@ class SentimentAnalyzer:
                 return {"error": f"[{commodity}] {target_date} 기준 최근 뉴스 데이터가 없습니다."}
             if price_df.empty:
                 return {"error": f"[{commodity}] {target_date} 기준 최근 가격 데이터가 없습니다."}
+
+            # 1-1. all_text 기준 앞 50자 동일 시 중복 제거 (가장 최근 것만 유지)
+            news_df = self._dedupe_news_by_text_prefix(news_df, prefix_length=50)
 
             # 2. 앙상블 모델 예측 실행
             report = _run_daily_prediction(
