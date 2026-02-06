@@ -60,11 +60,10 @@ def create_dag(commodity_name):
             if not run_market_analysis:
                 raise ImportError("run_market_analysis 함수를 불러오지 못했습니다.")
                 
-            execution_date = context['ds'] 
-            # [테스트 공지] 현재 데이터 부재 방지를 위해 2025-11-10로 고정하여 실행합니다.
-            target_date = "2025-11-10" 
+            # Airflow 실행 날짜 (YYYY-MM-DD)를 타겟 날짜로 설정
+            target_date = context['ds'] 
             
-            print(f"🚀 [{commodity_name}] 시장 분석 시작 (Target: {target_date}, RunDate: {execution_date})")
+            print(f"🚀 [{commodity_name}] 시장 분석 시작 (Target: {target_date})")
             # commodity 인자 전달
             result = run_market_analysis(target_date=target_date, commodity=commodity_name)
             return result
