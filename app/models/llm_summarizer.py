@@ -18,14 +18,18 @@ from models.timeseries_predictor import predict_market_trend
 from models.sentiment_analyzer import SentimentAnalyzer
 from models.keyword_analyzer import analyze_keywords as _analyze_keywords
 from models.pastnews_rag_runner import run_pastnews_rag as _run_pastnews_rag
+import os
+import csv
+from pathlib import Path
+from datetime import datetime, timezone
 
 
-REPORT_FORMAT = f"""
+REPORT_FORMAT = """
 **날짜**: (YYYY-MM-DD) | **종목**: [분석 대상 품목명]  
 
 | 어제 종가 | 퀀트 예측 | 시장 심리 | 종합 의견 | 확신도 |
 |:---:|:---:|:---:|:---:| :---:|
-| [y] | [상승/하락] | [긍정적/중립적/부정적] | [BUY/SELL/HOLD] |  [0~100 사이의 점수]  |
+| [y] | [상승/하락] | [긍정적/중립적/부정적] | [BUY/SELL/HOLD] | {{CONFIDENCE_V2}} |
 
 ---
 
@@ -223,6 +227,8 @@ SYSTEM_PROMPT = (
 - 퀀트 예측 방향과 뉴스 심리가 일치하면 BUY/SELL 확률을 강화하되,
   변동성이 높으면 강화 폭을 줄여라.
 - 절대 금지: 보고서 본문에 "확률", "%", "confidence", "p_buy" 같은 수치/용어를 쓰는 것.
+  예외(허용): 보고서 상단 표의 "확신도"(0~100 정수) 1개 값은 표시 가능하며,
+  이는 decision_meta(stage="v2")의 recommendation 확률을 0~100으로 환산한 값이다.
 - `timeseries_predictor` 결과 활용법:
   * **기본 정보**: y(어제 종가)를 상단 표에 표시
   * **퀀트 예측 컬럼**: 상단 표의 "퀀트 예측" 컬럼에는 반드시 섹션 1의 B섹션에서 도출한 최종 예측 방향([상승/하락])을 표시
