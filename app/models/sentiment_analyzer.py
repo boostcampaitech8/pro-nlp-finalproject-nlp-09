@@ -2,6 +2,8 @@ from typing import Dict, Any, Optional, Union, List
 import os
 import sys
 import traceback
+import pandas as pd
+from google.cloud import bigquery
 
 # 프로젝트 루트를 path에 추가 (app/models -> app -> 프로젝트 루트, dirname 2회)
 _current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -116,10 +118,110 @@ class SentimentAnalyzer:
                 for x in (supporting[:3] + opposing[:3])
             ]
             report["evidence_news"] = evidence_news
+            
+            # sentiment_summary를 BigQuery에 저장
+            market_analysis = report.get("market_analysis") or {}
+            sentiment_summary = market_analysis.get("sentiment_summary") or {}
+            if sentiment_summary:
+                try:
+                    news_count_val = int(sentiment_summary.get("total_news_count", 0))
+                    pos_ratio_val = float(sentiment_summary.get("positive_ratio", 0.0))
+                    neg_ratio_val = float(sentiment_summary.get("negative_ratio", 0.0))
+                    print(f"[DEBUG] sentiment_summary 저장 시도: date={target_date}, news_count={news_count_val}, pos_ratio={pos_ratio_val}, neg_ratio={neg_ratio_val}")
+                    success = self._save_sentiment_result_to_bq(
+                        target_date=target_date,
+                        news_count=news_count_val,
+                        pos_ratio=pos_ratio_val,
+                        neg_ratio=neg_ratio_val,
+                        keyword="corn",
+                    )
+                    if success:
+                        print(f"✓ sentiment_result_pos_neg 테이블 저장 성공")
+                    else:
+                        print(f"✗ sentiment_result_pos_neg 테이블 저장 실패")
+                except Exception as e:
+                    print(f"경고: sentiment_result_pos_neg 테이블 저장 중 예외 발생: {e}")
+                    traceback.print_exc()
+            
             return report
         except Exception as e:
             traceback.print_exc()
             return {"error": f"시장 예측 중 오류 발생: {str(e)}"}
+
+    def _save_sentiment_result_to_bq(
+        self,
+        target_date: str,
+        news_count: int,
+        pos_ratio: float,
+        neg_ratio: float,
+        keyword: str = "corn",
+        dataset_id: Optional[str] = None,
+        table_id: str = "sentiment_result_pos_neg",
+    ) -> bool:
+        """
+        sentiment_result_pos_neg 테이블에 감성 분석 결과를 삽입합니다.
+
+        Args:
+            target_date: 분석 날짜 (YYYY-MM-DD)
+            news_count: 총 뉴스 개수
+            pos_ratio: 긍정 비율 (0~1)
+            neg_ratio: 부정 비율 (0~1)
+            keyword: 키워드 (기본: "corn")
+            dataset_id: 데이터셋 ID (None이면 환경변수 사용)
+            table_id: 테이블 ID (기본: sentiment_result_pos_neg)
+
+        Returns:
+            bool: 성공 여부
+        """
+        try:
+            from datetime import datetime
+            datetime.strptime(target_date, "%Y-%m-%d")
+        except ValueError:
+            print(f"경고: 잘못된 날짜 형식: {target_date}")
+            return False
+
+        dataset = dataset_id or os.getenv("BIGQUERY_DATASET_ID", "tilda")
+        project_id = os.getenv("BIGQUERY_PROJECT_ID") or os.getenv("VERTEX_AI_PROJECT_ID")
+        if project_id:
+            client = bigquery.Client(project=project_id)
+        else:
+            client = bigquery.Client()
+        
+        full_table = f"{client.project}.{dataset}.{table_id}"
+
+        try:
+            # 기존 데이터 삭제 (중복 방지)
+            delete_query = f"DELETE FROM `{full_table}` WHERE date = @date AND keyword = @keyword"
+            client.query(
+                delete_query,
+                job_config=bigquery.QueryJobConfig(
+                    query_parameters=[
+                        bigquery.ScalarQueryParameter("date", "DATE", target_date),
+                        bigquery.ScalarQueryParameter("keyword", "STRING", keyword),
+                    ]
+                ),
+            ).result()
+
+            # 새 데이터 삽입
+            df = pd.DataFrame([{
+                "date": target_date,
+                "news_count": int(news_count),
+                "pos_ratio": float(pos_ratio),
+                "neg_ratio": float(neg_ratio),
+                "keyword": keyword,
+            }])
+            # date 컬럼을 DATE 타입으로 변환
+            df['date'] = pd.to_datetime(df['date']).dt.date
+            
+            job_config = bigquery.LoadJobConfig(
+                write_disposition=bigquery.WriteDisposition.WRITE_APPEND,
+            )
+            client.load_table_from_dataframe(df, full_table, job_config=job_config).result()
+            return True
+        except Exception as e:
+            print(f"경고: sentiment_result_pos_neg 테이블 저장 실패: {e}")
+            traceback.print_exc()
+            return False
 
     def predict_market_impact(self, target_date: str, lookback_days: int = 7) -> Dict[str, Any]:
         """
