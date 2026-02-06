@@ -149,18 +149,18 @@ SYSTEM_PROMPT = (
 **사용 가능한 도구**:
 1. timeseries_predictor: 시계열 분석 + 머신러닝 하이브리드 예측
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
-      - commodity: 상품명 (corn, soybean, wheat)
+   - commodity: 상품명 (corn, soybean, wheat)
    - 설명: 시계열 분석 모델의 가격 예측(yhat)과 머신러닝의 방향 예측(forecast_direction)을 반환합니다.
    - 반환 값: target_date, y(어제 종가), yhat(시계열 분석 예측값), forecast_direction(Up/Down), trend, EMA_lag2_effect, Volume_lag5_effect, volatility 등 시계열 features 전체
 
 2. news_sentiment_analyzer: 뉴스 기반 시장 영향력 분석 및 근거 추출
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
-      - commodity: 상품명 (corn, soybean, wheat)
+   - commodity: 상품명 (corn, soybean, wheat)
    - 설명: 해당 날짜 전후의 뉴스를 분석하여 시장 상승/하락 확률을 예측하고, 예측의 핵심 근거가 된 주요 뉴스들을 반환합니다.
 
 3. keyword_analyzer: 뉴스 기사의 주요 키워드 분석 (Entity Confidence / PageRank 기반)
    - target_date: 분석할 대상 날짜 (형식: "YYYY-MM-DD")
-      - commodity: 상품명 (corn, soybean, wheat)
+   - commodity: 상품명 (corn, soybean, wheat)
    - days: 분석할 일수 (기본 3일)
    - 설명: PageRank 알고리즘을 활용하여 뉴스의 Entity Confidence(중요도) 상위 키워드를 추출합니다.
    - 반환 값: top_entities (상위 10개, 각 항목: {"entity": "...", "score": ...})
@@ -403,7 +403,7 @@ class LLMSummarizer:
 - 다음 순서로 도구를 호출하세요:
   1. `timeseries_predictor(target_date="{target_date}", commodity="{commodity}")`
   2. `news_sentiment_analyzer(target_date="{target_date}", commodity="{commodity}")`
-  3. `keyword_analyzer(target_date="{target_date}", commodity    y="{commodity}")`
+  3. `keyword_analyzer(target_date="{target_date}", commodity="{commodity}")`
   4. keyword_analyzer 결과의 **top_triples 앞 5개**에서 "triple"만 추출해 `pastnews_rag(triples_json="...", commodity="{commodity}", top_k=2)` 호출. 연관 키워드는 그 앞 5개 top_triples의 keywords를 저장해 두었다가 보고서 표에 사용하세요.
 - **pastnews_rag 호출 예시**: keyword_analyzer가 {{"top_triples": [{{"triple": ["A","B","C"], "keywords": ["x","y"]}}, ...]}}를 반환하면, **앞 5개만** 사용해 `pastnews_rag(triples_json='[["A","B","C"], ...]', top_k=2)` 호출 (최대 5개). 표의 "연관 키워드"에는 그 앞 5개 top_triples의 keywords를 #키워드1 #키워드2 또는 키워드1, 키워드2 형식으로 구분해서 표시.
 - `timeseries_predictor` 결과 활용:
