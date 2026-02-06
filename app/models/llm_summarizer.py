@@ -275,6 +275,41 @@ SYSTEM_PROMPT = (
 Decision = Literal["BUY", "HOLD", "SELL"]
 Stage = Literal["v1", "v2"]
 
+# decision_meta 로그 저장 경로 (원하는 경로로 .env에서 오버라이드 가능)
+# 예) DECISION_META_LOG_PATH=./logs/decision_meta.csv
+DECISION_META_LOG_PATH = os.getenv("DECISION_META_LOG_PATH", "./outputs/decision_meta.csv")
+
+
+def _append_decision_meta_csv(row: dict, path: str = DECISION_META_LOG_PATH) -> None:
+    """
+    decision_meta 호출 시점(v1/v2) 확률 분포를 지정된 CSV에 append.
+    - 파일이 없으면 header 생성
+    - 있으면 계속 누적
+    """
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    file_exists = p.exists()
+
+    fieldnames = [
+        "ingested_at",
+        "target_date",
+        "commodity",
+        "stage",
+        "recommendation",
+        "p_buy",
+        "p_hold",
+        "p_sell",
+        "rationale_short",
+        "warnings",
+    ]
+
+    with p.open("a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow({k: row.get(k, "") for k in fieldnames})
+
+
 @tool
 def decision_meta(
     target_date: str,
@@ -313,6 +348,27 @@ def decision_meta(
         p_buy, p_hold, p_sell = 0.34, 0.33, 0.33
     else:
         p_buy, p_hold, p_sell = p_buy / s, p_hold / s, p_sell / s
+
+    # v1/v2 모두 CSV에 append 저장
+    try:
+        _append_decision_meta_csv(
+            {
+                "ingested_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "target_date": target_date,
+                "commodity": commodity,
+                "stage": stage,
+                "recommendation": recommendation,
+                "p_buy": p_buy,
+                "p_hold": p_hold,
+                "p_sell": p_sell,
+                "rationale_short": rationale_short,
+                "warnings": warnings,
+            }
+        )
+    except Exception as e:
+        # 도구 동작은 계속하되, 저장 실패만 로그
+        print(f"[decision_meta] CSV 저장 실패: {e}", flush=True)
+
 
     return json.dumps(
         {
@@ -569,6 +625,60 @@ class LLMSummarizer:
                 pass
         return str(content)
 
+    def _extract_decision_meta_v2(self, messages) -> Optional[dict]:
+        """
+        agent 메시지들에서 decision_meta(stage='v2')의 tool 결과(JSON)를 추출
+        """
+        for msg in reversed(messages or []):
+            # ToolMessage는 보통 name, content를 가짐 (msg.name == tool_name)
+            if getattr(msg, "name", None) == "decision_meta":
+                try:
+                    data = json.loads(getattr(msg, "content", "") or "")
+                    if isinstance(data, dict) and data.get("stage") == "v2":
+                        return data
+                except Exception:
+                    print("[_extract_decision_meta_v2] decision_meta v2 JSON 파싱 실패", flush=True)
+                    continue
+        return None
+
+    def _inject_confidence_v2(self, report: str, meta_v2: Optional[dict]) -> str:
+        """
+        보고서 상단 표 '확신도' 값을 decision_meta(v2) 기반으로 강제 주입.
+        - 확신도 = v2의 recommendation 확률 * 100 (0~100 정수)
+        - {{CONFIDENCE_V2}} 플레이스홀더가 있으면 우선 치환
+        - 없으면 첫 상단 테이블의 데이터 행 5번째 컬럼을 덮어씀
+        """
+        if not report or not meta_v2:
+            return report
+
+        rec = meta_v2.get("recommendation")
+        conf = meta_v2.get("confidence", {}) or {}
+        try:
+            p = float(conf.get(rec, 0.0))
+        except Exception:
+            p = 0.0
+        score = int(round(max(0.0, min(1.0, p)) * 100))
+
+        # 1) 플레이스홀더 치환(권장)
+        if "{{CONFIDENCE_V2}}" in report:
+            return report.replace("{{CONFIDENCE_V2}}", str(score))
+        else:
+            print("failed to find {{CONFIDENCE_V2}} placeholder")
+
+        # 2) 플레이스홀더가 없다면: 상단 표의 데이터 행에서 '확신도' 컬럼만 덮어쓰기
+        lines = report.splitlines()
+        for i, line in enumerate(lines):
+            if line.strip().startswith("|") and "어제 종가" in line and "확신도" in line:
+                data_idx = i + 2  # 헤더(i), 정렬(i+1), 데이터(i+2)
+                if data_idx < len(lines) and lines[data_idx].strip().startswith("|"):
+                    cols = [c.strip() for c in lines[data_idx].strip().strip("|").split("|")]
+                    if len(cols) >= 5:
+                        cols[4] = str(score)
+                        lines[data_idx] = "| " + " | ".join(cols[:5]) + " |"
+                break
+        return "\n".join(lines)
+
+
     def _extract_summary_from_result(self, result: dict) -> str:
         """Agent 실행 결과에서 요약 텍스트 추출"""
         import json
@@ -634,6 +744,7 @@ class LLMSummarizer:
             target_date = datetime.now().strftime("%Y-%m-%d")
 
         user_input = self._build_user_input(context=context, target_date=target_date, commodity=commodity)
+        meta_v2 = None
 
         for attempt in range(max_retries + 1):
             # Agent 실행 (LangChain이 자동으로 tool call을 처리함)
@@ -649,6 +760,10 @@ class LLMSummarizer:
 
                 summary = self._extract_summary_from_result(result)
                 agent_result = result
+
+                # (추가) decision_meta(v2) 결과를 찾아 상단 표 '확신도'에 주입
+                meta_v2 = self._extract_decision_meta_v2(messages)
+                summary = self._inject_confidence_v2(summary, meta_v2)
 
                 # 디버깅: 메시지 상태 확인
                 print(f"\n[디버깅] 총 메시지 수: {len(messages)}")
@@ -678,6 +793,7 @@ class LLMSummarizer:
                 return {
                     "summary": summary or "",
                     "agent_result": agent_result,
+                    "decision_meta_v2": meta_v2 or "",
                 }
 
             # 형식이 맞지 않으면 재시도
@@ -722,4 +838,5 @@ class LLMSummarizer:
         return {
             "summary": summary or "",
             "agent_result": agent_result,
+            "decision_meta_v2": meta_v2 or "",
         }
