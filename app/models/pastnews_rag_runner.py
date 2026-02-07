@@ -79,7 +79,7 @@ def fetch_embeddings_by_triple_texts(
 
 
 def vector_search_similar_hash_ids(client, triple_embedding: List[float], top_k: int = 5) -> List[str]:
-    """BigQuery VECTOR_SEARCH를 이용한 유사 기사 검색"""
+    """BigQuery VECTOR_SEARCH를 이용한 유사 기사 검색 (단일 임베딩). 호출 1회당 테이블 전체 스캔 발생."""
     if not triple_embedding:
         return []
     dataset = os.getenv("BIGQUERY_DATASET_ID", "tilda")
@@ -102,6 +102,54 @@ def vector_search_similar_hash_ids(client, triple_embedding: List[float], top_k:
                 bigquery.ArrayQueryParameter("embedding", "FLOAT64", triple_embedding)
             ]
         ),
+    )
+    return [row.hash_id for row in job.result()]
+
+
+def vector_search_batch_similar_hash_ids(
+    client, embeddings: List[List[float]], top_k: int = 5
+) -> List[str]:
+    """
+    BigQuery VECTOR_SEARCH를 이용한 유사 기사 검색 (배치).
+    여러 임베딩을 한 번의 VECTOR_SEARCH 호출로 처리하여 테이블 스캔 1회만 발생 (비용 최적화).
+    """
+    if not client or not embeddings:
+        return []
+    embeddings = [e for e in embeddings if e]
+    if not embeddings:
+        return []
+    dataset = os.getenv("BIGQUERY_DATASET_ID", "tilda")
+    table = "news_article_triples"
+    full_table = f"{client.project}.{dataset}.{table}"
+
+    # 쿼리 벡터 테이블: 여러 행을 UNION ALL로 구성 (호출 1번 = 테이블 1회 스캔)
+    if len(embeddings) == 1:
+        query_vectors_sql = "SELECT @embedding_0 AS embedding"
+        params = [bigquery.ArrayQueryParameter("embedding_0", "FLOAT64", embeddings[0])]
+    else:
+        parts = [f"SELECT @embedding_{i} AS embedding" for i in range(len(embeddings))]
+        query_vectors_sql = " UNION ALL ".join(parts)
+        params = [
+            bigquery.ArrayQueryParameter(f"embedding_{i}", "FLOAT64", emb)
+            for i, emb in enumerate(embeddings)
+        ]
+
+    query = f"""
+    WITH query_vectors AS (
+      {query_vectors_sql}
+    )
+    SELECT base.hash_id
+    FROM VECTOR_SEARCH(
+      TABLE `{full_table}`,
+      'embedding',
+      (SELECT embedding FROM query_vectors),
+      query_column_to_search => 'embedding',
+      top_k => {top_k}
+    )
+    """
+    job = client.query(
+        query,
+        job_config=bigquery.QueryJobConfig(query_parameters=params),
     )
     return [row.hash_id for row in job.result()]
 
@@ -156,13 +204,11 @@ def run_pastnews_rag(
         )
         return result
 
-    all_hash_ids = []
-    for tt in triple_texts:
-        emb = embeddings_map.get(tt)
-        if not emb:
-            continue
-        ids = vector_search_similar_hash_ids(client, emb, top_k=max_per_triple)
-        all_hash_ids.extend(ids)
+    # 배치 VECTOR_SEARCH 1회 호출로 비용 최적화 (기존: triple 수만큼 호출 → 테이블 N회 스캔)
+    embeddings_list = [embeddings_map[tt] for tt in triple_texts if embeddings_map.get(tt)]
+    all_hash_ids = vector_search_batch_similar_hash_ids(
+        client, embeddings_list, top_k=max_per_triple
+    )
     hash_ids = list(dict.fromkeys(all_hash_ids))
     if not hash_ids:
         return result
