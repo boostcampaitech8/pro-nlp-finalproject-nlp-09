@@ -1,5 +1,5 @@
 from airflow import DAG
-from airflow.operators.python import PythonOperator
+from airflow.operators.python import PythonOperator, ShortCircuitOperator
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
@@ -7,7 +7,9 @@ from prophet import Prophet
 import logging
 from google.cloud import bigquery
 import os
+import json
 
+# [환경 설정]
 PROJECT_ID = os.getenv("VERTEX_AI_PROJECT_ID", "project-5b75bb04-485d-454e-af7")
 DATASET_ID = "tilda"
 PRICE_TABLE = "wheat_price"
@@ -26,127 +28,147 @@ default_args = {
 def get_bq_client():
     return bigquery.Client(project=PROJECT_ID)
 
+def check_already_exists(**context):
+    """이미 해당 날짜의 데이터가 적재되어 있는지 확인"""
+    target_date = context['ds']
+    client = get_bq_client()
+    query = f"SELECT count(*) as cnt FROM `{PROJECT_ID}.{DATASET_ID}.{TARGET_TABLE}` WHERE ds = '{target_date}'"
+    try:
+        df = client.query(query).to_dataframe()
+        if df['cnt'].iloc[0] > 0:
+            logging.info(f"[PRICE-MODEL][{COMMODITY}] ✅ {target_date} 데이터가 이미 존재합니다. 작업을 건너뜁니다.")
+            return False
+        return True
+    except Exception as e:
+        logging.warning(f"[PRICE-MODEL][{COMMODITY}] ⚠️ 체크 실패 (진행): {e}")
+        return True
+
 def generate_features(**context):
+    """
+    Airflow 실행 날짜(ds)를 기준으로 Prophet 모델을 학습하고 피처를 생성합니다.
+    (prophet_wheat.py 로직과 100% 일치화)
+    """
     target_date_str = context['ds']
     target_date = pd.to_datetime(target_date_str)
+    
     logging.info(f"[PRICE-MODEL][{COMMODITY}] 🚀 Task 시작: generate_features (Target: {target_date_str})")
     
     client = get_bq_client()
     start_date = target_date - timedelta(days=365 * 4 + 30)
     start_date_str = start_date.strftime('%Y-%m-%d')
     
-    logging.info(f"[PRICE-MODEL][{COMMODITY}] 🔍 BQ 데이터 조회 범위: {start_date_str} ~ {target_date_str}")
-    
-    # 1. Wheat 데이터
-    q_wheat = f"SELECT time, close, volume as Volume, ema as EMA FROM `{PROJECT_ID}.{DATASET_ID}.{PRICE_TABLE}` WHERE DATE(time) >= '{start_date_str}' AND DATE(time) <= '{target_date_str}' ORDER BY time"
+    # 1. Wheat 데이터 로드
+    q_wheat = f"SELECT time, close, open, high, low, volume as Volume, ema as EMA FROM `{PROJECT_ID}.{DATASET_ID}.{PRICE_TABLE}` WHERE DATE(time) >= '{start_date_str}' AND DATE(time) <= '{target_date_str}' ORDER BY time"
     df = client.query(q_wheat).to_dataframe()
     
     if df.empty or df.iloc[-1]['time'].strftime('%Y-%m-%d') != target_date_str:
-        logging.warning(f"[PRICE-MODEL][{COMMODITY}] ⚠️ {target_date_str} 가격 데이터가 아직 없습니다. 작업을 건너뜁니다.")
+        logging.warning(f"[PRICE-MODEL][{COMMODITY}] ⚠️ {target_date_str} 데이터 부재로 중단.")
         return None
 
-    logging.info(f"[PRICE-MODEL][{COMMODITY}] ✅ {PRICE_TABLE} 데이터 로드 성공: {len(df)}건")
     df['ds'] = pd.to_datetime(df['time'])
     df['y'] = pd.to_numeric(df['close'])
     
-    # 2. Corn & Soybean 데이터
+    # 2. 보조 데이터(Corn, Soybean) 로드 (Granger 기반)
     for dep in ['corn', 'soybean']:
         q_dep = f"SELECT time, close as {dep}_close FROM `{PROJECT_ID}.{DATASET_ID}.{dep}_price` WHERE DATE(time) >= '{start_date_str}' AND DATE(time) <= '{target_date_str}' ORDER BY time"
         try:
             df_dep = client.query(q_dep).to_dataframe()
             df_dep['time'] = pd.to_datetime(df_dep['time'])
             df = pd.merge(df, df_dep, on='time', how='left')
-            logging.info(f"[PRICE-MODEL][{COMMODITY}] ✅ 보조 데이터({dep}) 병합 완료: {len(df_dep)}건")
-        except Exception as e:
-            logging.warning(f"[PRICE-MODEL][{COMMODITY}] ⚠️ {dep} 데이터 로드 실패: {e}")
-            df[f'{dep}_close'] = np.nan
+        except Exception: df[f'{dep}_close'] = np.nan
 
-    # 3. Lag 생성
-    df['EMA_lag1'] = df['EMA'].shift(1)
-    df['Volume_lag1'] = df['Volume'].shift(1)
-    df['corn_close_lag2'] = df['corn_close'].shift(2)
-    df['soybean_close_lag1'] = df['soybean_close'].shift(1)
+    # 3. Granger Lag 피처 생성
+    # Wheat 특화: EMA_lag1, Volume_lag1, corn_close_lag2, soybean_close_lag1
+    df['EMA_lag1'] = df['EMA'].shift(1).astype(float)
+    df['Volume_lag1'] = df['Volume'].shift(1).astype(float)
+    df['corn_close_lag2'] = df['corn_close'].shift(2).astype(float)
+    df['soybean_close_lag1'] = df['soybean_close'].shift(1).astype(float)
     
+    # 학습 데이터 준비 (target_date 전날까지)
     train_df = df[df['ds'] < target_date].dropna(subset=['EMA_lag1', 'Volume_lag1']).copy()
     
-    base_regressors = ['EMA_lag1', 'Volume_lag1']
-    extra_regressors = []
-    if 'corn_close_lag2' in train_df.columns and train_df['corn_close_lag2'].notna().mean() > 0.5:
-        extra_regressors.append('corn_close_lag2')
-    if 'soybean_close_lag1' in train_df.columns and train_df['soybean_close_lag1'].notna().mean() > 0.5:
-        extra_regressors.append('soybean_close_lag1')
-        
-    regressors = base_regressors + extra_regressors
-    logging.info(f"[PRICE-MODEL][{COMMODITY}] 🧠 학습 데이터 준비 완료: {len(train_df)}행, Regressors: {regressors}")
+    # 조건부 Regressors 체크
+    use_corn, use_soybean = False, False
+    regressors = ['EMA_lag1', 'Volume_lag1']
     
+    if 'corn_close_lag2' in train_df.columns and train_df['corn_close_lag2'].notna().mean() > 0.5:
+        use_corn = True
+        regressors.append('corn_close_lag2')
+    if 'soybean_close_lag1' in train_df.columns and train_df['soybean_close_lag1'].notna().mean() > 0.5:
+        use_soybean = True
+        regressors.append('soybean_close_lag1')
+        
+    train_df = train_df.dropna(subset=regressors)
+    logging.info(f"[PRICE-MODEL][{COMMODITY}] 🧠 학습 데이터: {len(train_df)}행, Regressors: {regressors}")
+    
+    # 4. Prophet 모델 학습
     model = Prophet(seasonality_mode='multiplicative', yearly_seasonality=True, weekly_seasonality=True, daily_seasonality=False)
     for reg in regressors: model.add_regressor(reg, mode='multiplicative')
     model.fit(train_df[['ds', 'y'] + regressors])
     
+    # 5. 예측
     future_row = df[df['ds'] == target_date].copy()
     if future_row[regressors].isna().any().any():
         future_row[regressors] = future_row[regressors].fillna(method='ffill')
         
     forecast = model.predict(future_row)
     
-    result = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper', 'trend']].iloc[0].to_dict()
+    # 6. 결과 정리
+    res = forecast[['ds', 'yhat', 'yhat_lower', 'yhat_upper', 'trend']].iloc[0].to_dict()
     for col in ['weekly', 'yearly', 'extra_regressors_multiplicative']:
-        if col in forecast.columns: result[col] = forecast[col].iloc[0]
+        res[col] = forecast[col].iloc[0] if col in forecast.columns else None
     for reg in regressors:
-        if reg in forecast.columns: result[f"{reg}_effect"] = forecast[reg].iloc[0]
+        res[f"{reg}_effect"] = forecast[reg].iloc[0] if reg in forecast.columns else None
             
-    result['y'] = future_row['y'].iloc[0]
-    result['y_next'] = None
-    result['Volume'] = future_row['Volume'].iloc[0]
-    result['EMA'] = future_row['EMA'].iloc[0]
-    result['corn_close'] = future_row['corn_close'].iloc[0] if 'corn_close' in future_row else None
-    result['soybean_close'] = future_row['soybean_close'].iloc[0] if 'soybean_close' in future_row else None
-    result['EMA_lag1'] = future_row['EMA_lag1'].iloc[0]
-    result['Volume_lag1'] = future_row['Volume_lag1'].iloc[0]
-    result['corn_close_lag2'] = future_row['corn_close_lag2'].iloc[0] if 'corn_close_lag2' in future_row else None
-    result['soybean_close_lag1'] = future_row['soybean_close_lag1'].iloc[0] if 'soybean_close_lag1' in future_row else None
-    result['used_corn'] = 'corn_close_lag2' in extra_regressors
-    result['used_soybean'] = 'soybean_close_lag1' in extra_regressors
-    result['volatility'] = result['yhat_upper'] - result['yhat_lower']
-    result['ds'] = result['ds'].strftime('%Y-%m-%d')
+    prev_idx = df[df['ds'] == target_date].index[0] - 1
+    res['y'] = float(df.iloc[prev_idx]['y']) if prev_idx >= 0 else None
+    res['y_next'] = float(future_row['y'].iloc[0])
     
-    logging.info(f"[PRICE-MODEL][{COMMODITY}] ✨ 피처 생성 성공: yhat={result['yhat']:.2f}, trend={result['trend']:.2f}")
-    return result
+    if res['y'] is not None and res['y_next'] is not None:
+        res['y_change'] = res['y_next'] - res['y']
+        res['direction'] = 1 if res['y_change'] > 0 else 0
+        res['predicted_direction'] = 1 if res['yhat'] > res['y'] else 0
+        res['actual_direction'] = res['direction']
+    else:
+        res['y_change'], res['direction'], res['predicted_direction'], res['actual_direction'] = None, None, None, None
+
+    res['Volume'] = int(future_row['Volume'].iloc[0])
+    res['EMA'] = float(future_row['EMA'].iloc[0])
+    res['corn_close'] = float(future_row['corn_close'].iloc[0]) if not pd.isna(future_row['corn_close'].iloc[0]) else None
+    res['soybean_close'] = float(future_row['soybean_close'].iloc[0]) if not pd.isna(future_row['soybean_close'].iloc[0]) else None
+    res['EMA_lag1'] = float(future_row['EMA_lag1'].iloc[0])
+    res['Volume_lag1'] = float(future_row['Volume_lag1'].iloc[0])
+    res['corn_close_lag2'] = float(future_row['corn_close_lag2'].iloc[0]) if use_corn else None
+    res['soybean_close_lag1'] = float(future_row['soybean_close_lag1'].iloc[0]) if use_soybean else None
+    
+    res['used_corn'] = bool(use_corn)
+    res['used_soybean'] = bool(use_soybean)
+    res['volatility'] = float(res['yhat_upper'] - res['yhat_lower'])
+    res['ds'] = res['ds'].strftime('%Y-%m-%d')
+    
+    return res
 
 def insert_to_bq(**context):
     feature_data = context['ti'].xcom_pull(task_ids='generate_features')
-    if not feature_data:
-        logging.info(f"[PRICE-MODEL][{COMMODITY}] ⏹️ 적재할 데이터가 없습니다.")
-        return
+    if not feature_data: return
     client = get_bq_client()
     table_id = f"{PROJECT_ID}.{DATASET_ID}.{TARGET_TABLE}"
-    target_ds = feature_data['ds']
-    
-    # [상세 로깅] 적재될 데이터 전체 출력
     row = {k: (None if pd.isna(v) else v) for k, v in feature_data.items()}
-    logging.info(f"[PRICE-MODEL][{COMMODITY}] 🔍 적재 예정 컬럼 ({len(row)}개): {list(row.keys())}")
-    logging.info(f"[PRICE-MODEL][{COMMODITY}] 📄 적재 예정 데이터 상세:\n{json.dumps(row, indent=2, ensure_ascii=False)}")
-
-    logging.info(f"[PRICE-MODEL][{COMMODITY}] 💾 BQ 적재 시작 (Target: {target_ds})")
-    try:
-        client.query(f"DELETE FROM `{table_id}` WHERE ds = '{target_ds}'").result()
-        logging.info(f"[PRICE-MODEL][{COMMODITY}] 🗑️ 기존 데이터 삭제 완료 ({target_ds})")
-    except Exception: pass
-
+    logging.info(f"[PRICE-MODEL][{COMMODITY}] 🔍 적재 예정 데이터:\n{json.dumps(row, indent=2, ensure_ascii=False)}")
     errors = client.insert_rows_json(table_id, [row])
-    if errors: raise RuntimeError(f"BigQuery 적재 실패: {errors}")
+    if errors: raise RuntimeError(f"BQ 적재 실패: {errors}")
     logging.info(f"[PRICE-MODEL][{COMMODITY}] ✅ 적재 완료 성공!")
 
 with DAG(
     'generate_prophet_features_wheat_v1',
     default_args=default_args,
-    description='Wheat Prophet 피처 생성 (Backfill 지원)',
+    description='Wheat Prophet 피처 생성 (존재 시 Skip)',
     schedule_interval='50 16 * * *',
     catchup=True,
     max_active_runs=1,
     tags=['wheat', 'prophet', 'feature_engineering']
 ) as dag:
-
+    t0 = ShortCircuitOperator(task_id='check_exists', python_callable=check_already_exists, provide_context=True)
     t1 = PythonOperator(task_id='generate_features', python_callable=generate_features, provide_context=True)
     t2 = PythonOperator(task_id='insert_to_bq', python_callable=insert_to_bq, provide_context=True)
-    t1 >> t2
+    t0 >> t1 >> t2
