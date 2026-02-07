@@ -6,8 +6,10 @@ import os
 import sys
 import json
 import traceback
+import pandas as pd
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime, timedelta
+from google.cloud import bigquery
 
 # 프로젝트 루트 및 모델 디렉토리를 Python 경로에 추가 (임포트 에러 해결)
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -42,6 +44,33 @@ class SentimentAnalyzer:
 
     def __init__(self):
         pass
+
+    def _dedupe_news_by_text_prefix(self, news_df, text_col: str = "all_text", prefix_length: int = 50):
+        """
+        all_text(또는 지정 컬럼) 기준 앞 prefix_length자(공백 정규화 후)가 같은 행은 중복으로 보고,
+        publish_date 기준 가장 최근 행만 남깁니다.
+        """
+        try:
+            import pandas as pd
+        except ImportError:
+            return news_df
+        if news_df.empty:
+            return news_df
+        # 텍스트 컬럼: all_text 없으면 description 사용
+        if text_col not in news_df.columns:
+            text_col = "description" if "description" in news_df.columns else news_df.columns[0]
+        col = news_df[text_col]
+        # 공백 정규화 후 앞 prefix_length자
+        prefix = col.fillna("").astype(str).str.split().str.join(" ").str.slice(0, prefix_length)
+        news_df = news_df.copy()
+        news_df["_text_prefix"] = prefix
+        # 날짜 컬럼: 문자열이면 파싱해서 정렬
+        date_col = "publish_date"
+        if date_col not in news_df.columns:
+            return news_df.drop(columns=["_text_prefix"], errors="ignore")
+        df_sorted = news_df.sort_values(date_col, ascending=False)
+        df_deduped = df_sorted.drop_duplicates(subset=["_text_prefix"], keep="first")
+        return df_deduped.drop(columns=["_text_prefix"], errors="ignore").reset_index(drop=True)
 
     def run_daily_prediction(
         self,
@@ -90,6 +119,9 @@ class SentimentAnalyzer:
             if price_df.empty:
                 return {"error": f"[{commodity}] {target_date} 기준 최근 가격 데이터가 없습니다."}
 
+            # 1-1. all_text 기준 앞 50자 동일 시 중복 제거 (가장 최근 것만 유지)
+            news_df = self._dedupe_news_by_text_prefix(news_df, prefix_length=50)
+
             # 2. 앙상블 모델 예측 실행
             report = _run_daily_prediction(
                 target_date=target_date,
@@ -122,8 +154,25 @@ class SentimentAnalyzer:
                 for x in (supporting[:3] + opposing[:3])
             ]
             report["evidence_news"] = evidence_news
+
+            # 반환값 일부를 BigQuery에 저장 (date, keyword, news_count, pos_ratio, neg_ratio)
+            market_analysis = report.get("market_analysis") or {}
+            sentiment_summary = market_analysis.get("sentiment_summary") or {}
+            if sentiment_summary:
+                try:
+                    self._save_sentiment_result_to_bq(
+                        target_date=target_date,
+                        news_count=int(sentiment_summary.get("total_news_count", 0)),
+                        pos_ratio=float(sentiment_summary.get("positive_ratio", 0.0)),
+                        neg_ratio=float(sentiment_summary.get("negative_ratio", 0.0)),
+                        keyword=commodity,
+                    )
+                except Exception as e:
+                    print(f"경고: sentiment_result_pos_neg 저장 중 예외: {e}")
+                    traceback.print_exc()
+
             return report
-            
+
         except Exception as e:
             traceback.print_exc()
             return {"error": f"[{commodity}] 시장 예측 중 오류 발생: {str(e)}"}
@@ -149,6 +198,54 @@ class SentimentAnalyzer:
         report["evidence_news"] = combined[:5]
         report["target_date"] = target_date
         report["commodity"] = commodity
+
+    def _save_sentiment_result_to_bq(
+        self,
+        target_date: str,
+        news_count: int,
+        pos_ratio: float,
+        neg_ratio: float,
+        keyword: str = "corn",
+        dataset_id: Optional[str] = None,
+        table_id: str = "sentiment_result_pos_neg",
+    ) -> bool:
+        """sentiment_result_pos_neg 테이블에 감성 분석 결과를 삽입합니다."""
+        try:
+            datetime.strptime(target_date, "%Y-%m-%d")
+        except ValueError:
+            print(f"경고: 잘못된 날짜 형식: {target_date}")
+            return False
+        dataset = dataset_id or os.getenv("BIGQUERY_DATASET_ID", "tilda")
+        project_id = os.getenv("BIGQUERY_PROJECT_ID") or os.getenv("VERTEX_AI_PROJECT_ID")
+        client = bigquery.Client(project=project_id) if project_id else bigquery.Client()
+        full_table = f"{client.project}.{dataset}.{table_id}"
+        try:
+            client.query(
+                f"DELETE FROM `{full_table}` WHERE date = @date AND keyword = @keyword",
+                job_config=bigquery.QueryJobConfig(
+                    query_parameters=[
+                        bigquery.ScalarQueryParameter("date", "DATE", target_date),
+                        bigquery.ScalarQueryParameter("keyword", "STRING", keyword),
+                    ]
+                ),
+            ).result()
+            df = pd.DataFrame([{
+                "date": target_date,
+                "news_count": int(news_count),
+                "pos_ratio": float(pos_ratio),
+                "neg_ratio": float(neg_ratio),
+                "keyword": keyword,
+            }])
+            df["date"] = pd.to_datetime(df["date"]).dt.date
+            client.load_table_from_dataframe(
+                df, full_table,
+                job_config=bigquery.LoadJobConfig(write_disposition=bigquery.WriteDisposition.WRITE_APPEND),
+            ).result()
+            return True
+        except Exception as e:
+            print(f"경고: {table_id} 저장 실패: {e}")
+            traceback.print_exc()
+            return False
 
 
 if __name__ == "__main__":
