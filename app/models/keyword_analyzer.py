@@ -748,7 +748,7 @@ if __name__ == "__main__":
     # 디버깅: 뉴스 가져오기 확인 (target_date 기준 0, -1, -2일)
     target_date = "2026-01-20"
     commodity = sys.argv[2] if len(sys.argv) > 2 else "corn"
-    days = 4
+    days = 3
 
     client = BigQueryClient()
     keyword_filter = f"{commodity} and (price or demand or supply or inventory) OR united states department of agriculture"

@@ -214,7 +214,7 @@ class BigQueryClient:
             base_dt = datetime.now()
 
         # start~target_date 구간. target_date 당일은 10:00 UTC 이전만 (BigQuery TIMESTAMP는 UTC 저장)
-        start_date = base_dt - timedelta(days=days - 1)
+        start_date = base_dt - timedelta(days=days)
         start_str = start_date.strftime("%Y-%m-%d")
         end_str = base_dt.strftime("%Y-%m-%d")
         select_clause = ", ".join([date_column] + value_cols)
