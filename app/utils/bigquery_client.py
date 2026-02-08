@@ -218,6 +218,7 @@ class BigQueryClient:
         start_str = start_date.strftime("%Y-%m-%d")
         end_str = base_dt.strftime("%Y-%m-%d")
         select_clause = ", ".join([date_column] + value_cols)
+        #where_cond = f"DATE({date_column}) >= '{start_str}' AND DATE({date_column}) <= '{end_str}'"
         where_cond = (
             f"DATE({date_column}) >= '{start_str}' "
             f"AND {date_column} <= TIMESTAMP('{end_str} 10:00:00')"
