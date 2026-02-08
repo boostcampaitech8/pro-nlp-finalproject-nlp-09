@@ -748,7 +748,7 @@ if __name__ == "__main__":
     # 디버깅: 뉴스 가져오기 확인 (target_date 기준 0, -1, -2일)
     target_date = "2026-01-20"
     commodity = sys.argv[2] if len(sys.argv) > 2 else "corn"
-    days = 3
+    days = 4
 
     client = BigQueryClient()
     keyword_filter = f"{commodity} and (price or demand or supply or inventory) OR united states department of agriculture"
@@ -779,19 +779,36 @@ if __name__ == "__main__":
     dates = [str(item.get("date", ""))[:10] for item in news_data]
     for d, cnt in sorted(Counter(dates).items()):
         print(f"  {d}: {cnt}건")
-    # 샘플 1건 (triples 길이만)
+    # 샘플 1건 (triples 원본 확인)
     first = news_data[0]
     triples_raw = first.get("triples")
+    _r = repr(triples_raw)
+    print(f"[DEBUG] 샘플 1건 triples 원본: type={type(triples_raw).__name__}, repr={_r[:200]}{'...' if len(_r) > 200 else ''}")
     if isinstance(triples_raw, str):
         try:
             triples_list = json.loads(triples_raw)
-        except Exception:
+        except Exception as e:
             triples_list = []
+            print(f"[DEBUG] triples JSON 파싱 실패: {e}")
     else:
-        triples_list = triples_raw or []
+        triples_list = triples_raw if triples_raw is not None else []
     print(f"[DEBUG] 샘플 1건: date={first.get('date')}, triples 수={len(triples_list)}")
     if triples_list:
         print(f"  첫 triple 예시: {triples_list[0]}")
+    # 전체 건 중 triples 있는 기사 수
+    def _count_triples(it):
+        raw = it.get("triples")
+        if raw is None:
+            return 0
+        if isinstance(raw, str):
+            try:
+                L = json.loads(raw)
+                return len(L) if isinstance(L, list) else 0
+            except Exception:
+                return 0
+        return len(raw) if isinstance(raw, list) else 0
+    n_with_triples = sum(1 for item in news_data if _count_triples(item) > 0)
+    print(f"[DEBUG] triples 있는 기사: {n_with_triples}/{len(news_data)}건")
 
     # 전체 키워드 분석 한 번 돌려보기 (선택)
     if len(sys.argv) > 3 and sys.argv[3] == "--full":

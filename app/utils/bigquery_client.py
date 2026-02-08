@@ -136,7 +136,7 @@ class BigQueryClient:
             FROM `{self.project_id}.{dataset}.{table_id}`
             WHERE publish_date >= '{start_date_str}'
               AND publish_date <= '{target_date}'
-              AND filter_status IN ('T', 'true')
+              AND filter_status = '{filter_status}'
             ORDER BY publish_date ASC
         """
         return self.client.query(query).to_dataframe()
@@ -213,15 +213,14 @@ class BigQueryClient:
         else:
             base_dt = datetime.now()
 
-        # target_date 기준 0일 전~(days-1)일 전 포함. target_date 당일은 오전 10시까지만 포함
+        # start~target_date 구간. target_date 당일은 10:00 UTC 이전만 (BigQuery TIMESTAMP는 UTC 저장)
         start_date = base_dt - timedelta(days=days - 1)
         start_str = start_date.strftime("%Y-%m-%d")
         end_str = base_dt.strftime("%Y-%m-%d")
         select_clause = ", ".join([date_column] + value_cols)
-        #where_cond = f"DATE({date_column}) >= '{start_str}' AND DATE({date_column}) <= '{end_str}'"
         where_cond = (
             f"DATE({date_column}) >= '{start_str}' "
-            f"AND {date_column} <= TIMESTAMP('{end_str} 10:00:00')"
+            f"AND {date_column} < TIMESTAMP('{end_str} 10:00:00', 'UTC')"
         )
         if where_clause:
             where_cond += f" AND ({where_clause})"
