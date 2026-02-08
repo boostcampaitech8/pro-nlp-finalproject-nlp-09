@@ -412,7 +412,7 @@ class KeywordAnalyzer:
         key_conditions = " OR ".join(
             f"key_word = '{k.replace(chr(39), chr(39) + chr(39))}'" for k in parts
         )
-        where_clause = f"filter_status = 'T' AND ({key_conditions})"
+        where_clause = f"filter_status IN ('T', 'true') AND ({key_conditions})"
         # 1. BigQuery에서 데이터 가져오기 (통합 테이블 news_article 유지)
         news_data = self.client.get_timeseries_data(
             table_id="news_article",

@@ -401,7 +401,7 @@ class PredictionReportGenerator:
                 key_entities = []
             
             article_info = {
-                'article_id': int(article['id']),
+                'article_id': article['id'],
                 'title': article['title'],
                 'all_text': article.get('all_text', ''),
                 'sentiment': article['sentiment'],
