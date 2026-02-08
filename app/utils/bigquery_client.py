@@ -213,10 +213,16 @@ class BigQueryClient:
         else:
             base_dt = datetime.now()
 
+        # start~target_date 구간. target_date 당일은 10:00 UTC 이전만 (BigQuery TIMESTAMP는 UTC 저장)
         start_date = base_dt - timedelta(days=days - 1)
-        
+        start_str = start_date.strftime("%Y-%m-%d")
+        end_str = base_dt.strftime("%Y-%m-%d")
         select_clause = ", ".join([date_column] + value_cols)
-        where_cond = f"{date_column} >= '{start_date.strftime('%Y-%m-%d')}' AND {date_column} <= '{base_dt.strftime('%Y-%m-%d')}'"
+        where_cond = (
+            f"DATE({date_column}) >= '{start_str}' "
+            f"AND {date_column} < TIMESTAMP('{end_str} 10:00:00', 'UTC')"
+        )
+
         if where_clause:
             where_cond += f" AND ({where_clause})"
 

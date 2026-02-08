@@ -11,7 +11,6 @@ from google.cloud import bigquery
 from app.models.pastnews_rag.price_jump import get_bq_client as _get_bq_client
 from app.models.pastnews_rag.price_jump import fetch_article_dates, fetch_prices_for_dates
 
-
 def extract_triples_from_today():
     """기본 검색용 triples"""
     return [["USDA", "announced", "export restrictions"]]
@@ -47,8 +46,7 @@ def fetch_embeddings_by_triple_texts(
     client, triple_texts: List[str]
 ) -> Dict[str, List[float]]:
     """
-    BigQuery tilda.news_article_triples에서 triple_text 목록으로 행을 찾아
-    triple_text -> embedding 매핑을 반환. (동일 triple_text 복수 행 시 첫 행만 사용)
+    BigQuery news_article_triples에서 triple_text 목록으로 embedding 조회.
     """
     out: Dict[str, List[float]] = {}
     if not client or not triple_texts:
@@ -73,7 +71,7 @@ def fetch_embeddings_by_triple_texts(
         ),
     )
     for row in job.result():
-        if row.triple_text not in out and row.embedding:
+        if row.embedding:
             out[row.triple_text] = list(row.embedding)
     return out
 
@@ -104,6 +102,64 @@ def vector_search_similar_hash_ids(client, triple_embedding: List[float], top_k:
         ),
     )
     return [row.hash_id for row in job.result()]
+
+
+def vector_search_batch_similar_hash_ids(
+    client, embeddings_list: List[List[float]], top_k: int = 5
+) -> List[List[str]]:
+    """
+    여러 임베딩에 대해 VECTOR_SEARCH를 한 번의 쿼리로 배치 실행.
+    news_article_triples(2.68GB) 반복 스캔을 줄이기 위해 사용.
+    Returns: embeddings_list와 같은 순서의 hash_id 리스트의 리스트.
+    """
+    if not client or not embeddings_list:
+        return []
+    # 빈 임베딩 제거하지 않고 인덱스로 매핑 유지
+    valid = [(i, emb) for i, emb in enumerate(embeddings_list) if emb]
+    if not valid:
+        return [[] for _ in embeddings_list]
+
+    dataset = os.getenv("BIGQUERY_DATASET_ID", "tilda")
+    table = os.getenv("TRIPLES_TABLE", "news_article_triples")
+    full_table = f"{client.project}.{dataset}.{table}"
+
+    # UNION ALL로 (idx, embedding) 행 구성
+    union_parts = " UNION ALL ".join(
+        f"SELECT {i} AS idx, @emb_{i} AS embedding" for i, _ in valid
+    )
+    query = f"""
+    WITH query_data AS (
+      {union_parts}
+    )
+    SELECT 
+        query.idx, 
+        base.hash_id
+    FROM VECTOR_SEARCH(
+      TABLE `{full_table}`,
+      'embedding',
+      (SELECT idx, embedding FROM query_data),
+      top_k => {top_k}
+    )
+    """
+    params = [
+        bigquery.ArrayQueryParameter(f"emb_{i}", "FLOAT64", emb)
+        for i, emb in valid
+    ]
+    job = client.query(
+        query,
+        job_config=bigquery.QueryJobConfig(query_parameters=params),
+    )
+    # idx별로 hash_id 수집
+    by_idx: Dict[int, List[str]] = {i: [] for i, _ in valid}
+    for row in job.result():
+        idx = row.idx
+        if idx in by_idx:
+            by_idx[idx].append(row.hash_id)
+    # 원래 embeddings_list 순서대로 반환 (임베딩 없던 인덱스는 빈 리스트)
+    out: List[List[str]] = [[] for _ in embeddings_list]
+    for i, _ in valid:
+        out[i] = by_idx.get(i, [])
+    return out
 
 
 def run_pastnews_rag(
@@ -156,12 +212,13 @@ def run_pastnews_rag(
         )
         return result
 
+    # triple_texts 순서대로 임베딩 리스트 구성 후 배치 VECTOR_SEARCH 1회 호출 (중복 BQ 스캔 제거)
+    embeddings_ordered = [embeddings_map.get(tt) or [] for tt in triple_texts]
+    batch_results = vector_search_batch_similar_hash_ids(
+        client, embeddings_ordered, top_k=max_per_triple
+    )
     all_hash_ids = []
-    for tt in triple_texts:
-        emb = embeddings_map.get(tt)
-        if not emb:
-            continue
-        ids = vector_search_similar_hash_ids(client, emb, top_k=max_per_triple)
+    for ids in batch_results:
         all_hash_ids.extend(ids)
     hash_ids = list(dict.fromkeys(all_hash_ids))
     if not hash_ids:
