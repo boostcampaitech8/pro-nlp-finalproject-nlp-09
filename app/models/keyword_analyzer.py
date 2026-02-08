@@ -7,8 +7,16 @@
 
 import json
 import re
+import sys
+from pathlib import Path
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple, Any
+
+# 직접 실행 시 프로젝트 루트를 path에 추가 (python keyword_analyzer.py)
+if __name__ == "__main__":
+    _root = Path(__file__).resolve().parent.parent.parent
+    if str(_root) not in sys.path:
+        sys.path.insert(0, str(_root))
 
 import networkx as nx
 import numpy as np
@@ -733,3 +741,65 @@ def analyze_keywords(target_date: str, commodity: str = "corn", days: int = 3, t
         top_k=top_k
     )
     return json.dumps(result, ensure_ascii=False, indent=2)
+
+
+if __name__ == "__main__":
+    import sys
+    # 디버깅: 뉴스 가져오기 확인 (target_date 기준 0, -1, -2일)
+    target_date = "2026-01-20"
+    commodity = sys.argv[2] if len(sys.argv) > 2 else "corn"
+    days = 3
+
+    client = BigQueryClient()
+    keyword_filter = f"{commodity} and (price or demand or supply or inventory) OR united states department of agriculture"
+    parts = [p.strip() for p in keyword_filter.split(" OR ") if p.strip()]
+    key_conditions = " OR ".join(
+        f"key_word = '{k.replace(chr(39), chr(39) + chr(39))}'" for k in parts
+    )
+    where_clause = f"filter_status = 'T' AND ({key_conditions})"
+
+    print(f"[DEBUG] target_date={target_date}, commodity={commodity}, days={days}")
+    print(f"[DEBUG] where_clause={where_clause}...")
+    news_data = client.get_timeseries_data(
+        table_id="news_article",
+        value_column=["triples"],
+        date_column="publish_date",
+        base_date=target_date,
+        days=days,
+        where_clause=where_clause,
+    )
+    print(f"[DEBUG] 뉴스 건수: {len(news_data)}")
+
+    if not news_data:
+        print("[DEBUG] 데이터 없음. target_date 또는 key_word 조건 확인.")
+        sys.exit(1)
+
+    # 날짜별 건수
+    from collections import Counter
+    dates = [str(item.get("date", ""))[:10] for item in news_data]
+    for d, cnt in sorted(Counter(dates).items()):
+        print(f"  {d}: {cnt}건")
+    # 샘플 1건 (triples 길이만)
+    first = news_data[0]
+    triples_raw = first.get("triples")
+    if isinstance(triples_raw, str):
+        try:
+            triples_list = json.loads(triples_raw)
+        except Exception:
+            triples_list = []
+    else:
+        triples_list = triples_raw or []
+    print(f"[DEBUG] 샘플 1건: date={first.get('date')}, triples 수={len(triples_list)}")
+    if triples_list:
+        print(f"  첫 triple 예시: {triples_list[0]}")
+
+    # 전체 키워드 분석 한 번 돌려보기 (선택)
+    if len(sys.argv) > 3 and sys.argv[3] == "--full":
+        print("\n[DEBUG] 전체 키워드 분석 실행...")
+        result = KeywordAnalyzer().analyze_keywords(
+            target_date=target_date, commodity=commodity, days=days, top_k=5
+        )
+        print("top_entities:", result.get("top_entities", [])[:5])
+        print("triples_count:", result.get("triples_count"))
+        if result.get("error"):
+            print("error:", result["error"])
