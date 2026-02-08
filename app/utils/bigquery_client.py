@@ -136,7 +136,7 @@ class BigQueryClient:
             FROM `{self.project_id}.{dataset}.{table_id}`
             WHERE publish_date >= '{start_date_str}'
               AND publish_date <= '{target_date}'
-              AND filter_status = '{filter_status}'
+              AND filter_status IN ('T', 'true')
             ORDER BY publish_date ASC
         """
         return self.client.query(query).to_dataframe()
