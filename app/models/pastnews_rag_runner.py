@@ -11,11 +11,6 @@ from google.cloud import bigquery
 from app.models.pastnews_rag.price_jump import get_bq_client as _get_bq_client
 from app.models.pastnews_rag.price_jump import fetch_article_dates, fetch_prices_for_dates
 
-# 동일 런 내 배치 재사용: 큰 배치(키워드 분석) 시 저장소 초기화, 소량( pastnews_rag ) 시 재사용
-_triples_embeddings_run: Dict[str, List[float]] = {}
-_RUN_SCOPE_THRESHOLD = 15  # 이 개수 초과 요청이면 새 런으로 보고 저장소 비움
-
-
 def extract_triples_from_today():
     """기본 검색용 triples"""
     return [["USDA", "announced", "export restrictions"]]
@@ -52,24 +47,12 @@ def fetch_embeddings_by_triple_texts(
 ) -> Dict[str, List[float]]:
     """
     BigQuery news_article_triples에서 triple_text 목록으로 embedding 조회.
-    큰 배치(키워드 분석)가 먼저 오면 저장소를 비우고 1회 조회, 이후 소량( pastnews_rag )은 저장소 재사용으로 BQ 호출 생략.
     """
-    global _triples_embeddings_run
     out: Dict[str, List[float]] = {}
     if not client or not triple_texts:
         return out
     unique_texts = list(dict.fromkeys(t for t in triple_texts if t))
     if not unique_texts:
-        return out
-    # 큰 배치면 새 런으로 간주하고 저장소 초기화 (이 파일 안에서만 런 구분)
-    if len(unique_texts) > _RUN_SCOPE_THRESHOLD:
-        _triples_embeddings_run = {}
-    # 이미 이번 런에서 조회된 것은 재사용
-    missing = [t for t in unique_texts if t not in _triples_embeddings_run]
-    for t in unique_texts:
-        if t in _triples_embeddings_run:
-            out[t] = _triples_embeddings_run[t]
-    if not missing:
         return out
     dataset = os.getenv("BIGQUERY_DATASET_ID", "tilda")
     table = os.getenv("TRIPLES_TABLE", "news_article_triples")
@@ -83,15 +66,13 @@ def fetch_embeddings_by_triple_texts(
         query,
         job_config=bigquery.QueryJobConfig(
             query_parameters=[
-                bigquery.ArrayQueryParameter("triple_texts", "STRING", missing)
+                bigquery.ArrayQueryParameter("triple_texts", "STRING", unique_texts)
             ]
         ),
     )
     for row in job.result():
-        if row.triple_text not in _triples_embeddings_run and row.embedding:
-            emb = list(row.embedding)
-            _triples_embeddings_run[row.triple_text] = emb
-            out[row.triple_text] = emb
+        if row.embedding:
+            out[row.triple_text] = list(row.embedding)
     return out
 
 
@@ -147,16 +128,18 @@ def vector_search_batch_similar_hash_ids(
         f"SELECT {i} AS idx, @emb_{i} AS embedding" for i, _ in valid
     )
     query = f"""
-    WITH query_embeddings AS (
+    WITH query_data AS (
       {union_parts}
     )
-    SELECT vs.idx, vs.hash_id
+    SELECT 
+        query.idx, 
+        base.hash_id
     FROM VECTOR_SEARCH(
       TABLE `{full_table}`,
       'embedding',
-      (SELECT idx, embedding FROM query_embeddings),
+      (SELECT idx, embedding FROM query_data),
       top_k => {top_k}
-    ) AS vs
+    )
     """
     params = [
         bigquery.ArrayQueryParameter(f"emb_{i}", "FLOAT64", emb)
