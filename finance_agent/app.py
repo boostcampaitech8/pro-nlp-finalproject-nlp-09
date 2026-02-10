@@ -3,10 +3,11 @@
 
 import html
 import textwrap
+import io
+import os
 
 import re
 
-import json
 
 from datetime import date
 
@@ -24,7 +25,6 @@ from google.genai.types import HttpOptions
 
 import plotly.graph_objects as go
 
-import streamlit.components.v1 as components
 
 
 
@@ -464,13 +464,9 @@ def _extract_summary_row(report_text: str):
 
     for i, ln in enumerate(lines):
 
-        if "|" in ln and all(k in ln for k in ["어제", "시계열", "머신러닝", "시장 심리", "종합 의견"]):
-
-            header_idx = i
-
-            break
-
-        if all(k in ln for k in ["어제", "시계열", "머신러닝", "시장 심리", "종합 의견"]):
+        has_base = all(k in ln for k in ["어제", "시장 심리", "종합 의견"])
+        has_pred = ("머신러닝" in ln) or ("퀀트" in ln)
+        if ("|" in ln and has_base and has_pred) or (has_base and has_pred):
 
             header_idx = i
 
@@ -486,25 +482,33 @@ def _extract_summary_row(report_text: str):
 
                 continue
 
-            if "|" in row:
+            if "|" in row and "|" in lines[header_idx]:
 
-                cells = [c.strip() for c in row.strip("|").split("|")]
-
-                cells = [c for c in cells if c]
-
-                if len(cells) >= 5:
-
+                headers = [c.strip() for c in lines[header_idx].strip("|").split("|")]
+                values = [c.strip() for c in row.strip("|").split("|")]
+                if len(headers) >= 4 and len(values) >= len(headers):
+                    value_by_header = dict(zip(headers, values))
+                    pred = next(
+                        (
+                            v
+                            for h, v in value_by_header.items()
+                            if ("퀀트" in h and "예측" in h) or ("머신러닝" in h and "예측" in h)
+                        ),
+                        "",
+                    )
                     return {
 
-                        "close": cells[0],
+                        "close": next((v for h, v in value_by_header.items() if "어제" in h), ""),
 
-                        "ts_forecast": cells[1],
+                        "ts_forecast": next((v for h, v in value_by_header.items() if "시계열" in h), ""),
 
-                        "ml_dir": cells[2],
+                        "ml_dir": pred,
 
-                        "sentiment": cells[3].replace(" ", ""),
+                        "sentiment": next((v for h, v in value_by_header.items() if "시장 심리" in h), "").replace(" ", ""),
 
-                        "opinion": cells[4].replace(" ", ""),
+                        "opinion": next((v for h, v in value_by_header.items() if "종합 의견" in h), "").replace(" ", ""),
+
+                        "confidence": next((v for h, v in value_by_header.items() if "확신도" in h), ""),
 
                     }
 
@@ -614,7 +618,7 @@ def _extract_ml_direction(report_text: str):
 
         return row["ml_dir"]
 
-    m = re.search(r"머신러닝 (?:방향 )?예측[^가-힣a-zA-Z]*([가-힣a-zA-Z]+)", report_text)
+    m = re.search(r"(?:머신러닝|퀀트) (?:방향 )?예측[^가-힣a-zA-Z]*([가-힣a-zA-Z]+)", report_text)
 
     if m:
 
@@ -883,6 +887,117 @@ def _highlight_keywords(text: str):
     return escaped
 
 
+def _strip_leading_meta_line(report_text: str) -> str:
+    if not report_text:
+        return ""
+    # Keep original line breaks intact; remove only the date/commodity line.
+    return re.sub(
+        r"^\s*\*\*날짜\*\*:\s*[0-9]{4}-[0-9]{2}-[0-9]{2}\s*\|\s*\*\*종목\*\*:\s*.+?\s*$\n?",
+        "",
+        report_text,
+        flags=re.MULTILINE,
+        count=1,
+    )
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _get_latest_report_date(commodity: str, report_prefix: str):
+    """Find latest report date from GCS object names for a commodity."""
+    try:
+        from google.cloud import storage
+
+        client = storage.Client()
+        bucket_name = "team-blue-raw-data"
+        prefix = f"reports/{commodity}/"
+        pattern = re.compile(rf"{re.escape(report_prefix)}(\d{{4}}-\d{{2}}-\d{{2}})\.txt$")
+
+        latest = None
+        for blob in client.list_blobs(bucket_name, prefix=prefix):
+            filename = blob.name.rsplit("/", 1)[-1]
+            match = pattern.match(filename)
+            if not match:
+                continue
+            file_date = date.fromisoformat(match.group(1))
+            if latest is None or file_date > latest:
+                latest = file_date
+        return latest or date.today()
+    except Exception:
+        return date.today()
+
+def _find_report_font():
+    candidates = [
+        os.environ.get("REPORT_FONT_PATH", ""),
+        "assets/fonts/NotoSansKR-Regular.ttf",
+        "/usr/share/fonts/truetype/noto/NotoSansKR-Regular.ttf",
+        "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
+        "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+        "/usr/share/fonts/truetype/nanum/NanumBarunGothic.ttf",
+    ]
+    for path in candidates:
+        if path and os.path.exists(path):
+            return path
+    return None
+
+def _build_report_pdf(report_text, title_text, report_date, commodity_label):
+    try:
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import A4
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+    except Exception:
+        return None
+
+    buffer = io.BytesIO()
+    width, height = A4
+    margin = 40
+    y = height - margin
+
+    font_name = "Helvetica"
+    font_path = _find_report_font()
+    if font_path:
+        try:
+            pdfmetrics.registerFont(TTFont("ReportFont", font_path))
+            font_name = "ReportFont"
+        except Exception:
+            font_name = "Helvetica"
+
+    c = canvas.Canvas(buffer, pagesize=A4)
+    c.setTitle(title_text)
+
+    c.setFont(font_name, 16)
+    c.drawString(margin, y, title_text)
+    y -= 18
+    c.setFont(font_name, 10)
+    c.setFillColorRGB(0.35, 0.35, 0.35)
+    c.drawString(margin, y, f"Date: {report_date:%Y-%m-%d} · Commodity: {commodity_label}")
+    y -= 14
+    c.setFillColorRGB(0, 0, 0)
+    c.setFont(font_name, 11)
+
+    text = report_text or ""
+    for line in text.splitlines():
+        wrapped_lines = textwrap.wrap(
+            line,
+            width=90,
+            break_long_words=True,
+            replace_whitespace=False,
+        )
+        if not wrapped_lines:
+            y -= 12
+            continue
+        for wline in wrapped_lines:
+            if y < margin:
+                c.showPage()
+                y = height - margin
+                c.setFont(font_name, 11)
+            c.drawString(margin, y, wline)
+            y -= 14
+
+    c.save()
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
 
 st.set_page_config(page_title="Finance Agent", layout="wide")
 
@@ -919,26 +1034,67 @@ st.markdown(
         color: var(--ink);
 
     }
-
-    .report-shell {
-
-        background: linear-gradient(180deg, #f7f4ee 0%, #fbf9f4 100%);
-
+    .page-title {
+        display: flex;
+        align-items: baseline;
+        gap: 14px;
+        margin: 6px 0 18px 0;
+        flex-wrap: wrap;
+    }
+    .page-title-main {
+        font-family: "Source Serif 4", serif;
+        font-size: 34px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+        color: var(--ink);
+    }
+    .page-title-tags {
+        display: inline-flex;
+        gap: 6px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 10px;
+        border-radius: 999px;
         border: 1px solid var(--edge);
-
-        border-radius: 16px;
-
-        padding: 24px 28px;
-
-        box-shadow: 0 10px 30px rgba(0,0,0,0.06);
-
-        position: relative;
-
-        overflow: hidden;
-
+        background: #ffffff;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        color: #334155;
+        text-transform: uppercase;
+    }
+    .tag-commodity {
+        border-color: rgba(14, 165, 233, 0.35);
+        background: rgba(14, 165, 233, 0.08);
+        color: #0f4c75;
+        box-shadow: inset 0 0 0 1px rgba(14, 165, 233, 0.08);
+    }
+    .tag-date {
+        border-color: rgba(15, 23, 42, 0.12);
+        background: rgba(15, 23, 42, 0.03);
+        color: #334155;
+    }
+    .tag-icon {
+        width: 14px;
+        height: 14px;
     }
 
-    .report-shell:before {
+    .st-key-report_shell {
+        background: linear-gradient(180deg, #f7f4ee 0%, #fbf9f4 100%);
+        border: 1px solid var(--edge);
+        border-radius: 16px;
+        padding: 24px 28px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .st-key-report_shell:before {
 
         content: "";
 
@@ -957,47 +1113,21 @@ st.markdown(
         pointer-events: none;
 
     }
-
-    .report-title {
-
+    .st-key-report_shell [data-testid="stMarkdownContainer"] {
         font-family: "Source Serif 4", serif;
-
-        font-size: 24px;
-
-        color: var(--ink);
-
-        margin: 0 0 6px 0;
-
-        letter-spacing: 0.2px;
-
-    }
-
-    .report-sub {
-
-        font-family: "Inter", sans-serif;
-
-        font-size: 12px;
-
-        color: var(--muted);
-
-        margin-bottom: 16px;
-
-    }
-
-    .report-body {
-
-        font-family: "Source Serif 4", serif;
-
         font-size: 14px;
-
         line-height: 1.7;
-
         color: var(--ink);
-
-        white-space: pre-wrap;
-
         margin: 0;
-
+        position: relative;
+        z-index: 1;
+    }
+    .report-meta {
+        font-family: "Inter", sans-serif;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 10px;
+        letter-spacing: 0.02em;
     }
 
     .summary-row {
@@ -1023,7 +1153,14 @@ st.markdown(
         padding: 14px 16px;
 
         box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+        background-image: linear-gradient(180deg, #ffffff 0%, #fbfbfb 100%);
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 
+    }
+    .summary-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 28px rgba(0,0,0,0.08);
+        border-color: rgba(14, 165, 233, 0.35);
     }
 
     .summary-title {
@@ -1306,7 +1443,7 @@ default_url = (
 
 with st.sidebar:
 
-    st.header("📌 Report Controls")
+    st.header("Report Settings")
 
     commodity_label = st.radio(
 
@@ -1323,12 +1460,26 @@ with st.sidebar:
     )
 
     commodity = commodity_map[commodity_label]
+    latest_report_date = _get_latest_report_date(commodity, report_prefix_map[commodity])
 
-    report_date = st.date_input("Report date", value=today)
+    if "ui_selected_commodity" not in st.session_state:
+        st.session_state.ui_selected_commodity = commodity
+
+    if "report_date_selection" not in st.session_state:
+        st.session_state.report_date_selection = latest_report_date
+
+    if st.session_state.ui_selected_commodity != commodity:
+        st.session_state.report_date_selection = latest_report_date
+        st.session_state.ui_selected_commodity = commodity
+
+    report_date = st.date_input("Report date", key="report_date_selection")
 
     if "report_url" not in st.session_state:
-
-        st.session_state.report_url = default_url
+        st.session_state.report_url = (
+            f"https://storage.cloud.google.com/team-blue-raw-data/reports/"
+            f"{commodity}/{report_date:%Y}/{report_date:%m}/"
+            f"{report_prefix_map[commodity]}{report_date:%Y-%m-%d}.txt"
+        )
 
     if (
 
@@ -1354,27 +1505,9 @@ with st.sidebar:
 
     use_service_account = True
 
-    auto_load = False
+    auto_load = True
 
     load_clicked = st.button("Load Report")
-
-    if st.session_state.get("report_text"):
-
-        st.markdown("### 📚 Navigate")
-
-        if st.button("퀀트 분석"):
-
-            st.session_state.scroll_target = "section-quant"
-
-        if st.button("뉴스 분석"):
-
-            st.session_state.scroll_target = "section-news"
-
-        if st.button("종합 의견"):
-
-            st.session_state.scroll_target = "section-summary"
-
-
 
 if "report_text" not in st.session_state:
 
@@ -1400,14 +1533,97 @@ if st.session_state.get("last_report_commodity") and st.session_state.last_repor
 
     st.session_state.last_loaded_date = None
 
-page_title = f"✅ Daily Market Brief · {commodity} · {report_date:%Y-%m-%d}"
-st.title(page_title)
+commodity_icon_map = {
+    "corn": (
+    # 1. 옥수수 본체 (상단을 살짝 더 좁고 길게 뽑아서 옥수수 특유의 형태 강조)
+    '<path d="M8 1.2 C6.5 1.2 4.8 3.5 4.8 7.5 C4.8 11.5 6.2 14 8 14 C9.8 14 11.2 11.5 11.2 7.5 C11.2 3.5 9.5 1.2 8 1.2 Z" fill="#FFD750" stroke="#B8860B" stroke-width="0.25" />'
+    
+    # 2. 알갱이 디테일 (격자선을 살짝 더 촘촘하고 부드럽게)
+    '<path d="M5.2 4.5 Q8 4.2 10.8 4.5 M4.9 7 Q8 6.7 11.1 7 M5 9.5 Q8 9.2 11 9.5 M5.5 12 Q8 11.7 10.5 12" fill="none" stroke="#B8860B" stroke-width="0.25" opacity="0.5" />'
+    '<path d="M6.5 2 Q6.5 7.5 6.5 13.5 M8 1.2 Q8 7.5 8 14 M9.5 2 Q9.5 7.5 9.5 13.5" fill="none" stroke="#B8860B" stroke-width="0.25" opacity="0.5" />'
+
+    # 3. 뒤쪽 벌어진 큰 껍질 (끝부분을 밖으로 샥- 뻗게 수정)
+    '<path d="M8 14 C5 14 1.5 11 2 6.5 C2.2 4 4.5 3 5.5 4.5 C4.5 7 4.5 11 8 14 Z" fill="#4CAF50" stroke="#2E7D32" stroke-width="0.3" />'
+    '<path d="M8 14 C11 14 14.5 11 14 6.5 C13.8 4 11.5 3 10.5 4.5 C11.5 7 11.5 11 8 14 Z" fill="#4CAF50" stroke="#2E7D32" stroke-width="0.3" />'
+    
+    # 4. 앞쪽 겹쳐지는 작은 껍질 (입체감 부여)
+    '<path d="M8 14 C6.2 14 5 12 5 8.5 C6 9.5 7 10.5 8 14 Z" fill="#66BB6A" stroke="#2E7D32" stroke-width="0.25" />'
+    '<path d="M8 14 C9.8 14 11 12 11 8.5 C10 9.5 9 10.5 8 14 Z" fill="#66BB6A" stroke="#2E7D32" stroke-width="0.25" />'
+
+    # 5. 하단 줄기 (깔끔하게 마무리)
+    '<path d="M7.6 14 L7.6 15.8 C7.6 16.2 8.4 16.2 8.4 15.8 L8.4 14" fill="#4CAF50" stroke="#2E7D32" stroke-width="0.3" />'
+    ),
+    "wheat": (
+    # 중앙 줄기 (얇고 깔끔하게)
+    '<path d="M8 15 L8 2" stroke="#8B4513" stroke-width="0.3" fill="none" />'
+    
+    # 하단 초록 잎 (옥수수와 통일감)
+    '<path d="M8 14 C6 14 4.5 13 4.5 11.5 C6 11.5 7.5 12.5 8 14 Z" fill="#66BB6A" stroke="#2E7D32" stroke-width="0.25" />'
+    '<path d="M8 14 C10 14 11.5 13 11.5 11.5 C10 11.5 8.5 12.5 8 14 Z" fill="#66BB6A" stroke="#2E7D32" stroke-width="0.25" />'
+
+    # 낟알 (좌우 비대칭 색상으로 입체감 부여)
+    # 1층
+    '<path d="M8 11.5 C6.5 11.5 5.5 10 5.5 8.5 C7 8.5 8 10 8 11.5 Z" fill="#F0E68C" stroke="#B8860B" stroke-width="0.25" />'
+    '<path d="M8 11.5 C9.5 11.5 10.5 10 10.5 8.5 C9 8.5 8 10 8 11.5 Z" fill="#EBC050" stroke="#B8860B" stroke-width="0.25" />'
+    # 2층
+    '<path d="M8 9 C6.5 9 5.5 7.5 5.5 6 C7 6 8 7.5 8 9 Z" fill="#F0E68C" stroke="#B8860B" stroke-width="0.25" />'
+    '<path d="M8 9 C9.5 9 10.5 7.5 10.5 6 C9 6 8 7.5 8 9 Z" fill="#EBC050" stroke="#B8860B" stroke-width="0.25" />'
+    # 3층 (상단)
+    '<path d="M8 6.5 C6.8 6.5 6 5.5 6 4.5 C7 4.5 8 5.5 8 6.5 Z" fill="#F0E68C" stroke="#B8860B" stroke-width="0.25" />'
+    '<path d="M8 6.5 C9.2 6.5 10 5.5 10 4.5 C9 4.5 8 5.5 8 6.5 Z" fill="#EBC050" stroke="#B8860B" stroke-width="0.25" />'
+    # 맨 위 꼭지
+    '<path d="M8 4.5 C7.5 4.5 7.5 3 8 2 C8.5 3 8.5 4.5 8 4.5 Z" fill="#F0E68C" stroke="#B8860B" stroke-width="0.25" />'
+    ),
+    "soybean": (
+        # 콩꼬투리 배경 (연두색/그린 계열)
+        '<path d="M4 8.2 C4 4.5 7 3 10 3 C13 3 14 6 14 8.5 C14 12 11 14 8 14 C5 14 4 11.5 4 8.2 Z" fill="#8DB600" />'
+        # 콩알 상세 표현 (더 밝은 녹색)
+        '<circle cx="8" cy="6.5" r="1.8" fill="#B2D300" />'
+        '<circle cx="9" cy="10.5" r="1.8" fill="#B2D300" />'
+        # 하이라이트 (입체감)
+        '<path d="M6.5 5.5 C7 5 8 4.8 9 5" stroke="white" stroke-width="0.5" fill="none" opacity="0.6" />'
+    )
+}
+
+commodity_label_map = {"corn": "CORN", "wheat": "WHEAT", "soybean": "SOYBEAN"}
+report_date_label = report_date.strftime("%Y.%m.%d")
+commodity_label_upper = commodity_label_map.get(commodity, commodity.upper())
+commodity_svg = commodity_icon_map.get(commodity, commodity_icon_map["corn"])
+
+st.markdown(
+    f"""
+    <div class="page-title">
+      <div class="page-title-main">Daily Market Report</div>
+      <div class="page-title-tags">
+        <span class="tag tag-commodity">
+          <svg class="tag-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+            {commodity_svg}
+          </svg>
+          {commodity_label_upper}
+        </span>
+        <span class="tag tag-date">
+          <svg class="tag-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2.3" y="3.5" width="11.4" height="10" rx="1.6"></rect>
+            <path d="M2.3 6.2H13.7"></path>
+            <path d="M5 2.5V4.6M11 2.5V4.6"></path>
+          </svg>
+          {report_date_label}
+        </span>
+      </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 
 should_load = False
 
-if auto_load and report_date != st.session_state.get("last_loaded_date"):
+if auto_load and (
+    not st.session_state.get("report_text")
+    or report_date != st.session_state.get("last_loaded_date")
+    or commodity != st.session_state.get("last_report_commodity")
+):
 
     should_load = True
 
@@ -1510,7 +1726,6 @@ with left_col:
     if st.session_state.report_text:
 
         report_text = st.session_state.report_text
-
         sections = _parse_sections(report_text)
 
         opinion = _extract_opinion(report_text)
@@ -1560,7 +1775,7 @@ with left_col:
                     <div class="opinion-badge {badge_class}">{opinion}</div>
                   </div>
                   <div class="summary-card">
-                    <div class="summary-title">머신러닝 예측</div>
+                    <div class="summary-title">퀀트 예측</div>
                     <div class="summary-metric">
                       <span class="opinion-badge {ml_badge_class}">{ml_dir}</span>
                     </div>
@@ -1579,146 +1794,13 @@ with left_col:
 
 
 
-        anchors = []
-
-        for key in ["quant", "news", "summary"]:
-
-            line = _find_header_line(report_text, key)
-
-            anchors.append({"key": key, "line": line})
-
-
-
-        safe_text = html.escape(report_text)
-
-        st.markdown(
-            textwrap.dedent(
-                f"""
-                <div class="report-shell">
-                <div class="report-title">Daily Market Brief · {commodity_label}</div>
-                <div class="report-sub">Date: {report_date:%Y-%m-%d} · Source: Loaded report text</div>
-                  <pre class="report-body">{safe_text}</pre>
-                </div>
-                """
-            ),
-            unsafe_allow_html=True,
-        )
-
-
-
-        if anchors:
-
-            anchors_json = json.dumps(anchors, ensure_ascii=False)
-
-            components.html(
-
-                f"""
-
-                <script>
-
-                (function() {{
-
-                  const anchors = {anchors_json};
-
-                  const doc = parent.document;
-
-                  const pre = doc.querySelector("pre.report-body");
-
-                  if (!pre) return;
-
-                  const textNode = pre.firstChild;
-
-                  if (!textNode || textNode.nodeType !== Node.TEXT_NODE) return;
-
-                  anchors.forEach(a => {{
-
-                    if (!a.line) {{
-
-                      const span = doc.createElement("span");
-
-                      span.id = `section-${{a.key}}`;
-
-                      span.className = "section-anchor";
-
-                      pre.appendChild(span);
-
-                      return;
-
-                    }}
-
-                    const idx = textNode.data.indexOf(a.line);
-
-                    if (idx === -1) {{
-
-                      const span = doc.createElement("span");
-
-                      span.id = `section-${{a.key}}`;
-
-                      span.className = "section-anchor";
-
-                      pre.appendChild(span);
-
-                      return;
-
-                    }}
-
-                    const startNode = textNode.splitText(idx);
-
-                    startNode.splitText(a.line.length);
-
-                    const span = doc.createElement("span");
-
-                    span.id = `section-${{a.key}}`;
-
-                    span.className = "section-anchor";
-
-                    span.textContent = a.line;
-
-                    pre.replaceChild(span, startNode);
-
-                  }});
-
-                }})();
-
-                </script>
-
-                """,
-
-                height=0,
-
+        display_text = _strip_leading_meta_line(report_text)
+        with st.container(key="report_shell"):
+            st.markdown(
+                f"<div class='report-meta'>다음날 예측 | 종목: {commodity_label_upper} | 기준일: {report_date:%Y-%m-%d}</div>",
+                unsafe_allow_html=True,
             )
-
-
-
-        if st.session_state.get("scroll_target"):
-
-            target = st.session_state.get("scroll_target")
-
-            components.html(
-
-                f"""
-
-                <script>
-
-                const targetId = "{target}";
-
-                setTimeout(() => {{
-
-                  const el = parent.document.getElementById(targetId);
-
-                  if (el) el.scrollIntoView({{ behavior: "smooth", block: "start" }});
-
-                }}, 150);
-
-                </script>
-
-                """,
-
-                height=0,
-
-            )
-
-            st.session_state.scroll_target = None
+            st.markdown(display_text)
 
 
 
