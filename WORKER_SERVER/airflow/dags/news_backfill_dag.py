@@ -9,16 +9,15 @@ import os
 import sys
 
 # 프로젝트 루트 경로를 path에 추가 (crawler, processor 모듈을 불러오기 위함)
-sys.path.append('/data/ephemeral/home/pro-nlp-finalproject-nlp-09/WORKER_SERVER') 
+sys.path.append('/data/ephemeral/home/pro-nlp-finalproject-nlp-09/WORKER_SERVER')
 
-from crawler.main_crawler import fetch_and_standardize
+from crawler.backfill_crawler import fetch_and_standardize_backfill
 from processor.news_processor import NewsProcessor
 from processor.embedder import TitanEmbedder
-from processor.bigquery.uploader import upload_processed_news_rows
-from processor.bigquery.entity_triple_uploader import upload_entities_and_triples_rows
+
 # 환경 설정 (Airflow Variables 우선, 없으면 환경변수)
 OPENAI_API_KEY = Variable.get("OPENAI_API_KEY", default_var=None) or os.getenv("OPENAI_API_KEY")
-DATA_DIR = "/data/ephemeral/home/pro-nlp-finalproject-nlp-09/WORKER_SERVER/data" # 로컬 볼륨과 연결된 경로
+DATA_DIR = "/data/ephemeral/home/pro-nlp-finalproject-nlp-09/WORKER_SERVER/data"
 
 os.makedirs(os.path.join(DATA_DIR, 'raw'), exist_ok=True)
 os.makedirs(os.path.join(DATA_DIR, 'processed'), exist_ok=True)
@@ -26,59 +25,62 @@ os.makedirs(os.path.join(DATA_DIR, 'processed'), exist_ok=True)
 default_args = {
     'owner': 'sehun',
     'depends_on_past': False,
-    'start_date': datetime(2024, 1, 1), # 시작일 설정
+    'start_date': datetime(2025, 11, 15),
+    'end_date': datetime(2025, 12, 31),
     'retries': 1,
     'retry_delay': timedelta(minutes=5),
 }
 
 with DAG(
-    'agri_news_pipeline_v1',
+    'agri_news_backfill_v1',
     default_args=default_args,
-    description='농산물 뉴스 수집 및 LLM 처리 파이프라인',
-    schedule='@hourly', # 매시간 실행
-    catchup=False
+    description='농산물 뉴스 백필 수집 파이프라인(일 단위)',
+    schedule='@daily',
+    catchup=True,
+    max_active_runs=1,
 ) as dag:
 
     def crawl_task_func(**context):
-        # execution_date를 활용해 시간별 파일명 생성
-        execution_date = context["ds_nodash"]
-        hour = context["logical_date"].hour
-        output_path = os.path.join(DATA_DIR, 'raw', f'news_{execution_date}_{hour}.json')
-        
-        # 크롤러 실행
-        results = fetch_and_standardize()
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(results, f, ensure_ascii=False, indent=4)
-        
-        # 다음 태스크를 위해 경로 전달 (XCom)
+        execution_date = context["logical_date"].date()
+        execution_date_nodash = context["ds_nodash"]
+
+        print(f"🚦 crawl_news_backfill start: {execution_date}")
+        end_date = execution_date
+        output_name = f'news_backfill_{execution_date_nodash}.json'
+
+        output_path = os.path.join(DATA_DIR, 'raw', output_name)
+
+        results = fetch_and_standardize_backfill(
+            start_date=execution_date.strftime("%Y-%m-%d"),
+            end_date=end_date.strftime("%Y-%m-%d"),
+            output_path=output_path,
+        )
+        if not results:
+            print("⚠️ 수집된 뉴스가 없습니다.")
         return output_path
 
     def process_task_func(**context):
-        # 이전 태스크에서 생성된 파일 경로를 가져옴
-        input_path = context['ti'].xcom_pull(task_ids='crawl_news')
-        output_path = os.path.join(DATA_DIR, 'processed', 'final_processed_news.json')
-        
-        # 프로세서 실행
+        input_path = context['ti'].xcom_pull(task_ids='crawl_news_backfill')
+        output_path = os.path.join(DATA_DIR, 'processed', f'processed_news_{context["ds_nodash"]}.json')
+
         if not OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY is not set")
         processor = NewsProcessor(api_key=OPENAI_API_KEY)
         processor.process_json_file(input_path=input_path, output_path=output_path)
+        return output_path
 
     def embed_news_task_func(**context):
-        """작성하신 TitanEmbedder를 사용하여 null인 임베딩을 채우는 함수"""
-        final_json_path = os.path.join(DATA_DIR, 'processed', 'final_processed_news.json')
+        final_json_path = context['ti'].xcom_pull(task_ids='process_news_backfill')
         entity_json_path = os.path.join(DATA_DIR, 'processed', 'entity.json')
         triple_json_path = os.path.join(DATA_DIR, 'processed', 'triple.json')
-        
+
         if not os.path.exists(final_json_path):
             print("❌ 처리할 JSON 파일이 없습니다.")
             return []
 
-        # 1. 파일 읽기
         with open(final_json_path, 'r', encoding='utf-8') as f:
             all_articles = json.load(f)
 
-        # 2. 임베더 초기화 (작성하신 클래스 사용)
         embedder = TitanEmbedder(region_name="us-east-1")
         newly_embedded_articles = []
         new_entities = []
@@ -107,20 +109,15 @@ with DAG(
         else:
             existing_triples = []
 
-        # 3. 임베딩이 없는 기사만 골라서 생성
         for art in all_articles:
-            # T인 기사 중 임베딩이 null인 경우만!
             if art.get('article_embedding') is None:
                 text_to_embed = f"{art['title']}\n\n{art.get('description', '')}"
-                
                 print(f"🔄 임베딩 생성 중: {art['title'][:20]}...")
                 vector = embedder.generate_embedding(text_to_embed, dimensions=512)
-                
                 if vector:
                     art['article_embedding'] = vector
                     newly_embedded_articles.append(art)
 
-        # 4. 엔티티/트리플 임베딩 생성
         def compute_mdhash_id(content: str, prefix: str) -> str:
             return prefix + md5(content.encode()).hexdigest()
 
@@ -157,7 +154,6 @@ with DAG(
                     })
                     existing_triple_ids.add(triple_id)
 
-        # 5. 파일 업데이트 저장
         if newly_embedded_articles:
             with open(final_json_path, 'w', encoding='utf-8') as f:
                 json.dump(all_articles, f, indent=4, ensure_ascii=False)
@@ -173,56 +169,21 @@ with DAG(
                 json.dump(existing_triples + new_triples, f, indent=4, ensure_ascii=False)
             print(f"✅ {len(new_triples)}개의 트리플 임베딩 완료!")
 
+        return newly_embedded_articles
 
-        return {
-            "newly_embedded_articles": newly_embedded_articles,
-            "new_entities": new_entities,
-            "new_triples": new_triples,
-        }
-
-    # 1. 크롤링 태스크
-    crawl_news = PythonOperator(
-        task_id='crawl_news',
+    crawl_news_backfill = PythonOperator(
+        task_id='crawl_news_backfill',
         python_callable=crawl_task_func,
     )
 
-    # 2. LLM 처리 태스크
-    process_news = PythonOperator(
-        task_id='process_news',
+    process_news_backfill = PythonOperator(
+        task_id='process_news_backfill',
         python_callable=process_task_func,
     )
-    # 3. 임베딩 생성 태스크
-    embed_news = PythonOperator(
-        task_id='embed_news',
+
+    embed_news_backfill = PythonOperator(
+        task_id='embed_news_backfill',
         python_callable=embed_news_task_func,
     )
 
-    def upload_to_bigquery_task_func(**context):
-        # 업로드 대상: final_processed_news.json, entity.json, triple.json
-        os.environ["BIGQUERY_DATASET_ID"] = os.getenv("BIGQUERY_DATASET_ID", "tilda")
-        os.environ["BIGQUERY_TABLE_ID"] = "news_article"
-        os.environ["ENTITIES_TABLE"] = "news_article_entities"
-        os.environ["TRIPLES_TABLE"] = "news_article_triples"
-        payload = context['ti'].xcom_pull(task_ids='embed_news') or {}
-        newly_embedded_articles = payload.get("newly_embedded_articles") or []
-        new_entities = payload.get("new_entities") or []
-        new_triples = payload.get("new_triples") or []
-
-        print(f"[XCom] new_articles={len(newly_embedded_articles)} new_entities={len(new_entities)} new_triples={len(new_triples)}")
-
-        uploaded_articles = upload_processed_news_rows(newly_embedded_articles)
-        uploaded_entities, uploaded_triples = upload_entities_and_triples_rows(
-            new_entities,
-            new_triples,
-            entities_table="news_article_entities",
-            triples_table="news_article_triples",
-        )
-        print(f"[BQ] uploaded_articles={uploaded_articles} uploaded_entities={uploaded_entities} uploaded_triples={uploaded_triples}")
-
-    upload_bigquery = PythonOperator(
-        task_id='upload_bigquery',
-        python_callable=upload_to_bigquery_task_func,
-    )
-
-    # 태스크 순서 설정
-    crawl_news >> process_news >> embed_news >> upload_bigquery
+    crawl_news_backfill >> process_news_backfill >> embed_news_backfill

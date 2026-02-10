@@ -12,3 +12,5 @@ langchain-google-vertexai==3.2.1
 langchain-postgres==0.0.16
 fastapi==0.117.1
 uvicorn==0.40.0
+openai>=1.0.0
+boto3>=1.26.0
