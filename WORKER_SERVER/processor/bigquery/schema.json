@@ -1,0 +1,15 @@
+[
+  {"name": "id", "type": "STRING"},
+  {"name": "title", "type": "STRING"},
+  {"name": "doc_url", "type": "STRING"},
+  {"name": "all_text", "type": "STRING"},
+  {"name": "authors", "type": "STRING"},
+  {"name": "publish_date", "type": "STRING"},
+  {"name": "meta_site_name", "type": "STRING"},
+  {"name": "key_word", "type": "STRING"},
+  {"name": "filter_status", "type": "STRING"},
+  {"name": "description", "type": "STRING"},
+  {"name": "named_entities", "type": "JSON"},
+  {"name": "triples", "type": "JSON"},
+  {"name": "article_embedding", "type": "JSON"}
+]

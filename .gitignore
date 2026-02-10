@@ -179,9 +179,14 @@ references/bq_tutorial/pyproject.toml
 references/bq_tutorial/run_bq_update.sh
 references/bq_tutorial/uv.lock
 
-
 *outputs
 libs/01_summary.md
 libs/data_schema.md
 **/backup_md/*
 **/backup_quries/*
+
+data/
+
+# Project-specific data/venv
+WORKER_SERVER/data/
+WORKER_SERVER/venv/
