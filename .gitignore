@@ -163,3 +163,7 @@ cython_debug/
 # Streamlit
 .streamlit/secrets.toml
 data/
+
+# Project-specific data/venv
+WORKER_SERVER/data/
+WORKER_SERVER/venv/
