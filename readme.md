@@ -73,9 +73,8 @@
 ## 시연 영상
 [![시연 영상](https://img.shields.io/badge/YouTube-시연_영상_보기-red?style=for-the-badge&logo=youtube)](https://www.youtube.com/watch?v=GadK78c9Bjg)
 
-````
 ## 📁 파일 구조
-````
+```
 📁 pro-nlp-finalproject-nlp-09/
 ├── 📁 .github/
 │   └── ⚙️ .keep
@@ -229,4 +228,4 @@
 ├── 🐍 run_pipeline.py
 ├── 🐍 streamlit.py
 └── 📄 uv.lock
-````
+```
