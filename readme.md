@@ -71,7 +71,7 @@
 - [랩업 리포트]()
 
 ## 시연 영상
-[![시연 영상](https://www.youtube.com/watch?v=GadK78c9Bjg)]
+[![시연 영상](https://img.youtube.com/vi/GadK78c9Bjg/maxresdefault.jpg)](https://www.youtube.com/watch?v=GadK78c9Bjg)
 
 ````
 ## 📁 파일 구조
