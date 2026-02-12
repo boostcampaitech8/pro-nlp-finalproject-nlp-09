@@ -1,0 +1,9 @@
+[
+  {"name": "time", "type": "DATE"},
+  {"name": "open", "type": "FLOAT"},
+  {"name": "high", "type": "FLOAT"},
+  {"name": "low", "type": "FLOAT"},
+  {"name": "close", "type": "FLOAT"},
+  {"name": "EMA", "type": "FLOAT"},
+  {"name": "Volume", "type": "INTEGER"}
+]
